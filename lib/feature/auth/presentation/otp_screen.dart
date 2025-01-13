@@ -1,0 +1,129 @@
+import 'package:coyotex/core/utills/app_colors.dart';
+import 'package:coyotex/core/utills/branded_primary_button.dart';
+import 'package:coyotex/feature/auth/presentation/passowrd_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
+
+class OtpScreen extends StatefulWidget {
+  const OtpScreen({super.key});
+
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
+  void _showIncorrectPasswordSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Pallete.primaryColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          child: const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.lock_outline,
+                  color: Colors.white,
+                  size: 40,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "Incorrect OTP",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _onContinuePressed(String otp) {
+    // Dummy check for incorrect OTP
+    // if (otp != "1234") {
+    //   _showIncorrectPasswordSheet(context);
+    // } else {
+    //   // Handle successful OTP verification
+    //   // For example, navigate to another screen
+    // }
+    Navigator.of(context).pop();
+    Navigator.of(context).pop();
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  "assets/images/logo.png",
+                  width: MediaQuery.of(context).size.width * 0.2,
+                ),
+                const SizedBox(height: 30),
+                const Text(
+                  "Enter OTP",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700),
+                ),
+                const Text(
+                  "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 30),
+                OtpTextField(
+                  numberOfFields: 4, // Set to 4 digits
+                  borderColor: Colors.white, // Set border color to white
+                  fieldWidth: 50,
+                  // style: const TextStyle(color: Colors.white, fontSize: 18),
+                  focusedBorderColor: Colors.white,
+                  showFieldAsBox: true, // Enables rectangular border
+                  borderRadius:
+                      BorderRadius.circular(4), // Subtle rounded corners
+                  onSubmit: (String otp) => _onContinuePressed(otp),
+                ),
+                const SizedBox(height: 30),
+                BrandedPrimaryButton(
+                  isEnabled: true,
+                  name: "Continue",
+                  onPressed: () {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (context) {
+                      return PasswordScreen();
+                    }));
+                  }, // Logic handled in OTP field's onSubmit
+                ),
+                SizedBox(
+                  height: MediaQuery.of(context).size.width * 0.3,
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
