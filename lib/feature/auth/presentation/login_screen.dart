@@ -3,6 +3,7 @@ import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/feature/auth/presentation/forget_password.dart';
 import 'package:coyotex/feature/auth/presentation/sign_up_screen.dart';
+import 'package:coyotex/feature/homeScreen/presentation/home_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -80,8 +81,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (password != "123456") {
       _showIncorrectPasswordSheet(context);
     } else {
-      // Handle successful login
-      // For example, navigate to another screen
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+        return HomeScreen();
+      }));
     }
   }
 

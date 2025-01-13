@@ -38,6 +38,15 @@ dependencies:
   provider: ^6.1.2
   google_fonts: ^6.2.1
   flutter_otp_text_field:
+  google_maps_flutter: 
+  geolocator: ^10.1.0
+  geocoding: ^3.0.0
+  http: 
+  drop_down_search_field: ^1.0.4
+
+
+
+  
 
 dev_dependencies:
   flutter_test:

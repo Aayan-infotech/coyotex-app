@@ -1,4 +1,5 @@
 import 'package:coyotex/feature/homeScreen/presentation/pages/home_page.dart';
+import 'package:coyotex/feature/map/presentation/map.dart';
 import 'package:coyotex/feature/profile/presentation/profile_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -15,11 +16,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     HomePage(),
     Center(child: Text('Search Page')),
-    ProfileScreen()
-   
+    MapScreen(), // New Screen 1
+    Center(child: Text('Favorites Page')), // New Screen 2
+    ProfileScreen(),
   ];
 
- 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -30,7 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: _pages[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -44,17 +48,26 @@ class _HomeScreenState extends State<HomeScreen> {
               Colors.transparent, // Make BottomNavigationBar transparent
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed, // Allows more than 3 items
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
               label: 'Home',
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.map),
+              label: 'Map',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.search),
               label: 'Search',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle),
+              icon: Icon(Icons.notifications),
+              label: 'Notification',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
               label: 'Profile',
             ),
           ],
