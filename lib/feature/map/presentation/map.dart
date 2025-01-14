@@ -1,10 +1,15 @@
 import 'dart:convert';
+import 'package:coyotex/core/utills/app_colors.dart';
+import 'package:coyotex/core/utills/branded_primary_button.dart';
+import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
+
+import 'package:intl/intl.dart';
 
 const kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
 
@@ -18,6 +23,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final TextEditingController _startController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
+
   final Set<Polyline> _polylines = {};
   final String _sessionToken = Uuid().v4();
   final LatLng _initialPosition = const LatLng(37.7749, -122.4194);
@@ -180,34 +186,34 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildSuggestionsBox(List<dynamic> suggestions, bool isStartField) {
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: suggestions.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(suggestions[index]['description']),
-          onTap: () {
-            setState(() {
-              if (isStartField) {
-                _startController.text = suggestions[index]['description'];
-                _startSuggestions = [];
-              } else {
-                _destinationController.text = suggestions[index]['description'];
-                _destinationSuggestions = [];
-              }
-            });
-          },
-        );
-      },
+    return Container(
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: suggestions.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text(suggestions[index]['description']),
+            onTap: () {
+              setState(() {
+                if (isStartField) {
+                  _startController.text = suggestions[index]['description'];
+                  _startSuggestions = [];
+                } else {
+                  _destinationController.text =
+                      suggestions[index]['description'];
+                  _destinationSuggestions = [];
+                }
+              });
+            },
+          );
+        },
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hunting Trip Planner'),
-      ),
       body: Stack(
         children: [
           GoogleMap(
@@ -226,39 +232,59 @@ class _MapScreenState extends State<MapScreen> {
             top: 10,
             left: 10,
             right: 10,
-            child: Column(
-              children: [
-                Card(
-                  elevation: 4,
-                  child: Column(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: Column(
+                children: [
+                  Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: _buildTextField(
-                            _startController, 'Current Location', true),
-                      ),
-                      _buildSuggestionsBox(_startSuggestions, true),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: _buildTextField(
-                            _destinationController, 'Destination', false),
-                      ),
-                      _buildSuggestionsBox(_destinationSuggestions, false),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: ElevatedButton(
-                          onPressed: isLoading ? null : _fetchRoute,
-                          child: isLoading
-                              ? const CircularProgressIndicator()
-                              : const Text('Plan Trip'),
+                      _buildTextField(
+                        _startController,
+                        'My Location',
+                        true,
+                        Icon(
+                          Icons.location_on,
+                          size: 20,
+                        ),
+                        Icon(
+                          Icons.person,
+                          size: 20, // Size of the profile icon
+                          color: Colors.grey, // Icon color
                         ),
                       ),
+                      _buildSuggestionsBox(_startSuggestions, true),
+                      _buildTextField(
+                        _destinationController,
+                        'Trip 1',
+                        false,
+                        Icon(
+                          Icons.check,
+                          color: Pallete.primaryColor,
+                          size: 20,
+                        ),
+                        Icon(
+                          Icons.drag_handle,
+                          size: 20, // Size of the profile icon
+                          color: Colors.black, // Icon color
+                        ),
+                      ),
+                      _buildSuggestionsBox(_destinationSuggestions, false),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
+          // Positioned(
+          //   bottom: MediaQuery.of(context).size.height *
+          //       0.17, // Adjust this value to position the icon just below the second field
+          //   right: 100,
+          //   child: Icon(
+          //     Icons.camera_front_outlined,
+          //     color: Colors.red,
+          //     size: 35, // Size of the camera icon
+          //   ),
+          // ),
           Positioned(
             bottom: 20,
             left: 10,
@@ -266,84 +292,171 @@ class _MapScreenState extends State<MapScreen> {
             child: Card(
               elevation: 4,
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Distance',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text('12 km')
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Set Time',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text('145 min')
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Weather',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text('22°C, Great Weather')
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Wind',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text('5 km/h')
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text('Let\'s Hunt'),
-                        ),
-                        OutlinedButton(
-                          onPressed: () {},
-                          child: const Text('Save Trip'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Image.asset("assets/images/distance_icons.png"),
+                          SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Distance",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text("24 KM"),
+                            ],
+                          ),
+                          Spacer(), // Pushes the "Next Stop" text to the right
+                          Text("Next Stop"),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    "22\u00B0",
+                                    style: TextStyle(fontSize: 22),
+                                  ),
+                                  SizedBox(width: 5), // Add spacing
+                                  Text("(Great Weather)"),
+                                ],
+                              ),
+                              Text(
+                                DateFormat('MMM d yyyy').format(DateTime.now()),
+                                style: TextStyle(fontSize: 15),
+                              ),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    size: 13,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "Birds Hunting A",
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+
+                                  SizedBox(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.23,
+                                  ), // Pushes the last item to the far right
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment
+                                        .end, // Align the text to the right within the column
+                                    children: [
+                                      Text("Humidity: 75%"),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      SizedBox(
+                        height: 35,
+                        child: BrandedPrimaryButton(
+                            isEnabled: true,
+                            name: "Stop: 15:00 Minutes",
+                            onPressed: () {}),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      SizedBox(
+                        height: 35,
+                        child: BrandedPrimaryButton(
+                            isEnabled: true,
+                            isUnfocus: true,
+                            name: "Key in Data point",
+                            onPressed: () {}),
+                      )
+                    ],
+                  )),
             ),
           ),
+          Icon(
+            Icons.camera_front_outlined,
+            color: Colors.red,
+          )
         ],
       ),
     );
   }
 
-  Widget _buildTextField(
-      TextEditingController controller, String label, bool isStartField) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(labelText: label),
-      onChanged: (value) => _getPlaceSuggestions(value, isStartField),
+  Widget _buildTextField(TextEditingController controller, String label,
+      bool isStartField, Icon prefixIcon, Icon sufixIcon) {
+    return Row(
+      children: [
+        Expanded(
+          child: BrandedTextField(
+            height: 45,
+            controller: controller,
+            labelText: label,
+            onChanged: (value) => _getPlaceSuggestions(value, isStartField),
+            prefix: (label != "My Location")
+                ? Padding(
+                    padding: const EdgeInsets.all(0.0),
+                    child: CircleAvatar(
+                      // Adjust the radius as needed
+                      backgroundColor: Pallete.primaryColor,
+                      // Circle background color
+                      child: Icon(
+                        Icons.check,
+                        size: 20, // Size of the profile icon
+                        color: Colors.grey, // Icon color
+                      ),
+                    ),
+                  )
+                : prefixIcon,
+            // prefix: Icon(
+            //   Icons.location_on,
+            //   size: 20,
+            // ),
+          ),
+        ),
+        SizedBox(
+          width: 5,
+        ),
+        Container(
+            width: 40, // Size of the square container
+            height: 40, // Size of the square container
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.white,
+                width: 2,
+              ),
+            ),
+            child: sufixIcon)
+      ],
     );
+    // TextField(
+    //   controller: controller,
+    //   decoration: InputDecoration(labelText: label),
+    //   onChanged: (value) => _getPlaceSuggestions(value, isStartField),
+    // );
   }
+  // Padding(
+  //                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
+  //                     child: ElevatedButton(
+  //                       onPressed: isLoading ? null : _fetchRoute,
+  //                       child: isLoading
+  //                           ? const CircularProgressIndicator()
+  //                           : const Text('Plan Trip'),
+  //                     ),
+  //                   ),
 }

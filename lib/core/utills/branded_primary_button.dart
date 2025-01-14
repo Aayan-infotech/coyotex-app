@@ -28,7 +28,7 @@ class BrandedPrimaryButton extends StatelessWidget {
                 onPressed: onPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      isUnfocus ? Pallete.black87 : Pallete.primaryColor,
+                      isUnfocus ? Pallete.whiteColor : Pallete.primaryColor,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(
