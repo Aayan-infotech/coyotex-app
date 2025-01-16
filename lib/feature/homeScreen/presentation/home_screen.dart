@@ -1,5 +1,6 @@
 import 'package:coyotex/feature/homeScreen/presentation/pages/home_page.dart';
 import 'package:coyotex/feature/map/presentation/map.dart';
+import 'package:coyotex/feature/map/presentation/notofication.dart';
 import 'package:coyotex/feature/profile/presentation/profile_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
     HomePage(),
     Center(child: Text('Search Page')),
     MapScreen(), // New Screen 1
-    Center(child: Text('Favorites Page')), // New Screen 2
+    NotificationScreen(), // New Screen 2
     ProfileScreen(),
   ];
 

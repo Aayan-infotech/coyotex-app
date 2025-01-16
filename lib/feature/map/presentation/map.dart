@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
+import 'package:coyotex/feature/map/presentation/add_photos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -275,16 +277,25 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
-          // Positioned(
-          //   bottom: MediaQuery.of(context).size.height *
-          //       0.17, // Adjust this value to position the icon just below the second field
-          //   right: 100,
-          //   child: Icon(
-          //     Icons.camera_front_outlined,
-          //     color: Colors.red,
-          //     size: 35, // Size of the camera icon
-          //   ),
-          // ),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                return AddPhotoScreen();
+              }));
+            },
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).size.height * 0.27, right: 10),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Icon(
+                  Icons.camera_alt_outlined,
+                  color: Colors.red,
+                  size: 30, // Size of the camera icon
+                ),
+              ),
+            ),
+          ),
           Positioned(
             bottom: 20,
             left: 10,
@@ -388,10 +399,6 @@ class _MapScreenState extends State<MapScreen> {
                   )),
             ),
           ),
-          Icon(
-            Icons.camera_front_outlined,
-            color: Colors.red,
-          )
         ],
       ),
     );

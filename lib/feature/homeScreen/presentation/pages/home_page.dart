@@ -1,4 +1,5 @@
 import 'package:coyotex/core/utills/branded_text_filed.dart';
+import 'package:coyotex/feature/map/presentation/trip_history.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -124,7 +125,12 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (context) {
+                        return TripsHistoryScreen();
+                      }));
+                    },
                     child:
                         Text('See All', style: TextStyle(color: Colors.orange)),
                   ),
