@@ -72,20 +72,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     );
   }
 
-  void _onLoginPressed() {
-    final password = _passwordController.text;
-
-    // Dummy check for incorrect password
-    // if (password != "123456") {
-    //   _showIncorrectPasswordSheet(context);
-    // } else {
-    //   // Handle successful login
-    //   // For example, navigate to another screen
-    // }
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      return OtpScreen();
-    }));
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +115,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 BrandedPrimaryButton(
                   isEnabled: true,
                   name: "Continue",
-                  onPressed: _onLoginPressed,
+                  onPressed: (){},
                 ),
                 SizedBox(
                   height: MediaQuery.of(context).size.width * 0.3,

@@ -1,4 +1,6 @@
 import 'package:coyotex/core/navigation/routes.dart';
+import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +8,7 @@ import 'package:provider/provider.dart';
 
 void main() {
   runApp(const MyApp());
+  SharedPrefUtil.init();
 }
 
 class MyApp extends StatelessWidget {
@@ -16,7 +19,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MapProvider()),
-        // ChangeNotifierProvider(create: (_) => YourSecondProvider()),
+        ChangeNotifierProvider(create: (_) => UserViewModel()),
         // Add more providers as needed
       ],
       child: MaterialApp(

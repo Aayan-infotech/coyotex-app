@@ -15,7 +15,7 @@ class MapProvider with ChangeNotifier {
   final Set<Polyline> polylines = {};
   final Set<Marker> markers = {};
   final List<LatLng> points = [];
-  final String sessionToken = Uuid().v4();
+  final String sessionToken = const Uuid().v4();
   var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
 
   

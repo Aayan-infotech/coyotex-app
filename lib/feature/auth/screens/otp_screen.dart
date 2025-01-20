@@ -1,17 +1,18 @@
+import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
+import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/passowrd_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
+import 'package:provider/provider.dart';
 
-class OtpScreen extends StatefulWidget {
-  const OtpScreen({super.key});
+class OtpScreen extends StatelessWidget {
+  final String email;
+  OtpScreen({required this.email, super.key});
 
-  @override
-  State<OtpScreen> createState() => _OtpScreenState();
-}
-
-class _OtpScreenState extends State<OtpScreen> {
   void _showIncorrectPasswordSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -49,80 +50,85 @@ class _OtpScreenState extends State<OtpScreen> {
     );
   }
 
-  void _onContinuePressed(String otp) {
-    // Dummy check for incorrect OTP
-    // if (otp != "1234") {
-    //   _showIncorrectPasswordSheet(context);
-    // } else {
-    //   // Handle successful OTP verification
-    //   // For example, navigate to another screen
-    // }
-    Navigator.of(context).pop();
-    Navigator.of(context).pop();
-    Navigator.of(context).pop();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  "assets/images/logo.png",
-                  width: MediaQuery.of(context).size.width * 0.2,
-                ),
-                const SizedBox(height: 30),
-                const Text(
-                  "Enter OTP",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700),
-                ),
-                const Text(
-                  "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 30),
-                OtpTextField(
-                  numberOfFields: 4, // Set to 4 digits
-                  borderColor: Colors.white, // Set border color to white
-                  fieldWidth: 50,
-                  // style: const TextStyle(color: Colors.white, fontSize: 18),
-                  focusedBorderColor: Colors.white,
-                  showFieldAsBox: true, // Enables rectangular border
-                  borderRadius:
-                      BorderRadius.circular(4), // Subtle rounded corners
-                  onSubmit: (String otp) => _onContinuePressed(otp),
-                ),
-                const SizedBox(height: 30),
-                BrandedPrimaryButton(
-                  isEnabled: true,
-                  name: "Continue",
-                  onPressed: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (context) {
-                      return PasswordScreen();
-                    }));
-                  }, // Logic handled in OTP field's onSubmit
-                ),
-                SizedBox(
-                  height: MediaQuery.of(context).size.width * 0.3,
-                )
-              ],
-            ),
-          ),
-        ),
+      body: Consumer<UserViewModel>(
+        builder: (context, authProvider, child) {
+          return authProvider.isLoading
+              ? CircularProgressIndicator()
+              : Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            "assets/images/logo.png",
+                            width: MediaQuery.of(context).size.width * 0.2,
+                          ),
+                          const SizedBox(height: 30),
+                          const Text(
+                            "Enter OTP",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700),
+                          ),
+                          const Text(
+                            "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 30),
+                          OtpTextField(
+                            numberOfFields: 6, // Set to 4 digits
+                            borderColor:
+                                Colors.white, // Set border color to white
+                            fieldWidth: 50,
+                            focusedBorderColor: Colors.white,
+                            showFieldAsBox: true, // Enables rectangular border
+                            borderRadius: BorderRadius.circular(
+                                4), // Subtle rounded corners
+                            onSubmit: (String otp) async {
+                              final responce =
+                                  await authProvider.verifyOTP(email, otp);
+                              if (!responce.success) {
+                                _showIncorrectPasswordSheet(context);
+                              } else {
+                                SharedPrefUtil.setValue(accessTokenPref,
+                                    responce.data["accessToken"]);
+                                SharedPrefUtil.setValue(refreshTokenPref,
+                                    responce.data["refreshToken"]);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 30),
+                          BrandedPrimaryButton(
+                            isEnabled: true,
+                            name: "Continue",
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => PasswordScreen(),
+                                ),
+                              );
+                            }, // Logic handled in OTP field's onSubmit
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.width * 0.3,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+        },
       ),
     );
   }
