@@ -1,30 +1,23 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
-import 'package:coyotex/feature/homeScreen/presentation/home_screen.dart';
+import 'package:coyotex/feature/auth/screens/weather_prefrences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class WeatherPrefernceScreen extends StatefulWidget {
-  const WeatherPrefernceScreen({super.key});
+class PrefernceDistanceScreen extends StatefulWidget {
+  const PrefernceDistanceScreen({super.key});
 
   @override
-  State<WeatherPrefernceScreen> createState() => _WeatherPrefernceScreenState();
+  State<PrefernceDistanceScreen> createState() =>
+      _PrefernceDistanceScreenState();
 }
 
-class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
+class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _referralController = TextEditingController();
-  List<String> lstWeatherImage = [
-    "assets/images/1.png",
-    "assets/images/2.png",
-    "assets/images/3.png",
-    "assets/images/4.png",
-    "assets/images/5.png",
-    "assets/images/6.png",
-  ];
 
   String? _selectedDistance;
 
@@ -109,7 +102,7 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Weather Prefrences",
+                      "Distance Unit",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -125,25 +118,19 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-
-                    // Using GridView.builder for lstWeatherImage
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2, // Number of columns in the grid
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.0, // Aspect ratio of each grid item
-                      ),
-                      itemCount: lstWeatherImage.length,
-                      itemBuilder: (context, index) {
-                        return _buildPlanCard(
-                          "Weather $index", // Use dynamic weather name if needed
-                          lstWeatherImage[index],
-                        );
-                      },
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.2,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildPlanCard("Miles", "assets/images/miles.png"),
+                        const SizedBox(width: 16),
+                        _buildPlanCard("KM", "assets/images/km.png"),
+                      ],
+                    ),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.15,
                     ),
                   ],
                 ),
@@ -168,7 +155,7 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                     onPressed: () {
                       Navigator.of(context)
                           .push(MaterialPageRoute(builder: (context) {
-                        return HomeScreen();
+                        return WeatherPrefernceScreen();
                       }));
                     },
                   ),

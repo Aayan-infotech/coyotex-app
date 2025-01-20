@@ -1,25 +1,24 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
-import 'package:coyotex/feature/auth/presentation/weather_prefrences.dart';
+import 'package:coyotex/feature/auth/screens/prefrence_dstance_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class PrefernceDistanceScreen extends StatefulWidget {
-  const PrefernceDistanceScreen({super.key});
+class SubscriptionScreen extends StatefulWidget {
+  const SubscriptionScreen({super.key});
 
   @override
-  State<PrefernceDistanceScreen> createState() =>
-      _PrefernceDistanceScreenState();
+  State<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
-class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
+class _SubscriptionScreenState extends State<SubscriptionScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _referralController = TextEditingController();
 
-  String? _selectedDistance;
+  String? _selectedPlan;
 
   void _showErrorSheet(BuildContext context, String message) {
     showModalBottomSheet(
@@ -68,24 +67,27 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
   }
 
   void _onSignupPressed() {
-    if (_selectedDistance == null) {
-      _showErrorSheet(context, "Please select a subscription plan.");
-      return;
-    }
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return PrefernceDistanceScreen();
+    }));
+    // if (_selectedPlan == null) {
+    //   _showErrorSheet(context, "Please select a subscription plan.");
+    //   return;
+    // }
 
-    final username = _usernameController.text;
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
+    // final username = _usernameController.text;
+    // final password = _passwordController.text;
+    // final confirmPassword = _confirmPasswordController.text;
 
-    if (password != confirmPassword) {
-      _showErrorSheet(context, "Passwords do not match. Please try again.");
-    } else if (username.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty) {
-      _showErrorSheet(context, "Please fill out all fields.");
-    } else {
-      print("Signup successful with plan: $_selectedDistance");
-    }
+    // if (password != confirmPassword) {
+    //   _showErrorSheet(context, "Passwords do not match. Please try again.");
+    // } else if (username.isEmpty ||
+    //     password.isEmpty ||
+    //     confirmPassword.isEmpty) {
+    //   _showErrorSheet(context, "Please fill out all fields.");
+    // } else {
+    //   print("Signup successful with plan: $_selectedPlan");
+    // }
   }
 
   @override
@@ -101,8 +103,13 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Image.asset(
+                      "assets/images/logo.png",
+                      width: MediaQuery.of(context).size.width * 0.3,
+                    ),
+                    const SizedBox(height: 30),
                     const Text(
-                      "Distance Unit",
+                      "Lorem Ipsum",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -118,19 +125,23 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.2,
+                    const SizedBox(height: 30),
+                    const Text(
+                      "Select Suitable Plan",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildPlanCard("Miles", "assets/images/miles.png"),
+                        _buildPlanCard("Monthly Plan", "\$19"),
                         const SizedBox(width: 16),
-                        _buildPlanCard("KM", "assets/images/km.png"),
+                        _buildPlanCard("Yearly Plan", "\$99"),
                       ],
-                    ),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.15,
                     ),
                   ],
                 ),
@@ -151,11 +162,11 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
                       Icons.arrow_forward,
                       color: Colors.white,
                     ),
-                    name: "Save",
+                    name: "Make Payment",
                     onPressed: () {
                       Navigator.of(context)
                           .push(MaterialPageRoute(builder: (context) {
-                        return WeatherPrefernceScreen();
+                        return PrefernceDistanceScreen();
                       }));
                     },
                   ),
@@ -180,27 +191,23 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
     );
   }
 
-  Widget _buildPlanCard(String unit, String imageUrl) {
-    final isSelected = _selectedDistance == unit;
+  Widget _buildPlanCard(String title, String price) {
+    final isSelected = _selectedPlan == title;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedDistance = unit;
+          _selectedPlan = title;
         });
       },
       child: Container(
         width: MediaQuery.of(context).size.width * 0.4,
         height: 200,
         decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.black.withOpacity(.7)
-              : Colors.black.withOpacity(.7),
+          color: isSelected ? Pallete.primaryColor : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? Colors.black.withOpacity(.7)
-                : Colors.black.withOpacity(.7),
+            color: isSelected ? Pallete.primaryColor : Colors.transparent,
             width: 2,
           ),
         ),
@@ -216,7 +223,31 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
                   size: 24,
                 ),
               ),
-            Center(child: Image.asset(imageUrl))
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    price,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

@@ -1,5 +1,5 @@
 import 'package:coyotex/core/utills/branded_primary_button.dart';
-import 'package:coyotex/feature/auth/presentation/login_screen.dart';
+import 'package:coyotex/feature/auth/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatelessWidget {

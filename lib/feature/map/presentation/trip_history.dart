@@ -16,7 +16,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
         backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -33,7 +33,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(height: 8),
-            Text(
+            const Text(
               'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
               style: TextStyle(color: Colors.white70, fontSize: 14),
               textAlign: TextAlign.center,

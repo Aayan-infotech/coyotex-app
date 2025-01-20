@@ -1,5 +1,5 @@
-import 'package:coyotex/feature/auth/presentation/splash_screen.dart';
-import 'package:coyotex/feature/auth/presentation/welcome_screen.dart';
+import 'package:coyotex/feature/auth/screens/splash_screen.dart';
+import 'package:coyotex/feature/auth/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
 class AppRoutes {

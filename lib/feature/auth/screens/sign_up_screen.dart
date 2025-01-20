@@ -1,7 +1,7 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
-import 'package:coyotex/feature/auth/presentation/subscription_screen.dart';
+import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:flutter/material.dart';
 
 class SignupScreen extends StatefulWidget {

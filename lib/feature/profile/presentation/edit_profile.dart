@@ -1,7 +1,7 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
-import 'package:coyotex/feature/auth/presentation/subscription_screen.dart';
+import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:flutter/material.dart';
 
 class EditProfile extends StatefulWidget {
@@ -103,7 +103,7 @@ class _EditProfileState extends State<EditProfile> {
                   //     'assets/profile_picture.jpg'), // Replace with your image asset or network image.
                 ),
                 SizedBox(height: 8),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
@@ -111,7 +111,7 @@ class _EditProfileState extends State<EditProfile> {
                     ),
                     Column(
                       children: [
-                        const Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
@@ -130,7 +130,7 @@ class _EditProfileState extends State<EditProfile> {
                             ),
                           ],
                         ),
-                        const Text(
+                        Text(
                           '@Ella',
                           style: TextStyle(
                             color: Colors.white70,

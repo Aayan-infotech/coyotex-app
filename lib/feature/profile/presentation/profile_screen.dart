@@ -1,8 +1,8 @@
 import 'package:coyotex/core/utills/branded_primary_button.dart';
-import 'package:coyotex/feature/auth/presentation/passowrd_screen.dart';
-import 'package:coyotex/feature/auth/presentation/prefrence_dstance_screen.dart';
-import 'package:coyotex/feature/auth/presentation/subscription_screen.dart';
-import 'package:coyotex/feature/auth/presentation/weather_prefrences.dart';
+import 'package:coyotex/feature/auth/screens/passowrd_screen.dart';
+import 'package:coyotex/feature/auth/screens/prefrence_dstance_screen.dart';
+import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
+import 'package:coyotex/feature/auth/screens/weather_prefrences.dart';
 import 'package:coyotex/feature/profile/presentation/FAQ_screen.dart';
 import 'package:coyotex/feature/profile/presentation/edit_profile.dart';
 import 'package:coyotex/feature/profile/presentation/linked_devices.dart';

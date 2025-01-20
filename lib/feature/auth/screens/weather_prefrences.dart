@@ -1,24 +1,32 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
-import 'package:coyotex/feature/auth/presentation/prefrence_dstance_screen.dart';
+import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
-class SubscriptionScreen extends StatefulWidget {
-  const SubscriptionScreen({super.key});
+class WeatherPrefernceScreen extends StatefulWidget {
+  const WeatherPrefernceScreen({super.key});
 
   @override
-  State<SubscriptionScreen> createState() => _SubscriptionScreenState();
+  State<WeatherPrefernceScreen> createState() => _WeatherPrefernceScreenState();
 }
 
-class _SubscriptionScreenState extends State<SubscriptionScreen> {
+class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _referralController = TextEditingController();
+  List<String> lstWeatherImage = [
+    "assets/images/1.png",
+    "assets/images/2.png",
+    "assets/images/3.png",
+    "assets/images/4.png",
+    "assets/images/5.png",
+    "assets/images/6.png",
+  ];
 
-  String? _selectedPlan;
+  String? _selectedDistance;
 
   void _showErrorSheet(BuildContext context, String message) {
     showModalBottomSheet(
@@ -67,27 +75,24 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _onSignupPressed() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      return PrefernceDistanceScreen();
-    }));
-    // if (_selectedPlan == null) {
-    //   _showErrorSheet(context, "Please select a subscription plan.");
-    //   return;
-    // }
+    if (_selectedDistance == null) {
+      _showErrorSheet(context, "Please select a subscription plan.");
+      return;
+    }
 
-    // final username = _usernameController.text;
-    // final password = _passwordController.text;
-    // final confirmPassword = _confirmPasswordController.text;
+    final username = _usernameController.text;
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
-    // if (password != confirmPassword) {
-    //   _showErrorSheet(context, "Passwords do not match. Please try again.");
-    // } else if (username.isEmpty ||
-    //     password.isEmpty ||
-    //     confirmPassword.isEmpty) {
-    //   _showErrorSheet(context, "Please fill out all fields.");
-    // } else {
-    //   print("Signup successful with plan: $_selectedPlan");
-    // }
+    if (password != confirmPassword) {
+      _showErrorSheet(context, "Passwords do not match. Please try again.");
+    } else if (username.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      _showErrorSheet(context, "Please fill out all fields.");
+    } else {
+      print("Signup successful with plan: $_selectedDistance");
+    }
   }
 
   @override
@@ -103,13 +108,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      "assets/images/logo.png",
-                      width: MediaQuery.of(context).size.width * 0.3,
-                    ),
-                    const SizedBox(height: 30),
                     const Text(
-                      "Lorem Ipsum",
+                      "Weather Prefrences",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -125,23 +125,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 30),
-                    const Text(
-                      "Select Suitable Plan",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
+
+                    // Using GridView.builder for lstWeatherImage
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2, // Number of columns in the grid
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 1.0, // Aspect ratio of each grid item
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildPlanCard("Monthly Plan", "\$19"),
-                        const SizedBox(width: 16),
-                        _buildPlanCard("Yearly Plan", "\$99"),
-                      ],
+                      itemCount: lstWeatherImage.length,
+                      itemBuilder: (context, index) {
+                        return _buildPlanCard(
+                          "Weather $index", // Use dynamic weather name if needed
+                          lstWeatherImage[index],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -162,11 +164,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       Icons.arrow_forward,
                       color: Colors.white,
                     ),
-                    name: "Make Payment",
+                    name: "Save",
                     onPressed: () {
                       Navigator.of(context)
                           .push(MaterialPageRoute(builder: (context) {
-                        return PrefernceDistanceScreen();
+                        return HomeScreen();
                       }));
                     },
                   ),
@@ -191,23 +193,27 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildPlanCard(String title, String price) {
-    final isSelected = _selectedPlan == title;
+  Widget _buildPlanCard(String unit, String imageUrl) {
+    final isSelected = _selectedDistance == unit;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedPlan = title;
+          _selectedDistance = unit;
         });
       },
       child: Container(
         width: MediaQuery.of(context).size.width * 0.4,
         height: 200,
         decoration: BoxDecoration(
-          color: isSelected ? Pallete.primaryColor : Colors.white,
+          color: isSelected
+              ? Colors.black.withOpacity(.7)
+              : Colors.black.withOpacity(.7),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Pallete.primaryColor : Colors.transparent,
+            color: isSelected
+                ? Colors.black.withOpacity(.7)
+                : Colors.black.withOpacity(.7),
             width: 2,
           ),
         ),
@@ -223,31 +229,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   size: 24,
                 ),
               ),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    price,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Center(child: Image.asset(imageUrl))
           ],
         ),
       ),

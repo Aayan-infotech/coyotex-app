@@ -1,9 +1,9 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
-import 'package:coyotex/feature/auth/presentation/forget_password.dart';
-import 'package:coyotex/feature/auth/presentation/sign_up_screen.dart';
-import 'package:coyotex/feature/homeScreen/presentation/home_screen.dart';
+import 'package:coyotex/feature/auth/screens/forget_password.dart';
+import 'package:coyotex/feature/auth/screens/sign_up_screen.dart';
+import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {

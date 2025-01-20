@@ -1,17 +1,17 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
-import 'package:coyotex/feature/auth/presentation/forget_password.dart';
+import 'package:coyotex/feature/auth/screens/otp_screen.dart';
 import 'package:flutter/material.dart';
 
-class PasswordScreen extends StatefulWidget {
-  const PasswordScreen({super.key});
+class ForgotPassword extends StatefulWidget {
+  const ForgotPassword({super.key});
 
   @override
-  State<PasswordScreen> createState() => _PasswordScreenState();
+  State<ForgotPassword> createState() => _ForgotPasswordState();
 }
 
-class _PasswordScreenState extends State<PasswordScreen> {
+class _ForgotPasswordState extends State<ForgotPassword> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -76,12 +76,15 @@ class _PasswordScreenState extends State<PasswordScreen> {
     final password = _passwordController.text;
 
     // Dummy check for incorrect password
-    if (password != "123456") {
-      _showIncorrectPasswordSheet(context);
-    } else {
-      // Handle successful login
-      // For example, navigate to another screen
-    }
+    // if (password != "123456") {
+    //   _showIncorrectPasswordSheet(context);
+    // } else {
+    //   // Handle successful login
+    //   // For example, navigate to another screen
+    // }
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return OtpScreen();
+    }));
   }
 
   @override
@@ -101,7 +104,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
                 ),
                 const SizedBox(height: 30),
                 const Text(
-                  "Change Password",
+                  "Recover Password",
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -119,27 +122,17 @@ class _PasswordScreenState extends State<PasswordScreen> {
                 BrandedTextField(
                   prefix: const Icon(Icons.person),
                   controller: _nameController,
-                  labelText: "New Password",
-                ),
-                const SizedBox(height: 20),
-                BrandedTextField(
-                  prefix: const Icon(Icons.lock),
-                  controller: _passwordController,
-                  labelText: "Comfirm New Password",
-                ),
-                SizedBox(
-                  height: 5,
+                  labelText: "Email",
                 ),
                 const SizedBox(height: 30),
                 BrandedPrimaryButton(
                   isEnabled: true,
-                  name: "Save",
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pop();
-                  },
+                  name: "Continue",
+                  onPressed: _onLoginPressed,
                 ),
+                SizedBox(
+                  height: MediaQuery.of(context).size.width * 0.3,
+                )
               ],
             ),
           ),
