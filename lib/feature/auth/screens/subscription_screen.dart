@@ -1,8 +1,10 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
+import 'package:coyotex/feature/auth/data/model/pref_model.dart';
+import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/prefrence_dstance_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -12,82 +14,17 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-  final TextEditingController _referralController = TextEditingController();
+  String? _selectedPlanId; // Store selected plan ID
 
-  String? _selectedPlan;
-
-  void _showErrorSheet(BuildContext context, String message) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.red,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.white,
-                size: 40,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text("Dismiss"),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  @override
+  void initState() {
+    super.initState();
+    getPlans();
   }
 
-  void _onSignupPressed() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      return PrefernceDistanceScreen();
-    }));
-    // if (_selectedPlan == null) {
-    //   _showErrorSheet(context, "Please select a subscription plan.");
-    //   return;
-    // }
-
-    // final username = _usernameController.text;
-    // final password = _passwordController.text;
-    // final confirmPassword = _confirmPasswordController.text;
-
-    // if (password != confirmPassword) {
-    //   _showErrorSheet(context, "Passwords do not match. Please try again.");
-    // } else if (username.isEmpty ||
-    //     password.isEmpty ||
-    //     confirmPassword.isEmpty) {
-    //   _showErrorSheet(context, "Please fill out all fields.");
-    // } else {
-    //   print("Signup successful with plan: $_selectedPlan");
-    // }
+  void getPlans() {
+    final authProvider = Provider.of<UserViewModel>(context, listen: false);
+    authProvider.getSubscriptionPlan(); // Fetch plans from the provider
   }
 
   @override
@@ -96,57 +33,90 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      "assets/images/logo.png",
-                      width: MediaQuery.of(context).size.width * 0.3,
-                    ),
-                    const SizedBox(height: 30),
-                    const Text(
-                      "Lorem Ipsum",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Text(
-                      "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    const Text(
-                      "Select Suitable Plan",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
+          Consumer<UserViewModel>(
+            builder: (context, userViewModel, child) {
+              if (userViewModel.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: Pallete.primaryColor,
+                  ),
+                );
+              }
+
+              // Ensure lstPlan is populated
+              if (userViewModel.lstPlan.isEmpty) {
+                return const Center(
+                  child: Text(
+                    "No plans available",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              }
+
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SingleChildScrollView(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildPlanCard("Monthly Plan", "\$19"),
-                        const SizedBox(width: 16),
-                        _buildPlanCard("Yearly Plan", "\$99"),
+                        Image.asset(
+                          "assets/images/logo.png",
+                          width: MediaQuery.of(context).size.width * 0.3,
+                        ),
+                        const SizedBox(height: 30),
+                        const Text(
+                          "Lorem Ipsum",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Text(
+                          "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        const Text(
+                          "Select Suitable Plan",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // GridView to display subscription plans
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio:
+                                3 / 2, // Adjusted aspect ratio for plan cards
+                          ),
+                          itemCount: userViewModel.lstPlan.length,
+                          itemBuilder: (context, index) {
+                            final plan = userViewModel.lstPlan[index];
+                            return _buildPlanCard(
+                                plan.id, plan.planName, "\$${plan.planAmount}");
+                          },
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
           Positioned(
             bottom: 20,
@@ -164,22 +134,48 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     ),
                     name: "Make Payment",
                     onPressed: () {
-                      Navigator.of(context)
-                          .push(MaterialPageRoute(builder: (context) {
-                        return PrefernceDistanceScreen();
-                      }));
+                      if (_selectedPlanId != null) {
+                        UserPreferences userPreferences = UserPreferences(
+                            userPlan: _selectedPlanId!,
+                            userUnit: '',
+                            userWeatherPref: '');
+
+                        Navigator.of(context)
+                            .push(MaterialPageRoute(builder: (context) {
+                          return PrefernceDistanceScreen(
+                            userPreferences: userPreferences,
+                          );
+                        }));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please select a plan."),
+                          ),
+                        );
+                      }
                     },
                   ),
                 ),
                 Flexible(
                   flex: 1,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      UserPreferences userPreferences = UserPreferences(
+                          userPlan: '', userUnit: '', userWeatherPref: '');
+
+                      Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (context) {
+                        return PrefernceDistanceScreen(
+                          userPreferences: userPreferences,
+                        );
+                      }));
+                    },
                     child: Text(
                       "Skip",
                       style: TextStyle(
-                          color: Pallete.primaryColor,
-                          fontWeight: FontWeight.bold),
+                        color: Pallete.primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -191,18 +187,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildPlanCard(String title, String price) {
-    final isSelected = _selectedPlan == title;
+  Widget _buildPlanCard(String planId, String title, String price) {
+    final isSelected = _selectedPlanId == planId;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedPlan = title;
+          _selectedPlanId = planId; // Update selected plan ID
         });
       },
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.4,
-        height: 200,
         decoration: BoxDecoration(
           color: isSelected ? Pallete.primaryColor : Colors.white,
           borderRadius: BorderRadius.circular(12),

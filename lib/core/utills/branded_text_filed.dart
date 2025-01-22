@@ -46,83 +46,78 @@ class _BrandedTextFieldState extends State<BrandedTextField> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.height,
-      child: TextFormField(
-        validator: widget.validator,
-        enabled: widget.isEnabled,
-        onTap: widget.onTap,
-        maxLines: widget.maxLines,
-        minLines: widget.minLines,
-        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Pallete.textColor),
-        controller: widget.controller,
-        keyboardType: widget.keyboardType,
-        onChanged: widget.onChanged,
-        obscureText: widget.isPassword ? _isObscured : false,
-        decoration: InputDecoration(
-          fillColor: Colors.white, //const Color.fromARGB(255, 226, 226, 245),
-          filled: widget.isFilled,
-          border: const OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(8),
-            ),
+    return TextFormField(
+      validator: widget.validator,
+      enabled: widget.isEnabled,
+      onTap: widget.onTap,
+      maxLines: widget.maxLines,
+      minLines: widget.minLines,
+      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+          fontSize: 12, fontWeight: FontWeight.w500, color: Pallete.textColor),
+      controller: widget.controller,
+      keyboardType: widget.keyboardType,
+      onChanged: widget.onChanged,
+      obscureText: widget.isPassword ? _isObscured : false,
+      decoration: InputDecoration(
+        fillColor: Colors.white, //const Color.fromARGB(255, 226, 226, 245),
+        filled: widget.isFilled,
+        border: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(8),
           ),
-          disabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Pallete.whiteColor),
-            borderRadius: BorderRadius.all(
-              Radius.circular(8),
-            ),
-          ),
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(
-                color: Pallete.accentColor), // Change the color as desired
-            borderRadius: BorderRadius.all(
-              Radius.circular(8),
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-                color: Pallete.outLineColor), // Change the color as desired
-            borderRadius: const BorderRadius.all(
-              Radius.circular(8),
-            ),
-          ),
-          hintText: widget.labelText,
-          suffixIcon: widget.isPassword
-              ? IconButton(
-                  icon: Icon(
-                    _isObscured
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    color: Pallete.textColor,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isObscured = !_isObscured;
-                    });
-                  },
-                )
-              : widget.sufix != null
-                  ? Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: widget.sufix,
-                    )
-                  : null,
-          prefixIcon: widget.prefix != null
-              ? Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: widget.prefix,
-                )
-              : null,
-          labelStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
-              fontWeight: FontWeight.w500,
-              color: const Color.fromRGBO(103, 103, 103, 1),
-              fontSize: 12),
-          contentPadding: const EdgeInsets.all(12),
         ),
+        disabledBorder: const OutlineInputBorder(
+          borderSide: BorderSide(color: Pallete.whiteColor),
+          borderRadius: BorderRadius.all(
+            Radius.circular(8),
+          ),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderSide: BorderSide(
+              color: Pallete.accentColor), // Change the color as desired
+          borderRadius: BorderRadius.all(
+            Radius.circular(8),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+              color: Pallete.outLineColor), // Change the color as desired
+          borderRadius: const BorderRadius.all(
+            Radius.circular(8),
+          ),
+        ),
+        hintText: widget.labelText,
+        suffixIcon: widget.isPassword
+            ? IconButton(
+                icon: Icon(
+                  _isObscured
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: Pallete.textColor,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isObscured = !_isObscured;
+                  });
+                },
+              )
+            : widget.sufix != null
+                ? Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: widget.sufix,
+                  )
+                : null,
+        prefixIcon: widget.prefix != null
+            ? Padding(
+                padding: const EdgeInsets.all(12),
+                child: widget.prefix,
+              )
+            : null,
+        labelStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
+            fontWeight: FontWeight.w500,
+            color: const Color.fromRGBO(103, 103, 103, 1),
+            fontSize: 12),
+        contentPadding: const EdgeInsets.all(12),
       ),
     );
   }

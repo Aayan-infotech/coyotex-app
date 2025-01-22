@@ -5,13 +5,16 @@ import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/passowrd_screen.dart';
+import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
 import 'package:provider/provider.dart';
 
 class OtpScreen extends StatelessWidget {
+  bool isResetPassward;
   final String email;
-  OtpScreen({required this.email, super.key});
+  OtpScreen({this.isResetPassward = false, required this.email, super.key});
+  String otpNumber = '';
 
   void _showIncorrectPasswordSheet(BuildContext context) {
     showModalBottomSheet(
@@ -93,31 +96,42 @@ class OtpScreen extends StatelessWidget {
                             fieldWidth: 50,
                             focusedBorderColor: Colors.white,
                             showFieldAsBox: true, // Enables rectangular border
+                            textStyle: TextStyle(color: Colors.white),
                             borderRadius: BorderRadius.circular(
                                 4), // Subtle rounded corners
                             onSubmit: (String otp) async {
-                              final responce =
-                                  await authProvider.verifyOTP(email, otp);
-                              if (!responce.success) {
-                                _showIncorrectPasswordSheet(context);
-                              } else {
-                                SharedPrefUtil.setValue(accessTokenPref,
-                                    responce.data["accessToken"]);
-                                SharedPrefUtil.setValue(refreshTokenPref,
-                                    responce.data["refreshToken"]);
-                              }
+                              otpNumber = otp;
                             },
                           ),
                           const SizedBox(height: 30),
                           BrandedPrimaryButton(
                             isEnabled: true,
                             name: "Continue",
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => PasswordScreen(),
-                                ),
-                              );
+                            onPressed: () async {
+                              if (isResetPassward) {
+                                Navigator.of(context)
+                                    .push(MaterialPageRoute(builder: (context) {
+                                  return PasswordScreen(
+                                    email: email,
+                                    otp: otpNumber,
+                                  );
+                                }));
+                              } else {
+                                final responce = await authProvider.verifyOTP(
+                                    email, otpNumber);
+                                if (!responce.success) {
+                                  _showIncorrectPasswordSheet(context);
+                                } else {
+                                  SharedPrefUtil.setValue(accessTokenPref,
+                                      responce.data["accessToken"]);
+                                  SharedPrefUtil.setValue(refreshTokenPref,
+                                      responce.data["refreshToken"]);
+                                  Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (context) {
+                                    return SubscriptionScreen();
+                                  }));
+                                }
+                              }
                             }, // Logic handled in OTP field's onSubmit
                           ),
                           SizedBox(

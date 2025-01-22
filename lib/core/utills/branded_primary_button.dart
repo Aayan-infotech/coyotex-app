@@ -22,13 +22,13 @@ class BrandedPrimaryButton extends StatelessWidget {
     return Center(
       child: isEnabled
           ? SizedBox(
-              height: 50,
+              height: 45,
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: onPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      isUnfocus ? Pallete.whiteColor : Pallete.primaryColor,
+                      isUnfocus ? Pallete.black87 : Pallete.primaryColor,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(
@@ -41,7 +41,7 @@ class BrandedPrimaryButton extends StatelessWidget {
               ),
             )
           : SizedBox(
-              height: 46,
+              height: 45,
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: null, // Disabled button, onPressed is null

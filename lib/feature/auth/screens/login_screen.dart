@@ -4,6 +4,7 @@ import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/sign_up_screen.dart';
+import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,8 +13,9 @@ class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
 
   final TextEditingController _nameController = TextEditingController();
-
   final TextEditingController _passwordController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
 
   void _showErrorDialog(String message, BuildContext context) {
     showDialog(
@@ -47,94 +49,117 @@ class LoginScreen extends StatelessWidget {
               builder: (context, userProvider, child) {
                 return userProvider.isLoading
                     ? const CircularProgressIndicator()
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            "assets/images/logo.png",
-                            width: MediaQuery.of(context).size.width * 0.2,
-                          ),
-                          const SizedBox(height: 30),
-                          const Text(
-                            "Welcome Back",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
+                    : Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              "assets/images/logo.png",
+                              width: MediaQuery.of(context).size.width * 0.2,
                             ),
-                          ),
-                          const Text(
-                            "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 30),
-                          BrandedTextField(
-                            prefix: const Icon(Icons.person),
-                            controller: _nameController,
-                            labelText: "Email/Username",
-                          ),
-                          const SizedBox(height: 20),
-                          BrandedTextField(
-                            prefix: const Icon(Icons.lock),
-                            controller: _passwordController,
-                            isPassword: true,
-                            labelText: "Password",
-                          ),
-                          const SizedBox(height: 5),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.of(context)
-                                    .push(MaterialPageRoute(builder: (context) {
-                                  return ForgotPassword();
-                                }));
-                              },
-                              child: const Text(
-                                "Forgot Password",
-                                style: TextStyle(color: Colors.white),
+                            const SizedBox(height: 30),
+                            const Text(
+                              "Welcome Back",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 30),
-                          BrandedPrimaryButton(
-                            isEnabled: true,
-                            name: "Login",
-                            onPressed: () async {
-                              final username = _nameController.text;
-                              final password = _passwordController.text;
+                            const Text(
+                              "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                            BrandedTextField(
+                              prefix: const Icon(Icons.person),
+                              controller: _nameController,
+                              labelText: "Email/Username",
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Please enter your email or username";
+                                }
+                                if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+                                        .hasMatch(value) &&
+                                    value.length < 4) {
+                                  return "Enter a valid email or username";
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                            BrandedTextField(
+                              prefix: const Icon(Icons.lock),
+                              controller: _passwordController,
+                              isPassword: true,
+                              labelText: "Password",
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Please enter your password";
+                                }
+                                if (value.length < 6) {
+                                  return "Password must be at least 6 characters long";
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 5),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (context) {
+                                      return ForgotPassword();
+                                    }),
+                                  );
+                                },
+                                child: const Text(
+                                  "Forgot Password",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                            BrandedPrimaryButton(
+                              isEnabled: true,
+                              name: "Login",
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  final username = _nameController.text;
+                                  final password = _passwordController.text;
 
-                              var response =
-                                  await userProvider.login(username, password);
+                                  var response = await userProvider.login(
+                                      username, password, context);
 
-                              if (response.success) {
-                                Navigator.of(context)
-                                    .push(MaterialPageRoute(builder: (context) {
-                                  return HomeScreen();
-                                }));
-                              } else {
-                                _showErrorDialog(response.message, context);
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          BrandedPrimaryButton(
-                            isUnfocus: true,
-                            isEnabled: true,
-                            name: "Create Account",
-                            onPressed: () {
-                              Navigator.of(context)
-                                  .push(MaterialPageRoute(builder: (context) {
-                                return SignupScreen();
-                              }));
-                            },
-                          ),
-                        ],
+                                  if (response.success) {
+                                  } else {
+                                    _showErrorDialog("Server Error!", context);
+                                  }
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                            BrandedPrimaryButton(
+                              isUnfocus: true,
+                              isEnabled: true,
+                              name: "Create Account",
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (context) {
+                                    return SignupScreen();
+                                  }),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       );
               },
             ),

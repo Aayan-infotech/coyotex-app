@@ -1,2 +1,2 @@
-String accessTokenPref = "accessToken";
-String refreshTokenPref = "refreshToken";
+String accessTokenPref = "accessToken-pref";
+String refreshTokenPref = "refreshToken-pref";

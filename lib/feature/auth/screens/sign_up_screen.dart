@@ -17,6 +17,8 @@ class SignupScreen extends StatelessWidget {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _referralController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _mobileNumberController = TextEditingController();
 
   void _showErrorSheet(BuildContext context, String message) {
     showModalBottomSheet(
@@ -74,14 +76,22 @@ class SignupScreen extends StatelessWidget {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
     final referralCode = _referralController.text;
+    final fullName = _fullNameController.text;
+    final mobileNumber = _mobileNumberController.text;
 
     if (password != confirmPassword) {
       _showErrorSheet(context, "Passwords do not match. Please try again.");
-    } else if (username.isEmpty || password.isEmpty || email.isEmpty) {
+    } else if (username.isEmpty ||
+        password.isEmpty ||
+        email.isEmpty ||
+        fullName.isEmpty ||
+        mobileNumber.isEmpty) {
       _showErrorSheet(context, "Please fill out all required fields.");
+    } else if (mobileNumber.length != 10) {
+      _showErrorSheet(context, "Mobile number must be 10 digits.");
     } else {
-      ApiResponseWithData responseWithData =
-          await authProvider.signUp(username, password, referralCode, email);
+      ApiResponseWithData responseWithData = await authProvider.signUp(
+          fullName, mobileNumber, username, password, referralCode, email);
       if (responseWithData.success) {
         Navigator.of(context).push(MaterialPageRoute(builder: (context) {
           return OtpScreen(
@@ -130,6 +140,19 @@ class SignupScreen extends StatelessWidget {
                           const SizedBox(height: 30),
                           BrandedTextField(
                             prefix: const Icon(Icons.person),
+                            controller: _fullNameController,
+                            labelText: "Full Name",
+                          ),
+                          const SizedBox(height: 20),
+                          BrandedTextField(
+                            prefix: const Icon(Icons.phone),
+                            controller: _mobileNumberController,
+                            keyboardType: TextInputType.number,
+                            labelText: "Mobile Number",
+                          ),
+                          const SizedBox(height: 20),
+                          BrandedTextField(
+                            prefix: const Icon(Icons.person_outline),
                             controller: _usernameController,
                             labelText: "Username",
                           ),

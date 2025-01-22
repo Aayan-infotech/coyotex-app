@@ -1,11 +1,15 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
+import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/auth/screens/weather_prefrences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 class PrefernceDistanceScreen extends StatefulWidget {
-  const PrefernceDistanceScreen({super.key});
+  bool? isProfile;
+  UserPreferences? userPreferences;
+  PrefernceDistanceScreen(
+      {this.userPreferences, this.isProfile = false, super.key});
 
   @override
   State<PrefernceDistanceScreen> createState() =>
@@ -67,27 +71,6 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
     );
   }
 
-  void _onSignupPressed() {
-    if (_selectedDistance == null) {
-      _showErrorSheet(context, "Please select a subscription plan.");
-      return;
-    }
-
-    final username = _usernameController.text;
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
-
-    if (password != confirmPassword) {
-      _showErrorSheet(context, "Passwords do not match. Please try again.");
-    } else if (username.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty) {
-      _showErrorSheet(context, "Please fill out all fields.");
-    } else {
-      print("Signup successful with plan: $_selectedDistance");
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,39 +124,71 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
             bottom: 20,
             left: 16,
             right: 16,
-            child: Row(
-              children: [
-                Flexible(
-                  flex: 3,
-                  child: BrandedPrimaryButton(
-                    isEnabled: true,
-                    suffixIcon: const Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                    ),
-                    name: "Save",
-                    onPressed: () {
-                      Navigator.of(context)
-                          .push(MaterialPageRoute(builder: (context) {
-                        return WeatherPrefernceScreen();
-                      }));
-                    },
+            child: widget.isProfile!
+                ? Column(
+                    children: [
+                      const SizedBox(height: 30),
+                      BrandedPrimaryButton(
+                        isEnabled: true,
+                        name: "Save",
+                        onPressed: () async {},
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      BrandedPrimaryButton(
+                        isUnfocus: true,
+                        isEnabled: true,
+                        name: "Cancel",
+                        onPressed: () {},
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Flexible(
+                        flex: 3,
+                        child: BrandedPrimaryButton(
+                          isEnabled: true,
+                          suffixIcon: const Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                          ),
+                          name: "Save",
+                          onPressed: () {
+                            widget.userPreferences?.userUnit =
+                                _selectedDistance!;
+                            Navigator.of(context)
+                                .push(MaterialPageRoute(builder: (context) {
+                              return WeatherPrefernceScreen(
+                                userPreferences: widget.userPreferences,
+                              );
+                            }));
+                          },
+                        ),
+                      ),
+                      Flexible(
+                        flex: 1,
+                        child: TextButton(
+                          onPressed: () {
+                            widget.userPreferences?.userUnit = '';
+                            Navigator.of(context)
+                                .push(MaterialPageRoute(builder: (context) {
+                              return WeatherPrefernceScreen(
+                                userPreferences: widget.userPreferences,
+                              );
+                            }));
+                          },
+                          child: const Text(
+                            "Skip",
+                            style: TextStyle(
+                                color: Pallete.primaryColor,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                Flexible(
-                  flex: 1,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      "Skip",
-                      style: TextStyle(
-                          color: Pallete.primaryColor,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),

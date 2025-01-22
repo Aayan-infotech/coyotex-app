@@ -148,7 +148,7 @@ class CallHelper {
       }
     } on DioError catch (e) {
       print(e);
-      return ApiResponseWithData(defaultData, false, message: '');
+      return ApiResponseWithData(defaultData, false, message: e.toString());
     }
   }
 
@@ -178,6 +178,27 @@ class CallHelper {
     try {
       final response = await dio
           .put('$url$urlSuffix',
+              data: jsonEncode(body),
+              options: Options(headers: await getHeaders()))
+          .timeout(
+            Duration(seconds: timeoutInSeconds),
+          );
+
+      if (response.statusCode == 200) {
+        return ApiResponse(
+            response.data['Message'] ?? internalServerErrorMessage, true);
+      } else {
+        return ApiResponse(internalServerErrorMessage, false);
+      }
+    } on DioError catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<ApiResponse> patch(String urlSuffix, Map<String, dynamic> body) async {
+    try {
+      final response = await dio
+          .patch('$url$urlSuffix',
               data: jsonEncode(body),
               options: Options(headers: await getHeaders()))
           .timeout(

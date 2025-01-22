@@ -16,7 +16,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // List of pages for each tab
   final List<Widget> _pages = [
     HomePage(),
-    Center(child: Text('Search Page')),
+    MapScreen(), // New Screen 1
+
     MapScreen(), // New Screen 1
     NotificationScreen(), // New Screen 2
     ProfileScreen(),

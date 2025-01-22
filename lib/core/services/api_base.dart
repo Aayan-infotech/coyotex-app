@@ -2,10 +2,11 @@ import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 
 class ApiBase {
-  String accessToken='';
+  String accessToken = '';
+  String refreshToken = '';
   ApiBase() {
-    accessToken =
-        SharedPrefUtil.getValue(accessTokenPref, "") as String;
+    accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
+    refreshToken = SharedPrefUtil.getValue(refreshTokenPref, "") as String;
     // city =
     //     SharedPrefUtil.getValue(loggedInUserCitySharedPrefName, "") as String;
     // industry =
