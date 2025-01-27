@@ -128,7 +128,7 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
 
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
-                                          SnackBar(
+                                          const SnackBar(
                                             content: Text(
                                                 'Preferences updated successfully!'),
                                             backgroundColor: Colors.green,

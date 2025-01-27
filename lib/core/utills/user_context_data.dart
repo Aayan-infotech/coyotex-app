@@ -1,0 +1,26 @@
+import 'package:coyotex/feature/auth/data/model/user_model.dart';
+import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
+import 'package:flutter/material.dart';
+
+import 'package:provider/provider.dart';
+
+class UserContextData {
+  static UserModel? _user;
+
+  static UserModel? get user => _user;
+
+  static setCurrentUserAndFetchUserData(BuildContext context) async {
+    final userProvider = Provider.of<UserViewModel>(context, listen: false);
+
+    _user = user;
+    List<Future> lstFutures = <Future>[];
+
+    lstFutures.add(userProvider.getUser());
+
+    // lstFutures.add(cartProvider.getCoupon(context));
+    // lstFutures
+    //     .add(productProvider.getOrderList(userProvider.user!.id, context));
+
+    await Future.wait(lstFutures);
+  }
+}

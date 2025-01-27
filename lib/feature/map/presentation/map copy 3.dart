@@ -115,121 +115,81 @@ class _MapScreenState extends State<MapScreen> {
                       left: 10,
                       right: 10,
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 80),
+                        padding: const EdgeInsets.only(top: 40),
                         child: Column(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: BrandedTextField(
-                                    height: 40,
-                                    controller: provider.startController,
-                                    labelText: "Search here",
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) {
-                                        return SearchLocationScreen();
-                                      })).then((value) {
-                                        setState(() {});
-                                      });
-                                    },
-                                    prefix: Icon(Icons.location_on),
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                        color: Colors.white, width: 2),
-                                  ),
-                                  child: Icon(
-                                    Icons.person,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (provider.startController.text.isNotEmpty &&
-                                provider.trips.isEmpty)
-                              SizedBox(
-                                height: 10,
-                              ),
-                            if (provider.startController.text.isNotEmpty &&
-                                provider.trips.isEmpty)
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: BrandedTextField(
-                                      height: 40,
-                                      controller:
-                                          provider.destinationController,
-                                      labelText: "Destination",
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return SearchLocationScreen();
-                                        })).then((value) {});
-                                      },
-                                      prefix: Icon(Icons.location_on),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                          color: Colors.white, width: 2),
-                                    ),
-                                    child: Icon(
-                                      Icons.drag_handle,
-                                      color: Colors.red,
-                                    ),
-                                  ),
-                                ],
-                              ),
                             Container(
                               height: MediaQuery.of(context).size.height * 0.2,
                               child: ListView.builder(
-                                  padding: EdgeInsets.all(0),
-                                  itemCount: provider.trips.length,
+                                  itemCount: (provider.trips.length == 0)
+                                      ? 1
+                                      : provider.trips.length,
                                   itemBuilder: (context, item) {
-                                    return GestureDetector(
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return SearchLocationScreen();
-                                        }));
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 5),
-                                        child: _buildTextField(
-                                          provider.destinationController,
-                                          provider.trips[item].name,
-                                          false,
-                                          provider,
-                                          const Icon(Icons.check,
-                                              size: 20, color: Colors.red),
-                                          (provider.trips.length - 1 == item)
-                                              ? const Icon(
-                                                  Icons.add,
-                                                  size: 20,
-                                                  color: Colors.red,
-                                                )
-                                              : const Icon(
-                                                  Icons.drag_handle,
-                                                  size: 20,
-                                                  color: Colors.white,
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 5),
+                                      child: item == 0
+                                          ? Row(
+                                              children: [
+                                                Expanded(
+                                                  child: BrandedTextField(
+                                                    height: 40,
+                                                    controller: provider
+                                                        .startController,
+                                                    labelText: "Search here",
+                                                    onTap: () {
+                                                      Navigator.of(context).push(
+                                                          MaterialPageRoute(
+                                                              builder:
+                                                                  (context) {
+                                                        return SearchLocationScreen();
+                                                      })).then((value) {
+                                                        setState(() {});
+                                                      });
+                                                    },
+                                                    prefix:
+                                                        Icon(Icons.location_on),
+                                                  ),
                                                 ),
-                                        ),
-                                      ),
+                                                const SizedBox(width: 5),
+                                                Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            6),
+                                                    border: Border.all(
+                                                        color: Colors.white,
+                                                        width: 2),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.person,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : _buildTextField(
+                                              provider.destinationController,
+                                              "",
+                                              //provider.trips[item - 1].name,
+                                              false,
+                                              provider,
+                                              const Icon(Icons.check,
+                                                  size: 20, color: Colors.red),
+                                              item == 2
+                                                  ? const Icon(
+                                                      Icons.add,
+                                                      size: 20,
+                                                      color: Colors.white,
+                                                    )
+                                                  : const Icon(
+                                                      Icons.drag_handle,
+                                                      size: 20,
+                                                      color: Colors.white,
+                                                    ),
+                                            ),
                                     );
                                   }),
                             ),
@@ -319,29 +279,29 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     ),
-                    // GestureDetector(
-                    //   onTap: () {
-                    //     Navigator.of(context).push(
-                    //       MaterialPageRoute(builder: (context) {
-                    //         return const AddPhotoScreen();
-                    //       }),
-                    //     );
-                    //   },
-                    //   child: Padding(
-                    //     padding: EdgeInsets.only(
-                    //       top: MediaQuery.of(context).size.height * 0.27,
-                    //       right: 10,
-                    //     ),
-                    //     child: const Align(
-                    //       alignment: Alignment.topRight,
-                    //       child: Icon(
-                    //         Icons.camera_alt_outlined,
-                    //         color: Colors.red,
-                    //         size: 30,
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) {
+                            return const AddPhotoScreen();
+                          }),
+                        );
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.of(context).size.height * 0.27,
+                          right: 10,
+                        ),
+                        child: const Align(
+                          alignment: Alignment.topRight,
+                          child: Icon(
+                            Icons.camera_alt_outlined,
+                            color: Colors.red,
+                            size: 30,
+                          ),
+                        ),
+                      ),
+                    ),
                     if (provider.isSave) tripCard(provider, context),
                     if (provider.isTripStart) add_stop_card(provider, context),
                     if (provider.isHurryUp) hurry_up_card(provider, context),

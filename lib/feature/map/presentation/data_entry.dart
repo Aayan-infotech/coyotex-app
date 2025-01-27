@@ -1,6 +1,9 @@
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
+import 'package:coyotex/feature/map/view_model/map_provider.dart';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class DataPointsScreen extends StatelessWidget {
   DataPointsScreen({Key? key}) : super(key: key);
@@ -89,9 +92,17 @@ class DataPointsScreen extends StatelessWidget {
             BrandedTextField(
                 controller: _numberOfKilledController,
                 labelText: "Enter number"),
-            const Spacer(),
+            const SizedBox(
+              height: 20,
+            ),
             BrandedPrimaryButton(
-                isEnabled: true, name: "Submit", onPressed: () {})
+                isEnabled: true,
+                name: "Submit",
+                onPressed: () {
+                  final mapProvider =
+                      Provider.of<MapProvider>(context, listen: false);
+                  mapProvider.submit(context);
+                })
           ],
         ),
       ),

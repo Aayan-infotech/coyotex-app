@@ -27,7 +27,7 @@ class CallHelper {
 
   final exponentialBackOff = ExponentialBackOff(
     interval:
-        const Duration(milliseconds: 2000), // Retry after 2, 4, 8, 16 seconds
+        const Duration(milliseconds: 5000), // Retry after 2, 4, 8, 16 seconds
     maxAttempts: 5,
     maxRandomizationFactor: 0.0,
     maxDelay: const Duration(seconds: 30),

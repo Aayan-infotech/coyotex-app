@@ -6,9 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
   runApp(const MyApp());
-  SharedPrefUtil.init();
 }
 
 class MyApp extends StatelessWidget {
@@ -20,7 +19,6 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => MapProvider()),
         ChangeNotifierProvider(create: (_) => UserViewModel()),
-        // Add more providers as needed
       ],
       child: MaterialApp(
         title: 'Flutter Demo',

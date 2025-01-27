@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 class SignupScreen extends StatelessWidget {
   SignupScreen({super.key});
 
-  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -71,7 +70,6 @@ class SignupScreen extends StatelessWidget {
 
   void _onSignupPressed(
       BuildContext context, UserViewModel authProvider) async {
-    final username = _usernameController.text;
     final email = _emailController.text;
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
@@ -81,8 +79,7 @@ class SignupScreen extends StatelessWidget {
 
     if (password != confirmPassword) {
       _showErrorSheet(context, "Passwords do not match. Please try again.");
-    } else if (username.isEmpty ||
-        password.isEmpty ||
+    } else if (password.isEmpty ||
         email.isEmpty ||
         fullName.isEmpty ||
         mobileNumber.isEmpty) {
@@ -91,7 +88,7 @@ class SignupScreen extends StatelessWidget {
       _showErrorSheet(context, "Mobile number must be 10 digits.");
     } else {
       ApiResponseWithData responseWithData = await authProvider.signUp(
-          fullName, mobileNumber, username, password, referralCode, email);
+          fullName, mobileNumber, password, referralCode, email);
       if (responseWithData.success) {
         Navigator.of(context).push(MaterialPageRoute(builder: (context) {
           return OtpScreen(
@@ -149,12 +146,6 @@ class SignupScreen extends StatelessWidget {
                             controller: _mobileNumberController,
                             keyboardType: TextInputType.number,
                             labelText: "Mobile Number",
-                          ),
-                          const SizedBox(height: 20),
-                          BrandedTextField(
-                            prefix: const Icon(Icons.person_outline),
-                            controller: _usernameController,
-                            labelText: "Username",
                           ),
                           const SizedBox(height: 20),
                           BrandedTextField(

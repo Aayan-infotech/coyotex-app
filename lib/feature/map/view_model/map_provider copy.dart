@@ -15,7 +15,6 @@ class MapProvider with ChangeNotifier {
   final Set<Polyline> polylines = {};
   final Set<Marker> markers = {};
   final List<LatLng> points = [];
-
   final String sessionToken = const Uuid().v4();
   var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
   String markerId = '';
@@ -23,7 +22,7 @@ class MapProvider with ChangeNotifier {
   List<dynamic> startSuggestions = [];
   List<dynamic> destinationSuggestions = [];
   GoogleMapController? mapController;
-  LatLng initialPosition = const LatLng(26.862421770613125, 80.99804357972356);
+  final LatLng initialPosition = const LatLng(37.7749, -122.4194);
   final Map<String, Duration> timeDurations = {};
 
   LatLng? pointA;
@@ -31,102 +30,11 @@ class MapProvider with ChangeNotifier {
   bool isSave = false;
   bool isLoading = false;
   double distance = 0.0;
-  bool isTripStart = false;
-  bool isHurryUp = false;
-  bool isKeyDataPoint = false;
-  bool isStartSuggestions = false;
 
   final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
-  void letsHunt() {
-    isTripStart = true;
-    isSave = false;
-    notifyListeners();
-  }
-
-  void addStop() {
-    isTripStart = false;
-    isSave = false;
-    isHurryUp = true;
-    notifyListeners();
-  }
-
-  void hurryUp() {
-    isTripStart = false;
-    isSave = false;
-    isHurryUp = false;
-    isKeyDataPoint = true;
-    notifyListeners();
-  }
-
-  void submit(BuildContext context) {
-    isTripStart = false;
-    isSave = false;
-    isHurryUp = false;
-    isKeyDataPoint = false;
-    Navigator.of(context).pop();
-    notifyListeners();
-  }
-
-  Future<void> drawPolylineWithMarkers(TripModel trip) async {
-    // Clear existing markers and polylines
-    isLoading = true;
-    isSave = true;
-    notifyListeners();
-    markers.clear();
-    polylines.clear();
-
-    // Add markers from the trip's MarkerData
-    for (var markerData in trip.markers) {
-      markers.add(
-        Marker(
-          markerId: MarkerId(markerData.id),
-          position: markerData.position,
-          infoWindow: InfoWindow(
-            title: markerData.title,
-            snippet: markerData.snippet,
-          ),
-        ),
-      );
-    }
-
-    // Draw polyline from routePoints in the trip
-    polylines.add(
-      Polyline(
-        polylineId: PolylineId("route"),
-        points: trip.routePoints, // Use routePoints from the TripModel
-        color: Colors.blue,
-        width: 5,
-      ),
-    );
-
-    // Optionally, add start and end markers with special titles
-    if (trip.routePoints.isNotEmpty) {
-      var start = trip.routePoints.first;
-      var end = trip.routePoints.last;
-
-      markers.add(
-        Marker(
-          markerId: MarkerId("start"),
-          position: start,
-          infoWindow: InfoWindow(title: "Start"),
-        ),
-      );
-
-      markers.add(
-        Marker(
-          markerId: MarkerId("end"),
-          position: end,
-          infoWindow: InfoWindow(title: "End"),
-        ),
-      );
-    }
-    isLoading = false;
-
-    notifyListeners();
-  }
 
   void saveTrip() {
-    if (points.isEmpty) {
+    if (points.isEmpty || startController.text.isEmpty) {
       debugPrint("Cannot save trip. Please ensure all fields are filled.");
       return;
     }
@@ -228,7 +136,6 @@ class MapProvider with ChangeNotifier {
   }
 
   Future<void> getPlaceSuggestions(String input, bool isStartField) async {
-    isStartSuggestions = true;
     if (input.isEmpty) {
       if (isStartField) {
         startSuggestions = [];
@@ -253,10 +160,40 @@ class MapProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Error while fetching suggestions: $e");
     }
+  }
+
+  void onMapTapped(LatLng position) {
+    points.add(position);
+
+    if (points.length == 1) {
+      startController.text = "${position.latitude}, ${position.longitude}";
+    } else {
+      final controller = TextEditingController(
+        text: "${position.latitude}, ${position.longitude}",
+      );
+      destinationControllers.add(controller);
+    }
+
+    if (points.length >= 2) {
+      distance = _calculateTotalDistance();
+      isSave = true;
+    }
+    final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
+    markerId = uniqueId;
+    markers.add(Marker(
+      markerId: MarkerId(uniqueId),
+      position: position,
+      infoWindow: InfoWindow(
+        title: 'Point ${points.length}',
+        snippet: '${position.latitude}, ${position.longitude}',
+      ),
+    ));
+
+    drawPolyline();
     notifyListeners();
   }
 
-  Future<void> drawPolyline() async {
+  void drawPolyline() {
     if (points.length > 1) {
       polylines.clear();
       polylines.add(Polyline(
@@ -337,107 +274,4 @@ class MapProvider with ChangeNotifier {
 
     return polyline;
   }
-
-  Future<void> onSuggestionSelected(String placeId, bool isStartField) async {
-    final url =
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$kGoogleApiKey';
-
-    try {
-      final response = await http.get(Uri.parse(url));
-      final data = jsonDecode(response.body);
-
-      if (data['status'] == 'OK') {
-        final location = data['result']['geometry']['location'];
-        final latAndLng = LatLng(location['lat'], location['lng']);
-
-        if (isStartField) {
-          startController.text = data['result']['formatted_address'];
-          pointA = latAndLng;
-          markerId = 'start';
-        } else {
-          destinationController.text = data['result']['formatted_address'];
-          pointB = latAndLng;
-          markerId = 'destination';
-        }
-        points.add(latAndLng);
-
-        if (points.length >= 2) {
-          distance = _calculateTotalDistance();
-          isSave = true;
-          isHurryUp = false;
-          isKeyDataPoint = false;
-          isTripStart = false;
-        }
-
-        final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
-        markerId = uniqueId;
-        markers.add(Marker(
-          markerId: MarkerId(uniqueId),
-          position: latAndLng,
-          infoWindow: InfoWindow(
-            title: 'Point ${points.length}',
-            snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
-          ),
-        ));
-
-        if (points.isNotEmpty)
-          initialPosition = LatLng(points[0].latitude, points[0].longitude);
-        await drawPolyline();
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint("Error fetching place details: $e");
-    }
-  }
-
-  void onMapTapped(LatLng position) {
-    points.add(position);
-
-    if (points.length == 1) {
-      // startController.text = "${position.latitude}, ${position.longitude}";
-    } else {
-      final controller = TextEditingController(
-        text: "${position.latitude}, ${position.longitude}",
-      );
-      destinationControllers.add(controller);
-    }
-
-    if (points.length >= 2) {
-      distance = _calculateTotalDistance();
-      isSave = true;
-      isHurryUp = false;
-      isKeyDataPoint = false;
-      isTripStart = false;
-    }
-    final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
-    markerId = uniqueId;
-    markers.add(Marker(
-      markerId: MarkerId(uniqueId),
-      position: position,
-      infoWindow: InfoWindow(
-        title: 'Point ${points.length}',
-        snippet: '${position.latitude}, ${position.longitude}',
-      ),
-    ));
-
-    drawPolyline();
-    notifyListeners();
-  }
-  // Future<void> _getUserLocation() async {
-  //   final currentLocation = await _location.getLocation();
-
-  //     _initialPosition =
-  //         LatLng(currentLocation.latitude ?? 0.0, currentLocation.longitude ?? 0.0);
-  //     markers.add(
-  //       Marker(
-  //         markerId: MarkerId("current_location"),
-  //         position: _initialPosition,
-  //         infoWindow: InfoWindow(title: "You are here"),
-  //       ),
-  //     );
-  //   });
-
-  //   // Move the camera to the current location
-  //   mapController.animateCamera(CameraUpdate.newLatLng(_initialPosition));
-  // }
 }

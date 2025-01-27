@@ -105,12 +105,12 @@ class UserViewModel extends ChangeNotifier {
   }
 
   // Sign Up
-  Future<ApiResponseWithData> signUp(String name,String mobileNumber,String userName, String password,
-      String referralCode, String email) async {
+  Future<ApiResponseWithData> signUp(String name, String mobileNumber,
+      String password, String referralCode, String email) async {
     _setLoading(true);
     try {
-      final response =
-          await _loginAPIs.signUp(name,mobileNumber, userName, password, referralCode, email);
+      final response = await _loginAPIs.signUp(
+          name, mobileNumber, password, referralCode, email);
       if (response.success) {
         return response;
       } else {

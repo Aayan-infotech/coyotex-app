@@ -1,6 +1,8 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
+import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/sign_up_screen.dart';
@@ -139,6 +141,7 @@ class LoginScreen extends StatelessWidget {
                                       username, password, context);
 
                                   if (response.success) {
+                                    SharedPrefUtil.setValue(isLoginPref, true);
                                   } else {
                                     _showErrorDialog("Server Error!", context);
                                   }

@@ -29,7 +29,6 @@ class LoginAPIs extends ApiBase {
   Future<ApiResponseWithData<Map<String, dynamic>>> signUp(
       String name,
       String mobileNumber,
-      String userName,
       String password,
       String referralCode,
       String email) async {
