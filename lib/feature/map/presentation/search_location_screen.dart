@@ -3,7 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 
 class SearchLocationScreen extends StatefulWidget {
-  const SearchLocationScreen({super.key});
+  TextEditingController controller;
+  bool isStart;
+
+  SearchLocationScreen(
+      {required this.isStart, required this.controller, super.key});
 
   @override
   State<SearchLocationScreen> createState() => _SearchLocationScreenState();
@@ -27,7 +31,7 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextField(
-                  controller: mapProvider.startController,
+                  controller: widget.controller,
                   decoration: InputDecoration(
                     hintText: 'Search location...',
                     border: OutlineInputBorder(
@@ -49,14 +53,12 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
                       leading: const Icon(Icons.location_on),
                       title: Text(suggestion['description'] ?? ''),
                       onTap: () async {
-                        mapProvider.startController.text =
+                        widget.controller.text =
                             suggestion['description'] ?? '';
                         mapProvider.startSuggestions.clear();
                         await mapProvider
-                            .onSuggestionSelected(
-                          suggestion['place_id'],
-                          true, // Change to false if it's the destination field
-                        )
+                            .onSuggestionSelected(suggestion['place_id'],
+                                widget.isStart, widget.controller)
                             .then((valueKey) {
                           Navigator.of(context).pop(true);
                         });

@@ -127,7 +127,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 Flexible(
                   flex: 3,
                   child: BrandedPrimaryButton(
-                    isEnabled: true,
+                    isEnabled: _selectedPlanId !=
+                        null, // Disable button if no plan is selected
                     suffixIcon: const Icon(
                       Icons.arrow_forward,
                       color: Colors.white,
@@ -136,9 +137,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     onPressed: () {
                       if (_selectedPlanId != null) {
                         UserPreferences userPreferences = UserPreferences(
-                            userPlan: _selectedPlanId!,
-                            userUnit: '',
-                            userWeatherPref: '');
+                          userPlan: _selectedPlanId!,
+                          userUnit: '',
+                          userWeatherPref: '',
+                        );
 
                         Navigator.of(context)
                             .push(MaterialPageRoute(builder: (context) {
@@ -181,7 +183,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ),
               ],
             ),
-          ),
+          )
         ],
       ),
     );

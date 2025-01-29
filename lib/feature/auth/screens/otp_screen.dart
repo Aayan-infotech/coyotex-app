@@ -10,11 +10,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
 import 'package:provider/provider.dart';
 
-class OtpScreen extends StatelessWidget {
+class OtpScreen extends StatefulWidget {
   bool isResetPassward;
   final String email;
   OtpScreen({this.isResetPassward = false, required this.email, super.key});
-  String otpNumber = '';
+
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
+  String otpNumber = ''; // Track the entered OTP
 
   void _showIncorrectPasswordSheet(BuildContext context) {
     showModalBottomSheet(
@@ -60,7 +66,7 @@ class OtpScreen extends StatelessWidget {
       body: Consumer<UserViewModel>(
         builder: (context, authProvider, child) {
           return authProvider.isLoading
-              ? CircularProgressIndicator()
+              ? Center(child: CircularProgressIndicator())
               : Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -90,7 +96,7 @@ class OtpScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 30),
                           OtpTextField(
-                            numberOfFields: 6, // Set to 4 digits
+                            numberOfFields: 6, // Set to 6 digits
                             borderColor:
                                 Colors.white, // Set border color to white
                             fieldWidth: 50,
@@ -100,25 +106,35 @@ class OtpScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(
                                 4), // Subtle rounded corners
                             onSubmit: (String otp) async {
-                              otpNumber = otp;
+                              setState(() {
+                                otpNumber = otp; // Update otpNumber
+                              });
+                            },
+                            onCodeChanged: (value) {
+                              setState(() {
+                                otpNumber =
+                                    value; // Update otpNumber on input change
+                              });
                             },
                           ),
                           const SizedBox(height: 30),
                           BrandedPrimaryButton(
-                            isEnabled: true,
+                            isEnabled: otpNumber.length ==
+                                6, // Enable only if OTP is 6 digits
                             name: "Continue",
                             onPressed: () async {
-                              if (isResetPassward) {
+                              if (widget.isResetPassward) {
                                 Navigator.of(context)
                                     .push(MaterialPageRoute(builder: (context) {
                                   return PasswordScreen(
-                                    email: email,
+                                    email: widget.email,
                                     otp: otpNumber,
                                   );
                                 }));
                               } else {
+                              
                                 final responce = await authProvider.verifyOTP(
-                                    email, otpNumber);
+                                    widget.email, otpNumber);
                                 if (!responce.success) {
                                   _showIncorrectPasswordSheet(context);
                                 } else {

@@ -3,7 +3,6 @@ import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
-import 'package:coyotex/feature/homeScreen/screens/pages/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -37,10 +36,55 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
   @override
   void initState() {
     final userProvider = Provider.of<UserViewModel>(context, listen: false);
-    // TODO: implement initState
     selectedWeatherId = userProvider.user.userWeatherPref;
 
     super.initState();
+  }
+
+  void _showErrorSheet(BuildContext context, String message) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.red,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.white,
+                size: 40,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text("Dismiss"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -110,7 +154,8 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                               children: [
                                 const SizedBox(height: 30),
                                 BrandedPrimaryButton(
-                                  isEnabled: true,
+                                  isEnabled:
+                                      selectedWeatherId?.isNotEmpty ?? false,
                                   name: "Save",
                                   onPressed: () async {
                                     UserPreferences userPreferences =
@@ -125,7 +170,6 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                                           .updatePref(userPreferences);
                                       if (response.success) {
                                         // Show success feedback to the user
-
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           const SnackBar(
@@ -134,7 +178,6 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                                             backgroundColor: Colors.green,
                                           ),
                                         );
-                                        // Optionally, navigate or refresh the UI
                                         Navigator.pop(context);
                                       } else {
                                         // Show error message from response or a generic one
@@ -148,15 +191,8 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                                         );
                                       }
                                     } catch (e) {
-                                      // Handle unexpected errors
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content:
-                                              Text('An error occurred: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
+                                      _showErrorSheet(
+                                          context, 'An error occurred: $e');
                                     }
                                   },
                                 ),
@@ -174,7 +210,8 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                                 Flexible(
                                   flex: 3,
                                   child: BrandedPrimaryButton(
-                                    isEnabled: true,
+                                    isEnabled:
+                                        selectedWeatherId?.isNotEmpty ?? false,
                                     suffixIcon: const Icon(
                                       Icons.arrow_forward,
                                       color: Colors.white,
@@ -183,14 +220,25 @@ class _WeatherPrefernceScreenState extends State<WeatherPrefernceScreen> {
                                     onPressed: () async {
                                       widget.userPreferences!.userWeatherPref =
                                           selectedWeatherId!;
-                                      var response = await userViewModel
-                                          .updatePref(widget.userPreferences!);
-                                      if (response.success) {
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return HomeScreen();
-                                        }));
+                                      try {
+                                        var response =
+                                            await userViewModel.updatePref(
+                                                widget.userPreferences!);
+                                        if (response.success) {
+                                          Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                  builder: (context) {
+                                            return HomeScreen();
+                                          }));
+                                        } else {
+                                          _showErrorSheet(
+                                              context,
+                                              response.message ??
+                                                  'Failed to update preferences');
+                                        }
+                                      } catch (e) {
+                                        _showErrorSheet(
+                                            context, 'An error occurred: $e');
                                       }
                                     },
                                   ),

@@ -27,17 +27,17 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      name: json['name'],
-      number: json['number'],
-      email: json['email'],
-      isVerified: json['isVerified'],
-      referralCode: json['referralCode'],
-      userPlan: json['userPlan'],
-      userUnit: json['userUnit'],
-      userWeatherPref: json['userWeatherPref'],
-      insIp: json['ins_ip'],
-      userStatus: json['user_status'],
-      insDate: DateTime.parse(json['ins_date']),
+      name: json['name'] ?? '',
+      number: json['number'] ?? '',
+      email: json['email'] ?? "",
+      isVerified: json['isVerified'] ?? true,
+      referralCode: json['referralCode'] ?? "",
+      userPlan: json['userPlan'] ?? '',
+      userUnit: json['userUnit'] ?? "",
+      userWeatherPref: json['userWeatherPref'] ?? "",
+      insIp: json['ins_ip'] ?? '',
+      userStatus: json['user_status'] ?? 1,
+      insDate: DateTime.parse(json['ins_date'] ?? DateTime.now().toString()),
     );
   }
 

@@ -20,7 +20,7 @@ class MapProvider with ChangeNotifier {
   List<LatLng> points = [];
 
   final String sessionToken = const Uuid().v4();
-  var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
+  final String kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
   String markerId = '';
 
   List<dynamic> startSuggestions = [];
@@ -37,27 +37,24 @@ class MapProvider with ChangeNotifier {
   bool isHurryUp = false;
   bool isKeyDataPoint = false;
   bool isStartSuggestions = false;
+
+  List<LatLng> path = [];
+
   void increaseCount() {
-    destinationCount += destinationCount;
-    TextEditingController _textController = TextEditingController();
-    destinationControllers.add(_textController);
+    destinationCount++;
+    destinationControllers.add(TextEditingController());
     notifyListeners();
   }
 
-  final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
-  void letsHunt() async {
+  Future<void> letsHunt() async {
     isTripStart = true;
     isSave = false;
     isLoading = true;
-    // isTap = false;
-
     notifyListeners();
+
     try {
-      // Request location permissions
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('Location services are disabled.');
-      }
+      if (!serviceEnabled) throw Exception('Location services are disabled.');
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -71,80 +68,59 @@ class MapProvider with ChangeNotifier {
         throw Exception('Location permissions are permanently denied.');
       }
 
-      // Get the initial location and fetch the route
       Position initialPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      print(
-          'Initial location: ${initialPosition.latitude}, ${initialPosition.longitude}');
       path.add(LatLng(initialPosition.latitude, initialPosition.longitude));
-
-      // Fetch the route only once
       await fetchRouteWithWaypoints(path);
       isLoading = false;
 
-      // Start listening to location updates for the user pointer
       Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 0, // Trigger updates regardless of distance
+          distanceFilter: 0,
         ),
       ).listen((Position position) {
         if (position != null) {
-          print(
-              'Updated location: ${position.latitude}, ${position.longitude}');
           notifyListeners();
         }
       });
     } catch (e) {
       isLoading = false;
       notifyListeners();
-      print('Error: $e');
+      debugPrint('Error: $e');
     }
   }
 
-  void addStop() async {
+  Future<void> addStop() async {
     try {
-      isLoading = true; // Indicate loading state
+      isLoading = true;
       isHurryUp = false;
       isKeyDataPoint = false;
       notifyListeners();
 
-      // Fetch the user's current location
       Position currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
       LatLng currentStop =
           LatLng(currentPosition.latitude, currentPosition.longitude);
 
-      // Add the current location as a new stop in the path
       points.add(currentStop);
       path.add(currentStop);
 
-      // Update the list of markers
       final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
       markerId = uniqueId;
       markers.add(Marker(
         markerId: MarkerId(uniqueId),
         position: currentStop,
-        
         infoWindow: InfoWindow(
           title: 'Stop ${points.length}',
           snippet: '${currentStop.latitude}, ${currentStop.longitude}',
         ),
       ));
 
-      // Add a new destination controller for the stop
-      // TextEditingController stopController = TextEditingController(
-      //   text: '${currentStop.latitude}, ${currentStop.longitude}',
-      // );
-      // destinationControllers.add(stopController);
-
-      // Fetch and redraw the updated route
       await fetchRouteWithWaypoints(path);
-
-      // Recalculate the total distance
       distance = _calculateTotalDistance();
       isSave = false;
     } catch (e) {
@@ -173,14 +149,13 @@ class MapProvider with ChangeNotifier {
   }
 
   Future<void> drawPolylineWithMarkers(TripModel trip) async {
-    // Clear existing markers and polylines
     isLoading = true;
     isSave = true;
     notifyListeners();
+
     markers.clear();
     polylines.clear();
 
-    // Add markers from the trip's MarkerData
     for (var markerData in trip.markers) {
       markers.add(
         Marker(
@@ -194,19 +169,18 @@ class MapProvider with ChangeNotifier {
       );
     }
 
-    // Draw polyline from routePoints in the trip
     polylines.add(
       Polyline(
         polylineId: PolylineId("route"),
-        points: trip.routePoints, // Use routePoints from the TripModel
+        points: trip.routePoints,
         color: Colors.blue,
         width: 5,
       ),
     );
-    points = trip.routePoints;
 
+    points = trip.routePoints;
     distance = _calculateTotalDistance();
-    // Optionally, add start and end markers with special titles
+
     if (trip.routePoints.isNotEmpty) {
       var start = trip.routePoints.first;
       var end = trip.routePoints.last;
@@ -227,8 +201,8 @@ class MapProvider with ChangeNotifier {
         ),
       );
     }
-    isLoading = false;
 
+    isLoading = false;
     notifyListeners();
   }
 
@@ -263,7 +237,6 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Reset input fields and points
   void resetFields() {
     startController.clear();
     destinationController.clear();
@@ -294,16 +267,12 @@ class MapProvider with ChangeNotifier {
   }
 
   Future<void> fetchRoute(String start, String end) async {
-    // if (startController.text.isEmpty || destinationController.text.isEmpty) {
-    //   return;
-    // }
-
     isLoading = true;
     notifyListeners();
 
     try {
       final url =
-          'https://maps.googleapis.com/maps/api/directions/json?origin=${Uri.encodeComponent(start)}&destination=${Uri.encodeComponent(end)}&mode=driving&key=$apiKey';
+          'https://maps.googleapis.com/maps/api/directions/json?origin=${Uri.encodeComponent(start)}&destination=${Uri.encodeComponent(end)}&mode=driving&key=$kGoogleApiKey';
       final response = await http.get(Uri.parse(url));
       final data = jsonDecode(response.body);
 
@@ -313,25 +282,11 @@ class MapProvider with ChangeNotifier {
         final polylinePoints = _decodePolyline(encodedPolyline);
         points.addAll(polylinePoints);
         await drawPolyline();
-        // polylines.clear();
-        // polylines.add(Polyline(
-        //   polylineId: const PolylineId('route'),
-        //   points: polylinePoints,
-        //   color: Colors.blue,
-        //   width: 5,
-        // ));
-
-        // if (mapController != null) {
-        //   LatLngBounds bounds = _getLatLngBounds(polylinePoints);
-        //   mapController
-        //       ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-        // }
       }
     } catch (e) {
       debugPrint("Error fetching route: $e");
     } finally {
       isLoading = false;
-
       notifyListeners();
     }
   }
@@ -346,14 +301,13 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Convert the LatLng locations to a string of waypoints
       String waypoints = locations
-          .skip(1) // Skip the first point, as it's the origin
+          .skip(1)
           .map((location) => '${location.latitude},${location.longitude}')
-          .join('|'); // Join with a '|' to separate the points
+          .join('|');
 
       final url =
-          'https://maps.googleapis.com/maps/api/directions/json?origin=${locations.first.latitude},${locations.first.longitude}&destination=${locations.last.latitude},${locations.last.longitude}&waypoints=$waypoints&mode=driving&avoid=highways&key=$apiKey';
+          'https://maps.googleapis.com/maps/api/directions/json?origin=${locations.first.latitude},${locations.first.longitude}&destination=${locations.last.latitude},${locations.last.longitude}&waypoints=$waypoints&mode=driving&avoid=highways&key=$kGoogleApiKey';
 
       final response = await http.get(Uri.parse(url));
       final data = jsonDecode(response.body);
@@ -363,13 +317,11 @@ class MapProvider with ChangeNotifier {
             data['routes'][0]['overview_polyline']['points'];
         final polylinePoints = _decodePolyline(encodedPolyline);
 
-        // Clear old points and add new ones
         points.clear();
         points.addAll(polylinePoints);
 
-        await drawPolyline(); // Ensure this method is implemented to draw the route
+        await drawPolyline();
 
-        // Optionally, update the polylines for the map
         polylines.clear();
         polylines.add(Polyline(
           polylineId: const PolylineId('route'),
@@ -378,7 +330,6 @@ class MapProvider with ChangeNotifier {
           width: 5,
         ));
 
-        // Adjust the map camera to fit the route
         if (mapController != null) {
           LatLngBounds bounds = _getLatLngBounds(polylinePoints);
           mapController
@@ -404,7 +355,6 @@ class MapProvider with ChangeNotifier {
       } else {
         destinationSuggestions = [];
       }
-
       return;
     }
 
@@ -456,8 +406,7 @@ class MapProvider with ChangeNotifier {
         points[i + 1].longitude,
       );
     }
-    totalDistance = totalDistance / 1000;
-    return totalDistance;
+    return totalDistance / 1000;
   }
 
   LatLngBounds _getLatLngBounds(List<LatLng> points) {
@@ -507,10 +456,8 @@ class MapProvider with ChangeNotifier {
     return polyline;
   }
 
-  String start = '';
-  String end = '';
   Future<void> onSuggestionSelected(String placeId, bool isStartField,
-      TextEditingController _controller) async {
+      TextEditingController controller) async {
     final url =
         'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$kGoogleApiKey';
 
@@ -521,21 +468,16 @@ class MapProvider with ChangeNotifier {
       if (data['status'] == 'OK') {
         final location = data['result']['geometry']['location'];
         final latAndLng = LatLng(location['lat'], location['lng']);
-        _controller.text = data['result']['formatted_address'];
+        controller.text = data['result']['formatted_address'];
+
         if (isStartField) {
           startController.text = data['result']['formatted_address'];
-
-          TextEditingController _1stController = TextEditingController();
-          destinationControllers.add((_1stController));
-          // pointA = latAndLng;
-          // markerId = 'start';
+          destinationControllers.add(TextEditingController());
         } else {
-          // destinationController.text = data['result']['formatted_address'];
           destinationControllers.last.text =
               data['result']['formatted_address'];
-          // pointB = latAndLng;
-          // markerId = 'destination';
         }
+
         points.add(latAndLng);
         path.add(latAndLng);
 
@@ -570,19 +512,10 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  List<LatLng> path = [];
   void onMapTapped(LatLng position) async {
     isLoading = true;
     points.add(position);
     path.add(position);
-    if (points.length == 1) {
-      // startController.text = "${position.latitude}, ${position.longitude}";
-    } else {
-      final controller = TextEditingController(
-        text: "${position.latitude}, ${position.longitude}",
-      );
-      destinationControllers.add(controller);
-    }
 
     if (points.length >= 2) {
       distance = _calculateTotalDistance();
@@ -591,9 +524,9 @@ class MapProvider with ChangeNotifier {
       isKeyDataPoint = false;
       isTripStart = false;
     }
+
     final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
     markerId = uniqueId;
-    
     markers.add(Marker(
       markerId: MarkerId(uniqueId),
       position: position,
@@ -602,11 +535,12 @@ class MapProvider with ChangeNotifier {
         snippet: '${position.latitude}, ${position.longitude}',
       ),
     ));
+
     if (points.length >= 2) {
       await fetchRouteWithWaypoints(path);
     }
+
     isLoading = false;
-    // drawPolyline();
     notifyListeners();
   }
 }

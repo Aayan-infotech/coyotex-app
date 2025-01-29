@@ -143,16 +143,16 @@ class ProfileScreen extends StatelessWidget {
                       context,
                       SubscriptionDetailsScreen(),
                     ),
-                    _buildListTile(
-                      Icons.lock,
-                      'Change Password',
-                      context,
-                      PasswordScreen(
-                        isResetPassward: false,
-                        email: '',
-                        otp: '',
-                      ),
-                    ),
+                    // _buildListTile(
+                    //   Icons.lock,
+                    //   'Change Password',
+                    //   context,
+                    //   PasswordScreen(
+                    //     isResetPassward: false,
+                    //     email: '',
+                    //     otp: '',
+                    //   ),
+                    // ),
                     _buildListTile(
                       Icons.help_outline,
                       'Help',

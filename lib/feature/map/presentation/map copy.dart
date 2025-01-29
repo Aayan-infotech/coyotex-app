@@ -1,19 +1,15 @@
-// import 'dart:convert';
-// import 'package:coyotex/core/utills/app_colors.dart';
-// import 'package:coyotex/core/utills/branded_primary_button.dart';
-// import 'package:coyotex/core/utills/branded_text_filed.dart';
-// import 'package:coyotex/feature/map/presentation/add_photos.dart';
+// import 'package:coyotex/feature/map/presentation/data_entry.dart';
+// import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
+// import 'package:coyotex/feature/map/view_model/map_provider.dart';
 // import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:flutter/widgets.dart';
-// import 'package:geolocator/geolocator.dart';
+// import 'package:provider/provider.dart';
 // import 'package:google_maps_flutter/google_maps_flutter.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:uuid/uuid.dart';
-
 // import 'package:intl/intl.dart';
 
-// const kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
+// import 'add_photos.dart';
+// import '../../../core/utills/app_colors.dart';
+// import '../../../core/utills/branded_primary_button.dart';
+// import '../../../core/utills/branded_text_filed.dart';
 
 // class MapScreen extends StatefulWidget {
 //   const MapScreen({Key? key}) : super(key: key);
@@ -23,173 +19,815 @@
 // }
 
 // class _MapScreenState extends State<MapScreen> {
-//   final TextEditingController _startController = TextEditingController();
-//   final TextEditingController _destinationController = TextEditingController();
+//   Future<void> _showDurationPicker(
+//       BuildContext context, MarkerId markerId, MapProvider provider) async {
+//     TextEditingController minuteController = TextEditingController();
 
-//   final Set<Polyline> _polylines = {};
-//   final String _sessionToken = Uuid().v4();
-//   final LatLng _initialPosition = const LatLng(37.7749, -122.4194);
-//   List<dynamic> _startSuggestions = [];
-//   List<dynamic> _destinationSuggestions = [];
-//   bool isLoading = false;
-//   GoogleMapController? _mapController;
+//     Duration? selectedDuration = await showDialog<Duration>(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return AlertDialog(
+//           shape: RoundedRectangleBorder(
+//             borderRadius: BorderRadius.circular(16.0),
+//           ),
+//           title: const Text(
+//             "Set Duration",
+//             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//           ),
+//           content: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               TextField(
+//                 controller: minuteController,
+//                 keyboardType: TextInputType.number,
+//                 decoration: InputDecoration(
+//                   labelText: "Enter time in minutes",
+//                   border: OutlineInputBorder(
+//                     borderRadius: BorderRadius.circular(12.0),
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(height: 20),
+//             ],
+//           ),
+//           actions: [
+//             TextButton(
+//               onPressed: () {
+//                 Navigator.of(context).pop(null); // No duration selected
+//               },
+//               child: const Text("Cancel"),
+//             ),
+//             ElevatedButton(
+//               onPressed: () async {
+//                 if (minuteController.text.isNotEmpty) {
+//                   int minutes = int.parse(minuteController.text);
+//                   await provider.setTimeDuration(
+//                       provider.markerId, Duration(minutes: minutes));
+//                   Navigator.of(context).pop(null);
+
+//                   //  Navigator.of(context).pop(Duration(minutes: minutes));
+//                 } else {
+//                   Navigator.of(context).pop(null); // No duration selected
+//                 }
+//               },
+//               child: const Text("Set"),
+//             ),
+//           ],
+//         );
+//       },
+//     );
+
+//     if (selectedDuration != null) {
+//       // Use the selected duration as needed
+//       // provider.setMarkerDuration(markerId, selectedDuration);
+//     }
+//   }
 
 //   @override
-//   void initState() {
-//     super.initState();
-//     _initLocationService();
-//   }
+//   Widget build(BuildContext context) {
+//     return Consumer<MapProvider>(
+//       builder: (context, provider, child) {
+//         return provider.isLoading
+//             ? const Center(child: CircularProgressIndicator())
+//             : Scaffold(
+//                 body: Stack(
+//                   children: [
+//                     GoogleMap(
+//                       initialCameraPosition: CameraPosition(
+//                         target: provider.initialPosition,
+//                         zoom: 10,
+//                       ),
+//                       myLocationEnabled: true,
+//                       mapType: MapType.hybrid,
+//                       myLocationButtonEnabled: true,
+//                       buildingsEnabled: true,
+//                       mapToolbarEnabled: true,
+//                       fortyFiveDegreeImageryEnabled: true,
+//                       polylines: provider.polylines,
+//                       markers: provider.markers,
+//                       onTap: provider.onMapTapped,
+//                       onMapCreated: (controller) {
+//                         provider.mapController = controller;
+//                       },
+//                     ),
+//                     Positioned(
+//                       top: -45,
+//                       left: 10,
+//                       right: 10,
+//                       child: Padding(
+//                         padding: const EdgeInsets.only(top: 80),
+//                         child: Row(
+//                           children: [
+//                             Expanded(
+//                               child: BrandedTextField(
+//                                 height: 40,
+//                                 controller: provider.startController,
+//                                 labelText: "Search here",
+//                                 onTap: () {
+//                                   Navigator.of(context).push(
+//                                       MaterialPageRoute(builder: (context) {
+//                                     return SearchLocationScreen(
+//                                       controller: provider.startController,
+//                                       isStart: true,
+//                                     );
+//                                   })).then((value) {
+//                                     setState(() {});
+//                                   });
+//                                 },
+//                                 prefix: Icon(Icons.location_on),
+//                               ),
+//                             ),
+//                             const SizedBox(width: 5),
+//                             GestureDetector(
+//                               onTap: () async {},
+//                               child: Container(
+//                                 width: 40,
+//                                 height: 40,
+//                                 decoration: BoxDecoration(
+//                                   borderRadius: BorderRadius.circular(6),
+//                                   border:
+//                                       Border.all(color: Colors.white, width: 2),
+//                                 ),
+//                                 child: const Icon(
+//                                   Icons.person,
+//                                   color: Colors.red,
+//                                 ),
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                     ),
+//                     if (provider.startController.text.isNotEmpty &&
+//                         provider.trips.isEmpty)
+//                       Positioned(
+//                         top: 10,
+//                         left: 10,
+//                         right: 10,
+//                         child: Padding(
+//                           padding: const EdgeInsets.only(top: 80),
+//                           child: Column(
+//                             children: [
+//                               if (provider.startController.text.isNotEmpty &&
+//                                   provider.trips.isEmpty)
+//                                 const SizedBox(
+//                                   height: 10,
+//                                 ),
+//                               if (provider.startController.text.isNotEmpty &&
+//                                   provider.trips.isEmpty)
+//                                 Container(
+//                                   height: (provider.destinationCount + 1) *
+//                                       (40 + 10), // Item height + spacing
+//                                   padding: EdgeInsets.all(0),
+//                                   child: ListView.builder(
+//                                     padding: EdgeInsets.all(0),
+//                                     itemCount: provider.destinationCount,
+//                                     itemBuilder: (context, index) {
+//                                       TextEditingController controller =
+//                                           provider.destinationControllers
+//                                                   .isNotEmpty
+//                                               ? provider
+//                                                   .destinationControllers[index]
+//                                               : TextEditingController();
 
-//   Future<void> _initLocationService() async {
-//     try {
-//       LocationPermission permission = await Geolocator.checkPermission();
-//       if (permission == LocationPermission.denied) {
-//         permission = await Geolocator.requestPermission();
-//         if (permission == LocationPermission.denied ||
-//             permission == LocationPermission.deniedForever) {
-//           return; // Permission denied
-//         }
-//       }
-//     } on PlatformException catch (e) {
-//       debugPrint("PlatformException: $e");
-//     } catch (e) {
-//       debugPrint("Error while getting location: $e");
-//     }
-//   }
-  
-
-//   Future<void> _fetchRoute() async {
-//     if (_startController.text.isEmpty || _destinationController.text.isEmpty) {
-//       _showSnackBar("Please enter both locations.");
-//       return;
-//     }
-
-//     setState(() => isLoading = true);
-
-//     try {
-//       final url =
-//           'https://maps.googleapis.com/maps/api/directions/json?origin=${Uri.encodeComponent(_startController.text)}&destination=${Uri.encodeComponent(_destinationController.text)}&key=$kGoogleApiKey';
-//       final response = await http.get(Uri.parse(url));
-//       final data = jsonDecode(response.body);
-
-//       if (data['status'] == 'OK') {
-//         final encodedPolyline =
-//             data['routes'][0]['overview_polyline']['points'];
-//         final polylinePoints = _decodePolyline(encodedPolyline);
-
-//         // Clear previous polyline and add the new one
-//         setState(() {
-//           _polylines.clear();
-//           _polylines.add(Polyline(
-//             polylineId: const PolylineId('route'),
-//             points: polylinePoints,
-//             color: Colors.blue,
-//             width: 5,
-//           ));
-//         });
-
-//         // Adjust the camera to fit the polyline
-//         if (_mapController != null) {
-//           LatLngBounds bounds = _getLatLngBounds(polylinePoints);
-//           _mapController
-//               ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-//         }
-//       } else {
-//         _showSnackBar("Unable to fetch route. Please try again.");
-//       }
-//     } catch (e) {
-//       debugPrint("Error while fetching route: $e");
-//       _showSnackBar("An error occurred while fetching the route.");
-//     } finally {
-//       setState(() => isLoading = false);
-//     }
-//   }
-
-//   LatLngBounds _getLatLngBounds(List<LatLng> points) {
-//     double? minLat, maxLat, minLng, maxLng;
-
-//     for (LatLng point in points) {
-//       if (minLat == null || point.latitude < minLat) minLat = point.latitude;
-//       if (maxLat == null || point.latitude > maxLat) maxLat = point.latitude;
-//       if (minLng == null || point.longitude < minLng) minLng = point.longitude;
-//       if (maxLng == null || point.longitude > maxLng) maxLng = point.longitude;
-//     }
-
-//     return LatLngBounds(
-//       southwest: LatLng(minLat!, minLng!),
-//       northeast: LatLng(maxLat!, maxLng!),
+//                                       return Padding(
+//                                         padding: const EdgeInsets.symmetric(
+//                                             vertical: 5),
+//                                         child: Row(
+//                                           children: [
+//                                             Expanded(
+//                                               child: BrandedTextField(
+//                                                 height: 40,
+//                                                 controller: controller,
+//                                                 labelText: "Destination",
+//                                                 onTap: () {
+//                                                   Navigator.of(context).push(
+//                                                     MaterialPageRoute(
+//                                                       builder: (context) {
+//                                                         return SearchLocationScreen(
+//                                                           controller:
+//                                                               controller,
+//                                                           isStart: false,
+//                                                         );
+//                                                       },
+//                                                     ),
+//                                                   ).then((value) {
+//                                                     // provider.destinationControllers.add(controller);
+//                                                   });
+//                                                 },
+//                                                 prefix: Icon(Icons.location_on),
+//                                               ),
+//                                             ),
+//                                             const SizedBox(width: 10),
+//                                             if (index ==
+//                                                 provider.destinationCount - 1)
+//                                               GestureDetector(
+//                                                 onTap: () {
+//                                                   provider.increaseCount();
+//                                                 },
+//                                                 child: Container(
+//                                                   width: 40,
+//                                                   height: 40,
+//                                                   decoration: BoxDecoration(
+//                                                     borderRadius:
+//                                                         BorderRadius.circular(
+//                                                             6),
+//                                                     border: Border.all(
+//                                                         color: Colors.white,
+//                                                         width: 2),
+//                                                   ),
+//                                                   child: const Icon(
+//                                                     Icons.add,
+//                                                     color: Colors.red,
+//                                                   ),
+//                                                 ),
+//                                               )
+//                                             else
+//                                               Container(
+//                                                 width: 40,
+//                                                 height: 40,
+//                                                 decoration: BoxDecoration(
+//                                                   borderRadius:
+//                                                       BorderRadius.circular(6),
+//                                                   border: Border.all(
+//                                                       color: Colors.white,
+//                                                       width: 2),
+//                                                 ),
+//                                                 child: const Icon(
+//                                                   Icons.drag_handle,
+//                                                   color: Colors.red,
+//                                                 ),
+//                                               ),
+//                                           ],
+//                                         ),
+//                                       );
+//                                     },
+//                                   ),
+//                                 ),
+//                               Container(
+//                                 height:
+//                                     MediaQuery.of(context).size.height * 0.2,
+//                                 child: ListView.builder(
+//                                     padding: EdgeInsets.all(0),
+//                                     itemCount: provider.trips.length,
+//                                     itemBuilder: (context, item) {
+//                                       return GestureDetector(
+//                                         onTap: () {
+//                                           // Navigator.of(context).push(
+//                                           //     MaterialPageRoute(
+//                                           //         builder: (context) {
+//                                           //   return SearchLocationScreen();
+//                                           // }));
+//                                         },
+//                                         child: Padding(
+//                                           padding: const EdgeInsets.symmetric(
+//                                               vertical: 5),
+//                                           child: _buildTextField(
+//                                             provider.destinationController,
+//                                             provider.trips[item].name,
+//                                             false,
+//                                             provider,
+//                                             const Icon(Icons.check,
+//                                                 size: 20, color: Colors.red),
+//                                             const Icon(
+//                                               Icons.drag_handle,
+//                                               size: 20,
+//                                               color: Colors.white,
+//                                             ),
+//                                           ),
+//                                         ),
+//                                       );
+//                                     }),
+//                               ),
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+//                     if (provider.trips.length > 0)
+//                       Positioned(
+//                         top: MediaQuery.of(context).size.height * 0.5,
+//                         left: 10,
+//                         right: 10,
+//                         bottom: 10,
+//                         child: Padding(
+//                           padding: const EdgeInsets.only(top: 40),
+//                           child: Row(
+//                             children:
+//                                 List.generate(provider.trips.length, (index) {
+//                               return GestureDetector(
+//                                 onTap: () {
+//                                   provider.drawPolylineWithMarkers(
+//                                       provider.trips[index]);
+//                                 },
+//                                 child: Card(
+//                                   color: Colors.white,
+//                                   child: SizedBox(
+//                                     height: 110, // Explicit height of the card
+//                                     width: MediaQuery.of(context).size.width *
+//                                         0.8, // Set the width for each card
+//                                     child: Row(
+//                                       children: [
+//                                         Padding(
+//                                           padding: const EdgeInsets.all(12.0),
+//                                           child: ClipRRect(
+//                                             borderRadius: BorderRadius.circular(
+//                                                 8.0), // Adjust the radius as needed
+//                                             child: Image.network(
+//                                               "https://images.pexels.com/photos/1386604/pexels-photo-1386604.jpeg",
+//                                               height:
+//                                                   100, // Image height should match the card height
+//                                               width: 100, // Image width
+//                                               fit: BoxFit.cover,
+//                                             ),
+//                                           ),
+//                                         ),
+//                                         const SizedBox(width: 10),
+//                                         Expanded(
+//                                           child: Padding(
+//                                             padding: const EdgeInsets.all(12.0),
+//                                             child: Column(
+//                                               crossAxisAlignment:
+//                                                   CrossAxisAlignment.start,
+//                                               children: [
+//                                                 Text(
+//                                                   "Trip ${index + 1}",
+//                                                   style: const TextStyle(
+//                                                       fontSize: 16,
+//                                                       fontWeight:
+//                                                           FontWeight.bold),
+//                                                   overflow:
+//                                                       TextOverflow.ellipsis,
+//                                                 ),
+//                                                 const Text(
+//                                                   "Lorem IpsumLorem Ipsum",
+//                                                   style: TextStyle(
+//                                                       color: Colors.grey,
+//                                                       fontSize: 12),
+//                                                 )
+//                                               ],
+//                                             ),
+//                                           ),
+//                                         ),
+//                                       ],
+//                                     ),
+//                                   ),
+//                                 ),
+//                               );
+//                             }),
+//                           ),
+//                         ),
+//                       ),
+//                     // GestureDetector(
+//                     //   onTap: () {
+//                     //     Navigator.of(context).push(
+//                     //       MaterialPageRoute(builder: (context) {
+//                     //         return const AddPhotoScreen();
+//                     //       }),
+//                     //     );
+//                     //   },
+//                     //   child: Padding(
+//                     //     padding: EdgeInsets.only(
+//                     //       top: MediaQuery.of(context).size.height * 0.27,
+//                     //       right: 10,
+//                     //     ),
+//                     //     child: const Align(
+//                     //       alignment: Alignment.topRight,
+//                     //       child: Icon(
+//                     //         Icons.camera_alt_outlined,
+//                     //         color: Colors.red,
+//                     //         size: 30,
+//                     //       ),
+//                     //     ),
+//                     //   ),
+//                     // ),
+//                     if (provider.isSave) tripCard(provider, context),
+//                     if (provider.isTripStart) add_stop_card(provider, context),
+//                     if (provider.isHurryUp) hurry_up_card(provider, context),
+//                     if (provider.isKeyDataPoint)
+//                       keyDataPoint(provider, context),
+//                   ],
+//                 ),
+//               );
+//       },
 //     );
 //   }
 
-//   List<LatLng> _decodePolyline(String encoded) {
-//     final polyline = <LatLng>[];
-//     int index = 0, len = encoded.length;
-//     int lat = 0, lng = 0;
-
-//     while (index < len) {
-//       int b, shift = 0, result = 0;
-//       do {
-//         b = encoded.codeUnitAt(index++) - 63;
-//         result |= (b & 0x1f) << shift;
-//         shift += 5;
-//       } while (b >= 0x20);
-//       final dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-//       lat += dlat;
-
-//       shift = 0;
-//       result = 0;
-//       do {
-//         b = encoded.codeUnitAt(index++) - 63;
-//         result |= (b & 0x1f) << shift;
-//         shift += 5;
-//       } while (b >= 0x20);
-//       final dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-//       lng += dlng;
-
-//       polyline.add(LatLng(lat / 1E5, lng / 1E5));
-//     }
-
-//     return polyline;
-//   }
-
-//   Future<void> _getPlaceSuggestions(String input, bool isStartField) async {
-//     if (input.isEmpty) {
-//       setState(() {
-//         if (isStartField) {
-//           _startSuggestions = [];
-//         } else {
-//           _destinationSuggestions = [];
-//         }
-//       });
-//       return;
-//     }
-
-//     try {
-//       final url =
-//           'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${Uri.encodeComponent(input)}&key=$kGoogleApiKey&sessiontoken=$_sessionToken';
-//       final response = await http.get(Uri.parse(url));
-//       final data = jsonDecode(response.body);
-
-//       setState(() {
-//         if (isStartField) {
-//           _startSuggestions = data['predictions'] ?? [];
-//         } else {
-//           _destinationSuggestions = data['predictions'] ?? [];
-//         }
-//       });
-//     } catch (e) {
-//       debugPrint("Error while fetching suggestions: $e");
-//     }
-//   }
-
-//   void _showSnackBar(String message) {
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(content: Text(message)),
+//   Positioned hurry_up_card(MapProvider provider, BuildContextcontext) {
+//     return Positioned(
+//       bottom: 20,
+//       left: 10,
+//       right: 10,
+//       child: Card(
+//         elevation: 4,
+//         child: Padding(
+//           padding: const EdgeInsets.all(8.0),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               SizedBox(
+//                 height: 5,
+//               ),
+//               Row(
+//                 children: [
+//                   Image.asset("assets/images/break_time.png"),
+//                   const SizedBox(width: 10),
+//                   const Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       Text(
+//                         "Late 5 min",
+//                         style: TextStyle(
+//                             fontWeight: FontWeight.bold, fontSize: 12),
+//                       ),
+//                       Text(
+//                         "15 Min",
+//                         style: TextStyle(fontSize: 10),
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//               SizedBox(
+//                 height: 5,
+//               ),
+//               SizedBox(
+//                 height: 35,
+//                 child: BrandedPrimaryButton(
+//                   isEnabled: true,
+//                   isUnfocus: false,
+//                   name: "Hurry Up",
+//                   onPressed: () {
+//                     provider.hurryUp();
+//                   },
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
 //     );
 //   }
 
-//   Widget _buildSuggestionsBox(List<dynamic> suggestions, bool isStartField) {
+//   Positioned add_stop_card(MapProvider provider, BuildContext context) {
+//     return Positioned(
+//       bottom: 20,
+//       left: 10,
+//       right: 10,
+//       child: Card(
+//         elevation: 4,
+//         child: Padding(
+//           padding: const EdgeInsets.all(8.0),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Row(
+//                 children: [
+//                   Image.asset("assets/images/distance_icons.png"),
+//                   const SizedBox(width: 10),
+//                   Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       const Text(
+//                         "Distance",
+//                         style: TextStyle(
+//                             fontWeight: FontWeight.bold, fontSize: 12),
+//                       ),
+//                       Text(
+//                         "${provider.distance.toStringAsFixed(2)} KM",
+//                         style: TextStyle(fontSize: 10),
+//                       ),
+//                     ],
+//                   ),
+//                   const Spacer(),
+//                   GestureDetector(
+//                     onTap: () {
+//                       _showDurationPicker(context, MarkerId("value"), provider);
+//                     },
+//                     child: const Text(
+//                       "Set Time",
+//                       style: TextStyle(fontWeight: FontWeight.bold),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//               SizedBox(
+//                 height: 5,
+//               ),
+//               Row(
+//                 children: [
+//                   Image.asset("assets/images/break_time.png"),
+//                   const SizedBox(width: 10),
+//                   const Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       Text(
+//                         "Break Time",
+//                         style: TextStyle(
+//                             fontWeight: FontWeight.bold, fontSize: 12),
+//                       ),
+//                       Text(
+//                         "15 Min",
+//                         style: TextStyle(fontSize: 10),
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//               SizedBox(
+//                 height: 5,
+//               ),
+//               SizedBox(
+//                 height: 35,
+//                 child: BrandedPrimaryButton(
+//                   isEnabled: true,
+//                   isUnfocus: false,
+//                   name: "Add Stop",
+//                   onPressed: () {
+//                     provider.addStop();
+//                   },
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Positioned tripCard(MapProvider provider, BuildContext context) {
+//     return Positioned(
+//       bottom: 20,
+//       left: 10,
+//       right: 10,
+//       child: Card(
+//         elevation: 4,
+//         child: Padding(
+//           padding: const EdgeInsets.all(8.0),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Row(
+//                 children: [
+//                   Image.asset("assets/images/distance_icons.png"),
+//                   const SizedBox(width: 10),
+//                   Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       const Text(
+//                         "Distance",
+//                         style: TextStyle(fontWeight: FontWeight.bold),
+//                       ),
+//                       Text(
+//                         "${provider.distance.toStringAsFixed(2)} KM",
+//                       ),
+//                     ],
+//                   ),
+//                   const Spacer(),
+//                   GestureDetector(
+//                     onTap: () {
+//                       _showDurationPicker(context, MarkerId("value"), provider);
+//                     },
+//                     child: const Text(
+//                       "Set Time",
+//                       style: TextStyle(fontWeight: FontWeight.bold),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//               Row(
+//                 children: [
+//                   Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       const Row(
+//                         children: [
+//                           Text(
+//                             "22\u00B0",
+//                             style: TextStyle(fontSize: 22),
+//                           ),
+//                           SizedBox(width: 5),
+//                           Text("(Great Weather)"),
+//                         ],
+//                       ),
+//                       Text(
+//                         DateFormat('MMM d yyyy').format(DateTime.now()),
+//                         style: const TextStyle(fontSize: 15),
+//                       ),
+//                       Row(
+//                         children: [
+//                           const Icon(
+//                             Icons.location_on_outlined,
+//                             size: 13,
+//                           ),
+//                           const SizedBox(width: 8),
+//                           const Text(
+//                             "Birds Hunting A",
+//                             style: TextStyle(fontSize: 12),
+//                           ),
+//                           SizedBox(
+//                             width: MediaQuery.of(context).size.width * 0.23,
+//                           ),
+//                           const Column(
+//                             crossAxisAlignment: CrossAxisAlignment.end,
+//                             children: [
+//                               Text("Humidity: 75%"),
+//                             ],
+//                           ),
+//                         ],
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//               const SizedBox(height: 10),
+//               SizedBox(
+//                 height: 35,
+//                 child: BrandedPrimaryButton(
+//                   isEnabled: true,
+//                   name: "Let's Hunt",
+//                   onPressed: () {
+//                     provider.letsHunt();
+//                   },
+//                 ),
+//               ),
+//               const SizedBox(height: 10),
+//               SizedBox(
+//                 height: 35,
+//                 child: BrandedPrimaryButton(
+//                   isEnabled: true,
+//                   isUnfocus: true,
+//                   name: "Save Trip",
+//                   onPressed: () {
+//                     provider.saveTrip();
+//                   },
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Positioned keyDataPoint(MapProvider provider, BuildContext context) {
+//     return Positioned(
+//       bottom: 20,
+//       left: 10,
+//       right: 10,
+//       child: Card(
+//         elevation: 4,
+//         child: Padding(
+//           padding: const EdgeInsets.all(8.0),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Row(
+//                 children: [
+//                   Image.asset("assets/images/distance_icons.png"),
+//                   const SizedBox(width: 10),
+//                   Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       const Text(
+//                         "Distance",
+//                         style: TextStyle(fontWeight: FontWeight.bold),
+//                       ),
+//                       Text(
+//                         "${provider.distance.toStringAsFixed(2)} KM",
+//                       ),
+//                     ],
+//                   ),
+//                   const Spacer(),
+//                   GestureDetector(
+//                     onTap: () {
+//                       _showDurationPicker(context, MarkerId("value"), provider);
+//                     },
+//                     child: const Text(
+//                       "Set Time",
+//                       style: TextStyle(fontWeight: FontWeight.bold),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//               Row(
+//                 children: [
+//                   Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       const Row(
+//                         children: [
+//                           Text(
+//                             "22\u00B0",
+//                             style: TextStyle(fontSize: 22),
+//                           ),
+//                           SizedBox(width: 5),
+//                           Text("(Great Weather)"),
+//                         ],
+//                       ),
+//                       Text(
+//                         DateFormat('MMM d yyyy').format(DateTime.now()),
+//                         style: const TextStyle(fontSize: 15),
+//                       ),
+//                       Row(
+//                         children: [
+//                           const Icon(
+//                             Icons.location_on_outlined,
+//                             size: 13,
+//                           ),
+//                           const SizedBox(width: 8),
+//                           const Text(
+//                             "Birds Hunting A",
+//                             style: TextStyle(fontSize: 12),
+//                           ),
+//                           SizedBox(
+//                             width: MediaQuery.of(context).size.width * 0.23,
+//                           ),
+//                           const Column(
+//                             crossAxisAlignment: CrossAxisAlignment.end,
+//                             children: [
+//                               Text("Humidity: 75%"),
+//                             ],
+//                           ),
+//                         ],
+//                       ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//               const SizedBox(height: 10),
+//               SizedBox(
+//                 height: 35,
+//                 child: BrandedPrimaryButton(
+//                   isEnabled: true,
+//                   name: "Stop: 15 Min",
+//                   onPressed: () {},
+//                 ),
+//               ),
+//               const SizedBox(height: 10),
+//               SizedBox(
+//                 height: 35,
+//                 child: BrandedPrimaryButton(
+//                   isEnabled: true,
+//                   isUnfocus: true,
+//                   name: "Key in  Data Point",
+//                   onPressed: () {
+//                     Navigator.of(context)
+//                         .push(MaterialPageRoute(builder: (context) {
+//                       return DataPointsScreen();
+//                     }));
+//                   },
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildTextField(
+//     TextEditingController controller,
+//     String label,
+//     bool isStartField,
+//     MapProvider provider,
+//     Icon prefixIcon,
+//     Icon suffixIcon,
+//   ) {
+//     return Row(
+//       children: [
+//         Expanded(
+//           child: BrandedTextField(
+//             height: 40,
+//             controller: controller,
+//             labelText: label,
+//             onChanged: (value) =>
+//                 provider.getPlaceSuggestions(value, isStartField),
+//             prefix: prefixIcon,
+//           ),
+//         ),
+//         const SizedBox(width: 5),
+//         Container(
+//           width: 40,
+//           height: 40,
+//           decoration: BoxDecoration(
+//             borderRadius: BorderRadius.circular(6),
+//             border: Border.all(color: Colors.white, width: 2),
+//           ),
+//           child: suffixIcon,
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildSuggestionsBox(List<dynamic> suggestions, bool isStartField,
+//       MapProvider provider, BuildContext context) {
 //     return Container(
+//       height: MediaQuery.of(context).size.width,
+//       color: Colors.white.withOpacity(.7),
 //       child: ListView.builder(
 //         shrinkWrap: true,
 //         itemCount: suggestions.length,
@@ -197,276 +835,11 @@
 //           return ListTile(
 //             title: Text(suggestions[index]['description']),
 //             onTap: () {
-//               setState(() {
-//                 if (isStartField) {
-//                   _startController.text = suggestions[index]['description'];
-//                   _startSuggestions = [];
-//                 } else {
-//                   _destinationController.text =
-//                       suggestions[index]['description'];
-//                   _destinationSuggestions = [];
-//                 }
-//               });
+//               // provider.selectSuggestion(suggestions[index], isStartField);
 //             },
 //           );
 //         },
 //       ),
 //     );
 //   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Stack(
-//         children: [
-//           GoogleMap(
-//             initialCameraPosition: CameraPosition(
-//               target: _initialPosition,
-//               zoom: 10,
-//             ),
-//             myLocationEnabled: true,
-//             mapType: MapType.satellite,
-//             myLocationButtonEnabled: false,
-//             polylines: _polylines,
-//             onMapCreated: (controller) {
-//               _mapController = controller;
-//             },
-            
-//           ),
-//           Positioned(
-//             top: 10,
-//             left: 10,
-//             right: 10,
-//             child: Padding(
-//               padding: const EdgeInsets.only(top: 40),
-//               child: Column(
-//                 children: [
-//                   Column(
-//                     children: [
-//                       _buildTextField(
-//                         _startController,
-//                         'My Location',
-//                         true,
-//                         Icon(
-//                           Icons.location_on,
-//                           size: 20,
-//                         ),
-//                         Icon(
-//                           Icons.person,
-//                           size: 20, // Size of the profile icon
-//                           color: Colors.grey, // Icon color
-//                         ),
-//                       ),
-//                       _buildSuggestionsBox(_startSuggestions, true),
-//                       _buildTextField(
-//                         _destinationController,
-//                         'Trip 1',
-//                         false,
-//                         Icon(
-//                           Icons.check,
-//                           color: Pallete.primaryColor,
-//                           size: 20,
-//                         ),
-//                         Icon(
-//                           Icons.drag_handle,
-//                           size: 20, // Size of the profile icon
-//                           color: Colors.black, // Icon color
-//                         ),
-//                       ),
-//                       _buildSuggestionsBox(_destinationSuggestions, false),
-//                     ],
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//           GestureDetector(
-//             onTap: () {
-//               Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-//                 return AddPhotoScreen();
-//               }));
-//             },
-//             child: Padding(
-//               padding: EdgeInsets.only(
-//                   top: MediaQuery.of(context).size.height * 0.27, right: 10),
-//               child: Align(
-//                 alignment: Alignment.topRight,
-//                 child: Icon(
-//                   Icons.camera_alt_outlined,
-//                   color: Colors.red,
-//                   size: 30, // Size of the camera icon
-//                 ),
-//               ),
-//             ),
-//           ),
-//           Positioned(
-//             bottom: 20,
-//             left: 10,
-//             right: 10,
-//             child: Card(
-//               elevation: 4,
-//               child: Padding(
-//                   padding: const EdgeInsets.all(8.0),
-//                   child: Column(
-//                     mainAxisSize: MainAxisSize.min,
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Row(
-//                         children: [
-//                           Image.asset("assets/images/distance_icons.png"),
-//                           SizedBox(width: 10),
-//                           Column(
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             children: [
-//                               Text(
-//                                 "Distance",
-//                                 style: TextStyle(fontWeight: FontWeight.bold),
-//                               ),
-//                               Text("24 KM"),
-//                             ],
-//                           ),
-//                           Spacer(), // Pushes the "Next Stop" text to the right
-//                           Text("Next Stop"),
-//                         ],
-//                       ),
-//                       Row(
-//                         children: [
-//                           Column(
-//                             crossAxisAlignment: CrossAxisAlignment.start,
-//                             children: [
-//                               Row(
-//                                 children: [
-//                                   Text(
-//                                     "22\u00B0",
-//                                     style: TextStyle(fontSize: 22),
-//                                   ),
-//                                   SizedBox(width: 5), // Add spacing
-//                                   Text("(Great Weather)"),
-//                                 ],
-//                               ),
-//                               Text(
-//                                 DateFormat('MMM d yyyy').format(DateTime.now()),
-//                                 style: TextStyle(fontSize: 15),
-//                               ),
-//                               Row(
-//                                 children: [
-//                                   Icon(
-//                                     Icons.location_on_outlined,
-//                                     size: 13,
-//                                   ),
-//                                   SizedBox(width: 8),
-//                                   Text(
-//                                     "Birds Hunting A",
-//                                     style: TextStyle(fontSize: 12),
-//                                   ),
-
-//                                   SizedBox(
-//                                     width: MediaQuery.of(context).size.width *
-//                                         0.23,
-//                                   ), // Pushes the last item to the far right
-//                                   Column(
-//                                     crossAxisAlignment: CrossAxisAlignment
-//                                         .end, // Align the text to the right within the column
-//                                     children: [
-//                                       Text("Humidity: 75%"),
-//                                     ],
-//                                   ),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
-//                         ],
-//                       ),
-//                       SizedBox(
-//                         height: 10,
-//                       ),
-//                       SizedBox(
-//                         height: 35,
-//                         child: BrandedPrimaryButton(
-//                             isEnabled: true,
-//                             name: "Stop: 15:00 Minutes",
-//                             onPressed: () {}),
-//                       ),
-//                       SizedBox(
-//                         height: 10,
-//                       ),
-//                       SizedBox(
-//                         height: 35,
-//                         child: BrandedPrimaryButton(
-//                             isEnabled: true,
-//                             isUnfocus: true,
-//                             name: "Key in Data point",
-//                             onPressed: () {}),
-//                       )
-//                     ],
-//                   )),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildTextField(TextEditingController controller, String label,
-//       bool isStartField, Icon prefixIcon, Icon sufixIcon) {
-//     return Row(
-//       children: [
-//         Expanded(
-//           child: BrandedTextField(
-//             height: 45,
-//             controller: controller,
-//             labelText: label,
-//             onChanged: (value) => _getPlaceSuggestions(value, isStartField),
-//             prefix: (label != "My Location")
-//                 ? Padding(
-//                     padding: const EdgeInsets.all(0.0),
-//                     child: CircleAvatar(
-//                       // Adjust the radius as needed
-//                       backgroundColor: Pallete.primaryColor,
-//                       // Circle background color
-//                       child: Icon(
-//                         Icons.check,
-//                         size: 20, // Size of the profile icon
-//                         color: Colors.grey, // Icon color
-//                       ),
-//                     ),
-//                   )
-//                 : prefixIcon,
-//             // prefix: Icon(
-//             //   Icons.location_on,
-//             //   size: 20,
-//             // ),
-//           ),
-//         ),
-//         SizedBox(
-//           width: 5,
-//         ),
-//         Container(
-//             width: 40, // Size of the square container
-//             height: 40, // Size of the square container
-//             decoration: BoxDecoration(
-//               borderRadius: BorderRadius.circular(6),
-//               border: Border.all(
-//                 color: Colors.white,
-//                 width: 2,
-//               ),
-//             ),
-//             child: sufixIcon)
-//       ],
-//     );
-//     // TextField(
-//     //   controller: controller,
-//     //   decoration: InputDecoration(labelText: label),
-//     //   onChanged: (value) => _getPlaceSuggestions(value, isStartField),
-//     // );
-//   }
-//   // Padding(
-//   //                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-//   //                     child: ElevatedButton(
-//   //                       onPressed: isLoading ? null : _fetchRoute,
-//   //                       child: isLoading
-//   //                           ? const CircularProgressIndicator()
-//   //                           : const Text('Plan Trip'),
-//   //                     ),
-//   //                   ),
 // }

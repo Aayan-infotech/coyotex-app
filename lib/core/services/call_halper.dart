@@ -139,7 +139,8 @@ class CallHelper {
           .timeout(
             Duration(seconds: timeoutInSeconds),
           );
-
+      internalServerErrorMessage =
+          response.data['message'] ?? "Internal Server Error";
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ApiResponseWithData(response.data as T, true);
       } else {
@@ -147,8 +148,8 @@ class CallHelper {
             message: response.data['message'] ?? internalServerErrorMessage);
       }
     } on DioError catch (e) {
-      print(e);
-      return ApiResponseWithData(defaultData, false, message: e.toString());
+      return ApiResponseWithData(defaultData, false,
+          message: internalServerErrorMessage);
     }
   }
 
