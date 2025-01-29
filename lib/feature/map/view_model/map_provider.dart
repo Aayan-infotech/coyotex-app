@@ -267,6 +267,7 @@ class MapProvider with ChangeNotifier {
           position: marker.position,
           title: marker.infoWindow.title ?? '',
           snippet: marker.infoWindow.snippet ?? '',
+          
         );
       }).toList(),
       timeDurations: timeDurations,
