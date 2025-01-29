@@ -63,6 +63,10 @@ class _OtpScreenState extends State<OtpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
       body: Consumer<UserViewModel>(
         builder: (context, authProvider, child) {
           return authProvider.isLoading
@@ -99,7 +103,7 @@ class _OtpScreenState extends State<OtpScreen> {
                             numberOfFields: 6, // Set to 6 digits
                             borderColor:
                                 Colors.white, // Set border color to white
-                            fieldWidth: 50,
+
                             focusedBorderColor: Colors.white,
                             showFieldAsBox: true, // Enables rectangular border
                             textStyle: TextStyle(color: Colors.white),
@@ -132,7 +136,6 @@ class _OtpScreenState extends State<OtpScreen> {
                                   );
                                 }));
                               } else {
-                              
                                 final responce = await authProvider.verifyOTP(
                                     widget.email, otpNumber);
                                 if (!responce.success) {

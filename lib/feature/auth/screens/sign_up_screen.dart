@@ -187,17 +187,23 @@ class _SignupScreenState extends State<SignupScreen> {
               : Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: SingleChildScrollView(
-                      child: Form(
-                        key: _formKey,
+                    child: Form(
+                      key: _formKey,
+                      child: SingleChildScrollView(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset(
-                              "assets/images/logo.png",
-                              width: MediaQuery.of(context).size.width * 0.2,
+                            const SizedBox(
+                              height: 30,
                             ),
-                            const SizedBox(height: 30),
+                            SizedBox(
+                              width: 70,
+                              height: 70,
+                              child: Image.asset(
+                                "assets/images/logo.png",
+                              ),
+                            ),
+                            const SizedBox(height: 20),
                             const Text(
                               "Create Account",
                               style: TextStyle(

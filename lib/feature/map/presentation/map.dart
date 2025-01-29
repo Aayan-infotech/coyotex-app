@@ -317,6 +317,7 @@ class _MapScreenState extends State<MapScreen> {
                                 return GestureDetector(
                                   onTap: () async {
                                     provider.isSavedTrip = true;
+                                    provider.isSave = true;
                                     provider.path =
                                         provider.trips[index].routePoints;
                                     await provider.fetchRouteWithWaypoints(
@@ -769,14 +770,14 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-              SizedBox(
-                height: 35,
-                child: BrandedPrimaryButton(
-                  isEnabled: true,
-                  name: "Stop: 15 Min",
-                  onPressed: () {},
-                ),
-              ),
+              // SizedBox(
+              //   height: 35,
+              //   child: BrandedPrimaryButton(
+              //     isEnabled: true,
+              //     name: "Stop: 15 Min",
+              //     onPressed: () {},
+              //   ),
+              // ),
               const SizedBox(height: 10),
               SizedBox(
                 height: 35,

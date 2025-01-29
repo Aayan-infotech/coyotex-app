@@ -118,8 +118,9 @@ class MapProvider with ChangeNotifier {
   void addStop() async {
     try {
       isLoading = true; // Indicate loading state
-      isHurryUp = false;
+      isHurryUp = true;
       isKeyDataPoint = false;
+      isTripStart = false;
       notifyListeners();
 
       // Fetch the user's current location
@@ -179,6 +180,7 @@ class MapProvider with ChangeNotifier {
     isSave = false;
     isHurryUp = false;
     isKeyDataPoint = false;
+    resetFields();
     Navigator.of(context).pop();
     notifyListeners();
   }
@@ -267,7 +269,6 @@ class MapProvider with ChangeNotifier {
           position: marker.position,
           title: marker.infoWindow.title ?? '',
           snippet: marker.infoWindow.snippet ?? '',
-          
         );
       }).toList(),
       timeDurations: timeDurations,

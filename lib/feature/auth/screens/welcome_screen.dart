@@ -54,7 +54,7 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
           Positioned(
-            bottom: 20, // Adjust this value to control the vertical position
+            bottom: 15, // Adjust this value to control the vertical position
             left: 0,
             right: 0,
             child: Padding(
