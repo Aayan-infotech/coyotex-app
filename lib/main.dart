@@ -21,10 +21,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => UserViewModel()),
       ],
       child: MaterialApp(
-        title: 'Flutter Demo',
+        title: 'Coyotex',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
+
           textTheme: GoogleFonts.montserratTextTheme(),
         ),
         initialRoute: AppRoutes.splash,

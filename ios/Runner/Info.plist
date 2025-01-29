@@ -46,6 +46,15 @@
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
 
+    <key>NSLocationWhenInUseUsageDescription</key>
+        <string>We need your location to show nearby places, services, and to improve your experience while using the map feature.</string>
+
+        <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+        <string>Your location helps us provide accurate results, even when the app is running in the background, such as tracking your delivery or providing navigation updates.</string>
+
+        <key>NSLocationAlwaysUsageDescription</key>
+        <string>We use your location to ensure a seamless experience by offering features like location-based services and precise delivery tracking.</string>
+
     <!-- Google Maps API Key -->
     <key>GMSAPIKey</key>
     <string>AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s</string>
