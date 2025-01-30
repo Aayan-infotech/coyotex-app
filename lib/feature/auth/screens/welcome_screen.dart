@@ -54,9 +54,10 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
           Positioned(
-            bottom: 15, // Adjust this value to control the vertical position
+            bottom: 100, // Adjust this value to control the vertical position
             left: 0,
             right: 0,
+
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: BrandedPrimaryButton(

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -39,6 +40,12 @@ class MapProvider with ChangeNotifier {
   bool isKeyDataPoint = false;
   bool isStartSuggestions = false;
   late BitmapDescriptor _markerIcon;
+  TripAPIs _tripAPIs = TripAPIs();
+
+  void getWeather(LatLng latAndLng) async {
+    var response =
+        await _tripAPIs.getWeather(latAndLng.latitude, latAndLng.longitude);
+  }
 
   /// Load custom live location icon
   void loadCustomLiveLocationIcon() async {

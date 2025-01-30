@@ -15,10 +15,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // List of pages for each tab
   final List<Widget> _pages = [
-    MapScreen(), // New Screen 1
+    const MapScreen(), // New Screen 1
 
     HomePage(), // New Screen 1
-    NotificationScreen(), // New Screen 2
+    const NotificationScreen(), // New Screen 2
     ProfileScreen(),
   ];
 
