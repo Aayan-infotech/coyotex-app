@@ -28,7 +28,7 @@ class TripAPIs extends ApiBase {
     );
   }
 
-  final String apiKey = 'e5a8127bbe60efcd32840ecdc64f9d1e';
+  final String apiKey = '7a698daa9a39296bb22dfac21380b303';
 
   // Endpoint for weather API
   final String endPoint = 'https://api.openweathermap.org/data/2.5/weather';

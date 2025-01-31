@@ -1,5 +1,6 @@
 import 'package:coyotex/feature/auth/data/model/user_model.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
+import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
@@ -11,11 +12,13 @@ class UserContextData {
 
   static setCurrentUserAndFetchUserData(BuildContext context) async {
     final userProvider = Provider.of<UserViewModel>(context, listen: false);
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
 
     _user = user;
     List<Future> lstFutures = <Future>[];
 
     lstFutures.add(userProvider.getUser());
+    lstFutures.add(mapProvider.getCurrentLocation());
 
     // lstFutures.add(cartProvider.getCoupon(context));
     // lstFutures

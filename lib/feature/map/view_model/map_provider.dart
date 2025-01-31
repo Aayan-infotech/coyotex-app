@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -41,10 +42,52 @@ class MapProvider with ChangeNotifier {
   bool isStartSuggestions = false;
   late BitmapDescriptor _markerIcon;
   TripAPIs _tripAPIs = TripAPIs();
+  late WeatherResponse weather = defaultWeatherResponse;
 
-  void getWeather(LatLng latAndLng) async {
+  Future<void> getWeather(LatLng latAndLng) async {
+    isLoading = true;
     var response =
         await _tripAPIs.getWeather(latAndLng.latitude, latAndLng.longitude);
+    weather = WeatherResponse.fromJson(response);
+    isLoading = false;
+  }
+
+  Future<void> getCurrentLocation() async {
+    isLoading = true;
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled.');
+      }
+
+      // Check and request location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permissions are denied.');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permissions are permanently denied.');
+      }
+
+      // Get the current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Update initial position with the retrieved coordinates
+      initialPosition = LatLng(position.latitude, position.longitude);
+      await getWeather(initialPosition);
+      isLoading = false;
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error getting current location: $e");
+    }
   }
 
   /// Load custom live location icon

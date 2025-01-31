@@ -125,22 +125,7 @@ class UserViewModel extends ChangeNotifier {
     }
   }
 
-  // Send OTP
-  // Future<void> sendOTP(String email) async {
-  //   _setLoading(true);
-  //   try {
-  //     final response = await _loginAPIs.refresh(email);
-  //     if (!response.success) {
-  //       errorMessage = response.message;
-  //     }
-  //   } catch (e) {
-  //     errorMessage = e.toString();
-  //   } finally {
-  //     _setLoading(false);
-  //   }
-  // }
 
-  // Verify OTP
   Future<ApiResponseWithData> verifyOTP(String email, String otp) async {
     _setLoading(true);
     try {
