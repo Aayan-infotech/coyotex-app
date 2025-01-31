@@ -1,10 +1,12 @@
-import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
-import 'package:coyotex/feature/auth/screens/otp_screen.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
+import 'package:coyotex/feature/auth/screens/otp_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../../utils/lower_case_text_formatter.dart';
+import '../../../utils/validation.dart';
 
 class ForgotPassword extends StatelessWidget {
   ForgotPassword({super.key});
@@ -56,6 +58,9 @@ class ForgotPassword extends StatelessWidget {
                   prefix: const Icon(Icons.person),
                   controller: _emailController,
                   labelText: "Email",
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) => validateEmail(value),
+                  inputFormatters: [LowerCaseTextFormatter()],
                 ),
                 const SizedBox(height: 30),
                 Consumer<UserViewModel>(

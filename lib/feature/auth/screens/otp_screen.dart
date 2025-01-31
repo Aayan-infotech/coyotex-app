@@ -1,4 +1,3 @@
-import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/constant.dart';
@@ -13,6 +12,7 @@ import 'package:provider/provider.dart';
 class OtpScreen extends StatefulWidget {
   bool isResetPassward;
   final String email;
+
   OtpScreen({this.isResetPassward = false, required this.email, super.key});
 
   @override
@@ -100,31 +100,31 @@ class _OtpScreenState extends State<OtpScreen> {
                           ),
                           const SizedBox(height: 30),
                           OtpTextField(
-                            numberOfFields: 6, // Set to 6 digits
-                            borderColor:
-                                Colors.white, // Set border color to white
+                            numberOfFields: 6,
+                            // Set to 6 digits
+                            borderColor: Colors.white,
+                            // Set border color to white
 
                             focusedBorderColor: Colors.white,
-                            showFieldAsBox: true, // Enables rectangular border
-                            textStyle: TextStyle(color: Colors.white),
-                            borderRadius: BorderRadius.circular(
-                                4), // Subtle rounded corners
+                            showFieldAsBox: true,
+                            // Enables rectangular border
+                            textStyle: const TextStyle(color: Colors.white),
+                            borderRadius: BorderRadius.circular(4),
+                            // Subtle rounded corners
                             onSubmit: (String otp) async {
                               setState(() {
-                                otpNumber = otp; // Update otpNumber
+                                otpNumber = otp;
                               });
                             },
                             onCodeChanged: (value) {
                               setState(() {
-                                otpNumber =
-                                    value; // Update otpNumber on input change
+                                otpNumber = value;
                               });
                             },
                           ),
                           const SizedBox(height: 30),
                           BrandedPrimaryButton(
-                            isEnabled: otpNumber.length ==
-                                6, // Enable only if OTP is 6 digits
+                            isEnabled: otpNumber.length == 6,
                             name: "Continue",
                             onPressed: () async {
                               if (widget.isResetPassward) {
@@ -147,7 +147,7 @@ class _OtpScreenState extends State<OtpScreen> {
                                       responce.data["refreshToken"]);
                                   Navigator.of(context).push(
                                       MaterialPageRoute(builder: (context) {
-                                    return SubscriptionScreen();
+                                    return const SubscriptionScreen();
                                   }));
                                 }
                               }

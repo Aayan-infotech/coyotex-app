@@ -28,17 +28,29 @@ class _SplashScreenState extends State<SplashScreen> {
       bool isLogin = SharedPrefUtil.getValue(isLoginPref, false) as bool;
       if (!isLogin) {
         Future.delayed(const Duration(seconds: 3), () {
-          Navigator.pushReplacement(
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+          // );
+          Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+            MaterialPageRoute(
+                builder: (context) => WelcomeScreen()),
+                (route) => false,
           );
         });
       } else {
         await UserContextData.setCurrentUserAndFetchUserData(context);
         Future.delayed(const Duration(seconds: 3), () {
-          Navigator.pushReplacement(
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => HomeScreen()),
+          // );
+          Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
+            MaterialPageRoute(
+                builder: (context) => HomeScreen()),
+                (route) => false,
           );
         });
       }

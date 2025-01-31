@@ -1,5 +1,6 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BrandedTextField extends StatefulWidget {
   final TextEditingController controller;
@@ -15,6 +16,7 @@ class BrandedTextField extends StatefulWidget {
   final bool isEnabled;
   final bool isPassword;
   final void Function()? onTap;
+  final List<TextInputFormatter> inputFormatters;
   final String? Function(String?)? validator;
   final Color? backgroundColor; // New background color property
 
@@ -27,6 +29,7 @@ class BrandedTextField extends StatefulWidget {
     this.prefix,
     required this.labelText,
     this.height = 55,
+    this.inputFormatters = const [],
     this.sufix,
     this.maxLines = 1,
     this.minLines = 1,
@@ -56,8 +59,10 @@ class _BrandedTextFieldState extends State<BrandedTextField> {
           fontSize: 12, fontWeight: FontWeight.w500, color: Pallete.textColor),
       controller: widget.controller,
       keyboardType: widget.keyboardType,
+      inputFormatters: widget.inputFormatters,
       onChanged: widget.onChanged,
       obscureText: widget.isPassword ? _isObscured : false,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       decoration: InputDecoration(
         fillColor: Colors.white, //const Color.fromARGB(255, 226, 226, 245),
         filled: widget.isFilled,

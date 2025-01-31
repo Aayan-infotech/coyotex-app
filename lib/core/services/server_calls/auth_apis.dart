@@ -90,11 +90,12 @@ class LoginAPIs extends ApiBase {
     Map<String, String> data = {
       'refreshToken': refToken,
     };
-    print(refreshToken);
-    return await CallHelper().post(
+
+    var res = await CallHelper().post(
       'api/auth/logout',
       data,
     );
+    return res;
   }
 
   Future<ApiResponse> forgetPassword(String email) async {
@@ -103,6 +104,20 @@ class LoginAPIs extends ApiBase {
     };
 
     return await CallHelper().post('api/auth/forgot-password', data);
+  }
+
+
+  Future<ApiResponse> changePassword(
+      String oldPassword, String newPassword, String confirmNewPassword) async {
+    Map<String, String> data = {
+      "oldPassword": oldPassword,
+      "newPassword": newPassword,
+      "confirmNewPassword": confirmNewPassword,
+    };
+    return await CallHelper().patch(
+      'api/auth/change-password',
+      data,
+    );
   }
 
   Future<ApiResponse> updatePref(UserPreferences prefrences) async {

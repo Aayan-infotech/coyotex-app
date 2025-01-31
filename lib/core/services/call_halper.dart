@@ -67,12 +67,12 @@ class CallHelper {
       }
 
       if (response.statusCode == 200) {
-        String message = response.data['Message'] ?? internalServerErrorMessage;
+        String message = response.data['message'] ?? internalServerErrorMessage;
         return ApiResponse(message, true);
       } else {
-        return ApiResponse(internalServerErrorMessage, false);
+        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       return _handleDioError(e);
     }
   }
@@ -103,7 +103,7 @@ class CallHelper {
           message: response.data['message'] ?? internalServerErrorMessage,
         );
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       return ApiResponseWithData(defaultData, false, message: '');
     }
   }
@@ -120,11 +120,11 @@ class CallHelper {
 
       if (response.statusCode == 200) {
         return ApiResponse(
-            response.data['Message'] ?? internalServerErrorMessage, true);
+            response.data['message'] ?? internalServerErrorMessage, true);
       } else {
-        return ApiResponse(internalServerErrorMessage, false);
+        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       return _handleDioError(e);
     }
   }
@@ -147,7 +147,7 @@ class CallHelper {
         return ApiResponseWithData(defaultData, false,
             message: response.data['message'] ?? internalServerErrorMessage);
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       return ApiResponseWithData(defaultData, false,
           message: internalServerErrorMessage);
     }
@@ -166,11 +166,11 @@ class CallHelper {
 
       if (response.statusCode == 200) {
         return ApiResponse(
-            response.data['Message'] ?? internalServerErrorMessage, true);
+            response.data['message'] ?? internalServerErrorMessage, true);
       } else {
-        return ApiResponse(internalServerErrorMessage, false);
+        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       return _handleDioError(e);
     }
   }
@@ -187,11 +187,11 @@ class CallHelper {
 
       if (response.statusCode == 200) {
         return ApiResponse(
-            response.data['Message'] ?? internalServerErrorMessage, true);
+            response.data['message'] ?? internalServerErrorMessage, true);
       } else {
-        return ApiResponse(internalServerErrorMessage, false);
+        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       return _handleDioError(e);
     }
   }
@@ -208,24 +208,24 @@ class CallHelper {
 
       if (response.statusCode == 200) {
         return ApiResponse(
-            response.data['Message'] ?? internalServerErrorMessage, true);
+            response.data['message'] ?? internalServerErrorMessage, true);
       } else {
-        return ApiResponse(internalServerErrorMessage, false);
+        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
       }
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       return _handleDioError(e);
     }
   }
 
   ApiResponse _handleDioError(DioError error) {
-    if (error.type == DioErrorType.cancel ||
-        error.type == DioErrorType.receiveTimeout) {
+    if (error.type == DioExceptionType.cancel ||
+        error.type == DioExceptionType.receiveTimeout) {
       return ApiResponse("Request timed out", false);
     } else if (error.response != null) {
       return ApiResponse(
-          error.response?.data['Message'] ?? internalServerErrorMessage, false);
+          error.response?.data['message'] ?? internalServerErrorMessage, false);
     } else {
-      return ApiResponse(error.response?.data['Message'], false);
+      return ApiResponse(error.response?.data['message'], false);
     }
   }
 }

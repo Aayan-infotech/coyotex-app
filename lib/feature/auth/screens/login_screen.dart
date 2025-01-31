@@ -1,4 +1,3 @@
-import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/core/utills/constant.dart';
@@ -6,10 +5,11 @@ import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/sign_up_screen.dart';
-import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
-import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
+import 'package:coyotex/utils/validation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../../utils/lower_case_text_formatter.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
@@ -83,17 +83,9 @@ class LoginScreen extends StatelessWidget {
                               prefix: const Icon(Icons.person),
                               controller: _nameController,
                               labelText: "Email/Username",
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Please enter your email or username";
-                                }
-                                if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-                                        .hasMatch(value) &&
-                                    value.length < 4) {
-                                  return "Enter a valid email or username";
-                                }
-                                return null;
-                              },
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) => validateEmail(value),
+                              inputFormatters: [LowerCaseTextFormatter()],
                             ),
                             const SizedBox(height: 20),
                             BrandedTextField(
@@ -101,15 +93,7 @@ class LoginScreen extends StatelessWidget {
                               controller: _passwordController,
                               isPassword: true,
                               labelText: "Password",
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Please enter your password";
-                                }
-                                if (value.length < 6) {
-                                  return "Password must be at least 6 characters long";
-                                }
-                                return null;
-                              },
+                              validator: (value) => validatePassword(value),
                             ),
                             const SizedBox(height: 5),
                             Align(
@@ -143,7 +127,7 @@ class LoginScreen extends StatelessWidget {
                                   if (response.success) {
                                     SharedPrefUtil.setValue(isLoginPref, true);
                                   } else {
-                                    _showErrorDialog("Server Error!", context);
+                                    _showErrorDialog(response.message, context);
                                   }
                                 }
                               },

@@ -11,7 +11,7 @@ class PasswordScreen extends StatefulWidget {
   final bool? isResetPassward;
   final String email;
   final String otp;
-  PasswordScreen(
+  const PasswordScreen(
       {this.isResetPassward = false,
       required this.email,
       required this.otp,
@@ -65,11 +65,14 @@ class _PasswordScreenState extends State<PasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+      ),
       backgroundColor: Colors.black,
       body: Consumer<UserViewModel>(
         builder: (context, provider, child) {
           return provider.isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),

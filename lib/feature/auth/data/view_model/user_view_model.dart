@@ -5,8 +5,6 @@ import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/model/plans.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/auth/data/model/user_model.dart';
-import 'package:coyotex/feature/auth/screens/forget_password.dart';
-import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -43,10 +41,16 @@ class UserViewModel extends ChangeNotifier {
             refreshTokenPref, response.data["refreshToken"]);
         await getUser();
 
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) {
-            return HomeScreen();
-          }),
+        // Navigator.of(context).push(
+        //   MaterialPageRoute(builder: (context) {
+        //     return HomeScreen();
+        //   }),
+        // );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+              builder: (context) => HomeScreen()),
+              (route) => false,
         );
 
         return response;
@@ -124,7 +128,6 @@ class UserViewModel extends ChangeNotifier {
       _setLoading(false);
     }
   }
-
 
   Future<ApiResponseWithData> verifyOTP(String email, String otp) async {
     _setLoading(true);
@@ -212,15 +215,21 @@ class UserViewModel extends ChangeNotifier {
   }
 
   // Password Reset
-  Future<void> passwordReset(String token, String password) async {
+  Future<ApiResponse> changePassword(
+      String oldPassword,
+      String newPassword,
+      String confirmNewPassword) async {
     _setLoading(true);
     try {
-      final response = await _loginAPIs.passwordReset(token, password);
+      final response = await _loginAPIs.changePassword(oldPassword, newPassword,confirmNewPassword);
       if (!response.success) {
-        errorMessage = response.message;
+        return response;
+      } else {
+        return response;
       }
     } catch (e) {
       errorMessage = e.toString();
+      return ApiResponse(errorMessage, false);
     } finally {
       _setLoading(false);
     }

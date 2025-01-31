@@ -1,18 +1,22 @@
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/login_screen.dart';
-import 'package:coyotex/feature/auth/screens/passowrd_screen.dart';
 import 'package:coyotex/feature/auth/screens/prefrence_dstance_screen.dart';
-import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:coyotex/feature/auth/screens/weather_prefrences.dart';
 import 'package:coyotex/feature/profile/presentation/FAQ_screen.dart';
+import 'package:coyotex/feature/profile/presentation/change_password.dart';
 import 'package:coyotex/feature/profile/presentation/edit_profile.dart';
 import 'package:coyotex/feature/profile/presentation/linked_devices.dart';
 import 'package:coyotex/feature/profile/presentation/subscription_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/utills/shared_pref.dart';
+import '../../auth/screens/passowrd_screen.dart';
+
 class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<UserViewModel>(
@@ -21,29 +25,24 @@ class ProfileScreen extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: Colors.black,
             elevation: 0,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
           ),
           body: Column(
             children: [
               Container(
                 color: Colors.black,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Column(
                   children: [
                     const CircleAvatar(
                       radius: 50,
                       child: Icon(Icons.person),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(
+                        const SizedBox(
                           width: 40,
                         ),
                         Column(
@@ -53,14 +52,14 @@ class ProfileScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   userViewModel.user.name,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                Icon(
+                                const SizedBox(width: 8),
+                                const Icon(
                                   Icons.verified,
                                   color: Colors.orange,
                                   size: 20,
@@ -69,21 +68,21 @@ class ProfileScreen extends StatelessWidget {
                             ),
                             Text(
                               '@${userViewModel.user.name}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 16,
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(
+                        const SizedBox(
                           width: 20,
                         ),
                         GestureDetector(
                           onTap: () {
                             Navigator.of(context)
                                 .push(MaterialPageRoute(builder: (context) {
-                              return EditProfile();
+                              return const EditProfile();
                             }));
                           },
                           child: const Align(
@@ -97,13 +96,13 @@ class ProfileScreen extends StatelessWidget {
                         )
                       ],
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         color: Colors.white,
                       ),
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -141,18 +140,18 @@ class ProfileScreen extends StatelessWidget {
                       Icons.credit_card,
                       'Subscription',
                       context,
-                      SubscriptionDetailsScreen(),
+                      const SubscriptionDetailsScreen(),
                     ),
-                    // _buildListTile(
-                    //   Icons.lock,
-                    //   'Change Password',
-                    //   context,
-                    //   PasswordScreen(
-                    //     isResetPassward: false,
-                    //     email: '',
-                    //     otp: '',
-                    //   ),
-                    // ),
+                    _buildListTile(
+                      Icons.lock,
+                      'Change Password',
+                      context,
+                      ChangePasswordScreen(
+                        isResetPassward: false,
+                        email: '',
+                        otp: '',
+                      ),
+                    ),
                     _buildListTile(
                       Icons.help_outline,
                       'Help',
@@ -185,7 +184,7 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -193,14 +192,14 @@ class ProfileScreen extends StatelessWidget {
             ),
             if (badge != null)
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: badgeColor ?? Colors.red,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   badge,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.black,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -209,10 +208,10 @@ class ProfileScreen extends StatelessWidget {
               ),
           ],
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             color: Colors.black,
           ),
@@ -228,9 +227,10 @@ class ProfileScreen extends StatelessWidget {
       leading: Icon(icon, color: Colors.black),
       title: Text(
         title,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+      trailing:
+          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
       onTap: () {
         if (isLogout) {
           _showLogoutBottomSheet(context);
@@ -248,7 +248,7 @@ class ProfileScreen extends StatelessWidget {
     final provider = Provider.of<UserViewModel>(context, listen: false);
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -257,12 +257,12 @@ class ProfileScreen extends StatelessWidget {
           child: Consumer<UserViewModel>(
             builder: (context, provider, child) {
               return Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (provider.isLoading)
-                      Column(
+                      const Column(
                         children: [
                           CircularProgressIndicator(),
                           SizedBox(height: 16),
@@ -274,18 +274,18 @@ class ProfileScreen extends StatelessWidget {
                         ],
                       )
                     else ...[
-                      Text(
+                      const Text(
                         'Logout?',
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(height: 20),
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         'Are you sure you want to logout?',
                         style: TextStyle(
                             fontSize: 15, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -299,7 +299,7 @@ class ProfileScreen extends StatelessWidget {
                               },
                             ),
                           ),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: BrandedPrimaryButton(
                               isEnabled: true,
@@ -310,6 +310,7 @@ class ProfileScreen extends StatelessWidget {
                                 var response = await provider.logout();
                                 // Stop loading
                                 if (response.success) {
+                                  SharedPrefUtil.preferences.clear();
                                   Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(
@@ -317,18 +318,18 @@ class ProfileScreen extends StatelessWidget {
                                     (route) => false,
                                   );
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
+                                    const SnackBar(
                                       content: Text('Logged out successfully.'),
                                       backgroundColor: Colors.green,
                                     ),
                                   );
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          'Logout failed. Please try again.'),
-                                      backgroundColor: Colors.red,
-                                    ),
+                                  SharedPrefUtil.preferences.clear();
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => LoginScreen()),
+                                    (route) => false,
                                   );
                                 }
                               },
@@ -347,94 +348,92 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // void _showLogoutBottomSheet(BuildContext context) {
-  //   final provider = Provider.of<UserViewModel>(context, listen: false);
-  //   showModalBottomSheet(
-  //     context: context,
-  //     shape: RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  //     ),
-  //     builder: (context) {
-  //       return Container(
-  //         padding: EdgeInsets.all(16),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             Text(
-  //               'Logout?',
-  //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //             ),
-  //             SizedBox(
-  //               height: 20,
-  //             ),
-  //             Text(
-  //               'Are you sure you want to logout?',
-  //               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-  //             ),
-  //             SizedBox(height: 16),
-  //             Row(
-  //               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //               children: [
-  //                 Expanded(
-  //                   child: BrandedPrimaryButton(
-  //                       isEnabled: true,
-  //                       isUnfocus: true,
-  //                       name: "Cancel",
-  //                       onPressed: () {}),
-  //                 ),
-  //                 SizedBox(
-  //                   width: 10,
-  //                 ),
-  //                 Expanded(
-  //                   child: BrandedPrimaryButton(
-  //                     isEnabled: true,
-  //                     isUnfocus: false,
-  //                     name: "Logout",
-  //                     onPressed: () async {
-  //                       var response = await provider.logout();
-  //                       if (response.success) {
-  //                         // Clear any user session data
-  //                         // Ensure you implement this in your UserViewModel.
+// void _showLogoutBottomSheet(BuildContext context) {
+//   final provider = Provider.of<UserViewModel>(context, listen: false);
+//   showModalBottomSheet(
+//     context: context,
+//     shape: RoundedRectangleBorder(
+//       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//     ),
+//     builder: (context) {
+//       return Container(
+//         padding: EdgeInsets.all(16),
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             Text(
+//               'Logout?',
+//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//             ),
+//             SizedBox(
+//               height: 20,
+//             ),
+//             Text(
+//               'Are you sure you want to logout?',
+//               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+//             ),
+//             SizedBox(height: 16),
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//               children: [
+//                 Expanded(
+//                   child: BrandedPrimaryButton(
+//                       isEnabled: true,
+//                       isUnfocus: true,
+//                       name: "Cancel",
+//                       onPressed: () {}),
+//                 ),
+//                 SizedBox(
+//                   width: 10,
+//                 ),
+//                 Expanded(
+//                   child: BrandedPrimaryButton(
+//                     isEnabled: true,
+//                     isUnfocus: false,
+//                     name: "Logout",
+//                     onPressed: () async {
+//                       var response = await provider.logout();
+//                       if (response.success) {
+//                         // Clear any user session data
+//                         // Ensure you implement this in your UserViewModel.
 
-  //                         // Navigate to the login screen
-  //                         Navigator.pushAndRemoveUntil(
-  //                           context,
-  //                           MaterialPageRoute(
-  //                               builder: (context) =>
-  //                                   LoginScreen()), // Replace with your login screen
-  //                           (route) =>
-  //                               false, // Removes all previous routes from the stack
-  //                         );
+//                         // Navigate to the login screen
+//                         Navigator.pushAndRemoveUntil(
+//                           context,
+//                           MaterialPageRoute(
+//                               builder: (context) =>
+//                                   LoginScreen()), // Replace with your login screen
+//                           (route) =>
+//                               false, // Removes all previous routes from the stack
+//                         );
 
-  //                         // Optionally show a confirmation message
-  //                         ScaffoldMessenger.of(context).showSnackBar(
-  //                           SnackBar(
-  //                             content: Text('Logged out successfully.'),
-  //                             backgroundColor: Colors.green,
-  //                           ),
-  //                         );
-  //                       } else {
-  //                         // Handle the error (e.g., network issue, server error)
-  //                         ScaffoldMessenger.of(context).showSnackBar(
-  //                           SnackBar(
-  //                             content: Text('Logout failed. Please try again.'),
-  //                             backgroundColor: Colors.red,
-  //                           ),
-  //                         );
-  //                       }
-  //                     },
-  //                   ),
-  //                 )
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
+//                         // Optionally show a confirmation message
+//                         ScaffoldMessenger.of(context).showSnackBar(
+//                           SnackBar(
+//                             content: Text('Logged out successfully.'),
+//                             backgroundColor: Colors.green,
+//                           ),
+//                         );
+//                       } else {
+//                         // Handle the error (e.g., network issue, server error)
+//                         ScaffoldMessenger.of(context).showSnackBar(
+//                           SnackBar(
+//                             content: Text('Logout failed. Please try again.'),
+//                             backgroundColor: Colors.red,
+//                           ),
+//                         );
+//                       }
+//                     },
+//                   ),
+//                 )
+//               ],
+//             ),
+//           ],
+//         ),
+//       );
+//     },
+//   );
+// }
 }
 
 // Dummy screens for demonstration
-
-

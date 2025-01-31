@@ -16,11 +16,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // List of pages for each tab
   final List<Widget> _pages = [
     HomePage(),
-    const MapScreen(), // New Screen 1
-    const MapScreen(), // New Screen 1
-
-    // New Screen 1
-    const NotificationScreen(), // New Screen 2
+    const MapScreen(),
+    const MapScreen(),
+    const NotificationScreen(),
     ProfileScreen(),
   ];
 
@@ -47,11 +45,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: BottomNavigationBar(
-          backgroundColor:
-              Colors.transparent, // Make BottomNavigationBar transparent
+          backgroundColor: Colors.transparent,
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed, // Allows more than 3 items
+          type: BottomNavigationBarType.fixed,
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
