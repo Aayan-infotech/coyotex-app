@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import '../data/trip_model.dart';
+import 'package:geocoding/geocoding.dart';
 
 class MapProvider with ChangeNotifier {
   final TextEditingController startController = TextEditingController();
@@ -33,6 +34,7 @@ class MapProvider with ChangeNotifier {
   LatLng? pointA;
   LatLng? pointB;
   bool isSave = false;
+  bool onTapOnMap = false;
   bool isLoading = false;
   double distance = 0.0;
   bool isTripStart = false;
@@ -43,6 +45,7 @@ class MapProvider with ChangeNotifier {
   late BitmapDescriptor _markerIcon;
   TripAPIs _tripAPIs = TripAPIs();
   late WeatherResponse weather = defaultWeatherResponse;
+  final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
 
   Future<void> getWeather(LatLng latAndLng) async {
     isLoading = true;
@@ -105,11 +108,11 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
   void letsHunt() async {
     isTripStart = true;
     isSave = false;
     isLoading = true;
+    onTapOnMap = false;
     // isTap = false;
 
     notifyListeners();
@@ -171,6 +174,7 @@ class MapProvider with ChangeNotifier {
       isHurryUp = true;
       isKeyDataPoint = false;
       isTripStart = false;
+
       notifyListeners();
 
       // Fetch the user's current location
@@ -298,7 +302,9 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void saveTrip() {
+  void saveTrip() async {
+    isLoading = true;
+    notifyListeners();
     if (points.isEmpty) {
       debugPrint("Cannot save trip. Please ensure all fields are filled.");
       return;
@@ -324,8 +330,12 @@ class MapProvider with ChangeNotifier {
       timeDurations: timeDurations,
     );
 
-    trips.add(trip);
-    resetFields();
+    var res = await _tripAPIs.addTrip(trip);
+    if (res.success) {
+      trips.add(trip);
+      resetFields();
+    }
+    isLoading = false;
     notifyListeners();
   }
 
@@ -338,6 +348,7 @@ class MapProvider with ChangeNotifier {
     path.clear();
     polylines.clear();
     markers.clear();
+    onTapOnMap = false;
     isSave = false;
     distance = 0.0;
     notifyListeners();
@@ -359,12 +370,16 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchRouteWithWaypoints(List<LatLng> locations) async {
-    if (locations.isEmpty || locations.length < 2) {
+  Future<void> fetchRouteWithWaypoints(List<LatLng> locations,
+      {bool isRemove = false}) async {
+    if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
       debugPrint("At least two locations are required.");
       return;
     }
 
+    if (locations.length == 1) {
+      locations.add((locations.first));
+    }
     isLoading = true;
     notifyListeners();
 
@@ -377,7 +392,7 @@ class MapProvider with ChangeNotifier {
 
       // Include `optimize:true` to get the shortest path and `alternatives=true` for multiple routes
       final url =
-          'https://maps.googleapis.com/maps/api/directions/json?origin=${locations.first.latitude},${locations.first.longitude}&destination=${locations.last.latitude},${locations.last.longitude}&waypoints=optimize:true|$waypoints&mode=driving&avoid=highways&alternatives=true&key=$apiKey';
+          'https://maps.googleapis.com/maps/api/directions/json?origin=${locations.first.latitude},${locations.first.longitude}&destination=${locations.last.latitude},${locations.last.longitude}&waypoints=$waypoints&mode=driving&alternatives=true&key=$apiKey';
 
       final response = await http.get(Uri.parse(url));
       final data = jsonDecode(response.body);
@@ -594,7 +609,9 @@ class MapProvider with ChangeNotifier {
           initialPosition = LatLng(points[0].latitude, points[0].longitude);
         }
 
-        await fetchRouteWithWaypoints(path);
+        await fetchRouteWithWaypoints(
+          path,
+        );
         notifyListeners();
       }
     } catch (e) {
@@ -603,18 +620,63 @@ class MapProvider with ChangeNotifier {
   }
 
   List<LatLng> path = [];
+  // void onMapTapped(LatLng position) async {
+  //   isLoading = true;
+  //   isSavedTrip = false;
+
+  //   points.add(position);
+  //   path.add(position);
+  //   if (points.length == 1) {
+  //     // startController.text = "${position.latitude}, ${position.longitude}";
+  //   } else {
+  //     final controller = TextEditingController(
+  //       text: "${position.latitude}, ${position.longitude}",
+  //     );
+  //     destinationControllers.add(controller);
+  //   }
+
+  //   if (points.length >= 2) {
+  //     distance = _calculateTotalDistance();
+  //     isSave = true;
+  //     isHurryUp = false;
+  //     isKeyDataPoint = false;
+  //     isTripStart = false;
+  //   }
+  //   final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
+  //   markerId = uniqueId;
+
+  //   markers.add(Marker(
+  //     markerId: MarkerId(uniqueId),
+  //     // // icon: _markerIcon,
+  //     position: position,
+  //     infoWindow: InfoWindow(
+  //       title: 'Point ${points.length}',
+  //       snippet: '${position.latitude}, ${position.longitude}',
+  //     ),
+  //   ));
+  //   if (points.length >= 2) {
+  //     await fetchRouteWithWaypoints(path);
+  //   }
+  //   isLoading = false;
+  //   // drawPolyline();
+  //   notifyListeners();
+  // }
+
   void onMapTapped(LatLng position) async {
     isLoading = true;
     isSavedTrip = false;
+    onTapOnMap = true;
 
     points.add(position);
     path.add(position);
+
+    // Fetch location name
+    String locationName = await _getLocationName(position);
+
     if (points.length == 1) {
-      // startController.text = "${position.latitude}, ${position.longitude}";
+      // startController.text = locationName;
     } else {
-      final controller = TextEditingController(
-        text: "${position.latitude}, ${position.longitude}",
-      );
+      final controller = TextEditingController(text: locationName);
       destinationControllers.add(controller);
     }
 
@@ -625,23 +687,70 @@ class MapProvider with ChangeNotifier {
       isKeyDataPoint = false;
       isTripStart = false;
     }
+
     final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
     markerId = uniqueId;
 
     markers.add(Marker(
       markerId: MarkerId(uniqueId),
-      // // icon: _markerIcon,
       position: position,
       infoWindow: InfoWindow(
         title: 'Point ${points.length}',
-        snippet: '${position.latitude}, ${position.longitude}',
+        snippet: locationName,
       ),
     ));
+
     if (points.length >= 2) {
       await fetchRouteWithWaypoints(path);
     }
+
     isLoading = false;
-    // drawPolyline();
+    notifyListeners();
+  }
+
+  Future<String> _getLocationName(LatLng position) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        return "${place.name}, ${place.locality}, ${place.country}";
+      }
+    } catch (e) {
+      print("Error fetching location name: $e");
+    }
+    return "Unknown Location";
+  }
+
+  void onRemove(LatLng position) async {
+    isLoading = true;
+    notifyListeners();
+
+    points.remove(position);
+    path.remove(position);
+
+    markers.removeWhere((marker) => marker.position == position);
+
+    destinationControllers.removeWhere(
+      (controller) =>
+          controller.text == "${position.latitude}, ${position.longitude}",
+    );
+
+    if (points.isEmpty) {
+      isSave = false;
+      isHurryUp = false;
+      isKeyDataPoint = false;
+      isTripStart = false;
+      distance = 0.0;
+    } else if (points.length >= 2) {
+      distance = _calculateTotalDistance();
+    }
+    await fetchRouteWithWaypoints(path, isRemove: true);
+
+    isLoading = false;
     notifyListeners();
   }
 }

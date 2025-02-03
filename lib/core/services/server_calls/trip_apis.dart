@@ -3,29 +3,18 @@ import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
+import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class TripAPIs extends ApiBase {
   TripAPIs() : super();
 
-  Future<ApiResponseWithData<Map<String, dynamic>>> login(
-      String email, String password) async {
-    Map<String, String> data = {
-      'email': email,
-      'password': password,
-    };
+  Future<ApiResponseWithData<Map<String, dynamic>>> addTrip(
+      TripModel trip_model) async {
+    Map<String, dynamic> data = trip_model.toJson();
 
-    return await CallHelper().postWithData('api/auth/login', data, {});
-  }
-
-  Future<ApiResponseWithData<Map<String, dynamic>>> getSubscription() async {
-    Map<String, String> data = {};
-
-    return await CallHelper().getWithData(
-      'api/subscriptions/active',
-      data,
-    );
+    return await CallHelper().postWithData('api/trips/', data, {});
   }
 
   final String apiKey = '7a698daa9a39296bb22dfac21380b303';

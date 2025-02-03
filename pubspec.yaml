@@ -32,6 +32,10 @@ dependencies:
   geocoding: ^3.0.0
   http: 
   shared_preferences: ^2.2.3
+  flutter_local_notifications: ^17.2.2
+  firebase_messaging:
+
+
 
   dio:
   exponential_back_off: ^0.1.0+2
@@ -39,6 +43,7 @@ dependencies:
   image_picker:
   intl: ^0.18.0
   drop_down_search_field: ^1.0.4
+  firebase_core: ^3.10.1
 
 
 

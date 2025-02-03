@@ -106,7 +106,7 @@ class _MapScreenState extends State<MapScreen> {
                         zoom: 10,
                       ),
                       myLocationEnabled: true,
-                      mapType: MapType.hybrid,
+                      mapType: MapType.terrain,
                       myLocationButtonEnabled: true,
                       buildingsEnabled: true,
                       mapToolbarEnabled: true,
@@ -127,47 +127,110 @@ class _MapScreenState extends State<MapScreen> {
                         padding: const EdgeInsets.only(top: 80),
                         child: Column(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: BrandedTextField(
-                                    height: 40,
-                                    controller: provider.startController,
-                                    labelText: "Search here",
-                                    onTap: () {
-                                      provider.resetFields();
-                                      Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) {
-                                        return SearchLocationScreen(
-                                          controller: provider.startController,
-                                          isStart: true,
-                                        );
-                                      })).then((value) {
-                                        setState(() {});
-                                      });
-                                    },
-                                    prefix: Icon(Icons.location_on),
-                                  ),
+                            if (provider.onTapOnMap)
+                              Container(
+                                height: 50, // Item height + spacing
+                                padding: const EdgeInsets.all(0),
+                                child: ListView.builder(
+                                  padding: EdgeInsets.all(0),
+                                  itemCount: provider.markers.length,
+                                  scrollDirection: Axis.horizontal,
+                                  itemBuilder: (context, index) {
+                                    List<Marker> markerList =
+                                        provider.markers.toList();
+                                    Marker _marker = markerList[index];
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4.0),
+                                      child: Chip(
+                                        label: Text(
+                                          (_marker.infoWindow.snippet != null &&
+                                                  _marker.infoWindow.snippet!
+                                                          .length >
+                                                      1)
+                                              ? _marker.infoWindow.snippet!
+                                                  .substring(
+                                                      0) // Hides first letter
+                                              : "",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors
+                                                .white, // Adjust text color
+                                          ),
+                                        ),
+                                        backgroundColor: Colors
+                                            .blueAccent, // Change as needed
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          side: BorderSide(
+                                              color: Colors.white,
+                                              width: 1), // Optional border
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
+                                        deleteIcon: Icon(Icons.close,
+                                            color: Colors
+                                                .white), // Styled delete icon
+                                        onDeleted: () {
+                                          provider.onRemove(_marker.position);
+                                        },
+                                      ),
+                                    );
+                                  },
                                 ),
-                                const SizedBox(width: 5),
-                                GestureDetector(
-                                  onTap: () async {},
-                                  child: Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                          color: Colors.white, width: 2),
-                                    ),
-                                    child: const Icon(
-                                      Icons.person,
-                                      color: Colors.red,
+                              ),
+                            if (!provider.onTapOnMap)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: BrandedTextField(
+                                      height: 40,
+                                      controller: provider.startController,
+                                      labelText: "Search here",
+                                      onTap: () {
+                                        provider.resetFields();
+                                        Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return SearchLocationScreen(
+                                            controller:
+                                                provider.startController,
+                                            isStart: true,
+                                          );
+                                        })).then((value) {});
+                                      },
+                                      prefix: Icon(Icons.location_on),
+                                      // sufix: GestureDetector(
+                                      //   onTap: () {},
+                                      //   child: const Icon(
+                                      //     Icons.person,
+                                      //     color: Colors.red,
+                                      //   ),
+                                      // ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                  const SizedBox(width: 5),
+                                  GestureDetector(
+                                    onTap: () async {},
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                            color: Colors.white, width: 2),
+                                      ),
+                                      child: const Icon(
+                                        Icons.person,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             if (provider.startController.text.isNotEmpty &&
                                 provider.trips.isEmpty)
                               const SizedBox(
@@ -300,7 +363,6 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     ),
-
                     if (provider.trips.length > 0)
                       Positioned(
                         top: MediaQuery.of(context).size.height * 0.5,
@@ -384,29 +446,6 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         ),
                       ),
-                    // GestureDetector(
-                    //   onTap: () {
-                    //     Navigator.of(context).push(
-                    //       MaterialPageRoute(builder: (context) {
-                    //         return const AddPhotoScreen();
-                    //       }),
-                    //     );
-                    //   },
-                    //   child: Padding(
-                    //     padding: EdgeInsets.only(
-                    //       top: MediaQuery.of(context).size.height * 0.27,
-                    //       right: 10,
-                    //     ),
-                    //     child: const Align(
-                    //       alignment: Alignment.topRight,
-                    //       child: Icon(
-                    //         Icons.camera_alt_outlined,
-                    //         color: Colors.red,
-                    //         size: 30,
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
                     if (provider.isSave) tripCard(provider, context),
                     if (provider.isTripStart) add_stop_card(provider, context),
                     if (provider.isHurryUp) hurry_up_card(provider, context),
