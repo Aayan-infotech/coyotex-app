@@ -122,7 +122,7 @@ class ProfileScreen extends StatelessWidget {
                       Icons.wb_sunny,
                       'Change Weather Preference',
                       context,
-                      WeatherPrefernceScreen(
+                      WeatherPreferenceScreen(
                         isProfile: true,
                       ),
                     ),
@@ -146,7 +146,7 @@ class ProfileScreen extends StatelessWidget {
                       Icons.lock,
                       'Change Password',
                       context,
-                      ChangePasswordScreen(
+                      const ChangePasswordScreen(
                         isResetPassward: false,
                         email: '',
                         otp: '',
@@ -317,12 +317,6 @@ class ProfileScreen extends StatelessWidget {
                                         builder: (context) => LoginScreen()),
                                     (route) => false,
                                   );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Logged out successfully.'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
                                 } else {
                                   SharedPrefUtil.preferences.clear();
                                   Navigator.pushAndRemoveUntil(
@@ -347,93 +341,6 @@ class ProfileScreen extends StatelessWidget {
       },
     );
   }
-
-// void _showLogoutBottomSheet(BuildContext context) {
-//   final provider = Provider.of<UserViewModel>(context, listen: false);
-//   showModalBottomSheet(
-//     context: context,
-//     shape: RoundedRectangleBorder(
-//       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//     ),
-//     builder: (context) {
-//       return Container(
-//         padding: EdgeInsets.all(16),
-//         child: Column(
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             Text(
-//               'Logout?',
-//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//             ),
-//             SizedBox(
-//               height: 20,
-//             ),
-//             Text(
-//               'Are you sure you want to logout?',
-//               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-//             ),
-//             SizedBox(height: 16),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//               children: [
-//                 Expanded(
-//                   child: BrandedPrimaryButton(
-//                       isEnabled: true,
-//                       isUnfocus: true,
-//                       name: "Cancel",
-//                       onPressed: () {}),
-//                 ),
-//                 SizedBox(
-//                   width: 10,
-//                 ),
-//                 Expanded(
-//                   child: BrandedPrimaryButton(
-//                     isEnabled: true,
-//                     isUnfocus: false,
-//                     name: "Logout",
-//                     onPressed: () async {
-//                       var response = await provider.logout();
-//                       if (response.success) {
-//                         // Clear any user session data
-//                         // Ensure you implement this in your UserViewModel.
-
-//                         // Navigate to the login screen
-//                         Navigator.pushAndRemoveUntil(
-//                           context,
-//                           MaterialPageRoute(
-//                               builder: (context) =>
-//                                   LoginScreen()), // Replace with your login screen
-//                           (route) =>
-//                               false, // Removes all previous routes from the stack
-//                         );
-
-//                         // Optionally show a confirmation message
-//                         ScaffoldMessenger.of(context).showSnackBar(
-//                           SnackBar(
-//                             content: Text('Logged out successfully.'),
-//                             backgroundColor: Colors.green,
-//                           ),
-//                         );
-//                       } else {
-//                         // Handle the error (e.g., network issue, server error)
-//                         ScaffoldMessenger.of(context).showSnackBar(
-//                           SnackBar(
-//                             content: Text('Logout failed. Please try again.'),
-//                             backgroundColor: Colors.red,
-//                           ),
-//                         );
-//                       }
-//                     },
-//                   ),
-//                 )
-//               ],
-//             ),
-//           ],
-//         ),
-//       );
-//     },
-//   );
-// }
 }
 
 // Dummy screens for demonstration

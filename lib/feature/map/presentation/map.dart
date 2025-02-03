@@ -177,7 +177,7 @@ class _MapScreenState extends State<MapScreen> {
                               Container(
                                 height: (provider.destinationCount + 1) *
                                     (40 + 10), // Item height + spacing
-                                padding: EdgeInsets.all(0),
+                                padding: const EdgeInsets.all(0),
                                 child: ListView.builder(
                                   padding: EdgeInsets.all(0),
                                   itemCount: provider.destinationCount,
@@ -259,7 +259,7 @@ class _MapScreenState extends State<MapScreen> {
                                   },
                                 ),
                               ),
-                            if (provider.trips.length > 0 &&
+                            if (provider.trips.isNotEmpty &&
                                 provider.startController.text.isEmpty)
                               Container(
                                 height:

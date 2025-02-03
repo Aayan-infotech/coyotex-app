@@ -16,13 +16,8 @@ class _FAQScreenState extends State<FAQScreen> {
         backgroundColor: Colors.black,
         elevation: 0,
         centerTitle: true,
-        title: Text('FAQ', style: TextStyle(color: Colors.white)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('FAQ', style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
             icon: Icon(Icons.search, color: Colors.white),
@@ -42,7 +37,7 @@ class _FAQScreenState extends State<FAQScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'How can we help you?',
                       style: TextStyle(
                         fontSize: 24,

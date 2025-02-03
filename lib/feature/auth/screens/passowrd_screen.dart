@@ -4,6 +4,7 @@ import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/login_screen.dart';
+import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -125,44 +126,22 @@ class _PasswordScreenState extends State<PasswordScreen> {
                               );
 
                               if (response.success) {
-                                // Show a success dialog
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text("Success"),
-                                      content: const Text(
-                                          "Your password has been reset successfully."),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(); // Close the dialog
-                                            Navigator.of(context)
-                                                .pushReplacement(
-                                              MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      LoginScreen()), // Redirect to login screen
-                                            );
-                                          },
-                                          child: const Text("OK"),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              } else {
-                                // Handle error
-                                if (response.message != null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(response.message!),
-                                      backgroundColor: Colors.red,
-                                    ),
+                                AppDialog.showSuccessDialog(context,
+                                    "Your password has been set successfully.",
+                                    () {
+                                  Navigator.of(context)
+                                      .pop(); // Close the dialog
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            LoginScreen()), // Redirect to login screen
                                   );
-                                } else {
-                                  _showIncorrectPasswordSheet(context);
-                                }
+                                });
+                                // Show a success dialog
+                              } else {
+                                // Handle erro
+                                AppDialog.showErrorDialog(
+                                    context, response.message, () {});
                               }
                             },
                           ),

@@ -17,6 +17,21 @@ class LoginAPIs extends ApiBase {
     return await CallHelper().postWithData('api/auth/login', data, {});
   }
 
+  Future<ApiResponse> updateProfile(String name, String number, String userUnit,
+      String userWeatherPref) async {
+    Map<String, String> data = {
+      "name": name,
+      "number": number,
+      "userUnit": userUnit,
+      "userWeatherPref": userWeatherPref
+    };
+
+    return await CallHelper().patch(
+      'api/update-details',
+      data,
+    );
+  }
+
   Future<ApiResponseWithData<Map<String, dynamic>>> getSubscription() async {
     Map<String, String> data = {};
 
@@ -105,7 +120,6 @@ class LoginAPIs extends ApiBase {
 
     return await CallHelper().post('api/auth/forgot-password', data);
   }
-
 
   Future<ApiResponse> changePassword(
       String oldPassword, String newPassword, String confirmNewPassword) async {

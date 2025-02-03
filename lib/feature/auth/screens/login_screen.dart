@@ -5,6 +5,7 @@ import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/sign_up_screen.dart';
+import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:coyotex/utils/validation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -19,15 +20,40 @@ class LoginScreen extends StatelessWidget {
 
   final _formKey = GlobalKey<FormState>();
 
-  void _showErrorDialog(String message, BuildContext context) {
+  _showErrorDialog(String message, BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Error"),
-          content: Text(message),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.red),
+              const SizedBox(width: 8),
+              const Text(
+                "Error",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(fontSize: 16),
+          ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -127,7 +153,10 @@ class LoginScreen extends StatelessWidget {
                                   if (response.success) {
                                     SharedPrefUtil.setValue(isLoginPref, true);
                                   } else {
-                                    _showErrorDialog(response.message, context);
+                                    AppDialog.showErrorDialog(
+                                        context, response.message, () {
+                                      Navigator.of(context).pop();
+                                    });
                                   }
                                 }
                               },
