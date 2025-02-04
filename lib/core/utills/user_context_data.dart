@@ -19,7 +19,7 @@ class UserContextData {
 
     lstFutures.add(userProvider.getUser());
     lstFutures.add(mapProvider.getCurrentLocation());
-
+// lstFutures.add()
     // lstFutures.add(cartProvider.getCoupon(context));
     // lstFutures
     //     .add(productProvider.getOrderList(userProvider.user!.id, context));

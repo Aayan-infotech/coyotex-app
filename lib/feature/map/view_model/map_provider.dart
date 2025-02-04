@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:convert';
 import 'dart:math';
 import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
+import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -13,24 +15,23 @@ import 'package:geocoding/geocoding.dart';
 
 class MapProvider with ChangeNotifier {
   final TextEditingController startController = TextEditingController();
-  final TextEditingController destinationController = TextEditingController();
+   TextEditingController destinationController = TextEditingController();
   final List<TextEditingController> destinationControllers = [];
   int destinationCount = 1;
   final List<TripModel> trips = [];
   bool isTap = true;
   final Set<Polyline> polylines = {};
-  final Set<Marker> markers = {};
+    Set<Marker> mapMarkers = {};
+List<MarkerData> markers=[];
   List<LatLng> points = [];
-
   final String sessionToken = const Uuid().v4();
   var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
   String markerId = '';
-
   List<dynamic> startSuggestions = [];
   List<dynamic> destinationSuggestions = [];
   GoogleMapController? mapController;
   LatLng initialPosition = const LatLng(26.862421770613125, 80.99804357972356);
-  final Map<String, Duration> timeDurations = {};
+   int timeDurations = 0;
   LatLng? pointA;
   LatLng? pointB;
   bool isSave = false;
@@ -42,6 +43,7 @@ class MapProvider with ChangeNotifier {
   bool isSavedTrip = false;
   bool isKeyDataPoint = false;
   bool isStartSuggestions = false;
+
   late BitmapDescriptor _markerIcon;
   TripAPIs _tripAPIs = TripAPIs();
   late WeatherResponse weather = defaultWeatherResponse;
@@ -191,15 +193,26 @@ class MapProvider with ChangeNotifier {
       // Update the list of markers
       final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
       markerId = uniqueId;
-      markers.add(Marker(
-        markerId: MarkerId(uniqueId),
+      markers.add(MarkerData(
+        id: uniqueId,
         position: currentStop,
-        // // // icon: _markerIcon,
-        infoWindow: InfoWindow(
-          title: 'Stop ${points.length}',
-          snippet: '${currentStop.latitude}, ${currentStop.longitude}',
-        ),
+        icon: "assets/images/stop.icon",
+        title: "Stop",
+        snippet: '${currentStop.latitude}, ${currentStop.longitude}',
+        duration: timeDurations,
+        markerType: "inbetween",
+
+
       ));
+      // Marker(
+      //   markerId: MarkerId(uniqueId),
+      //   position: currentStop,
+      //   // // // icon: _markerIcon,
+      //   infoWindow: InfoWindow(
+      //     title: 'Stop ${points.length}',
+      //     snippet: '${currentStop.latitude}, ${currentStop.longitude}',
+      //   ),
+      // )
 
       // Add a new destination controller for the stop
       // TextEditingController stopController = TextEditingController(
@@ -239,70 +252,70 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> drawPolylineWithMarkers(TripModel trip) async {
-    // Clear existing markers and polylines
-    isLoading = true;
-    isSave = true;
-    notifyListeners();
-    markers.clear();
-    polylines.clear();
+  // Future<void> drawPolylineWithMarkers(TripModel trip) async {
+  //   // Clear existing markers and polylines
+  //   isLoading = true;
+  //   isSave = true;
+  //   notifyListeners();
+  //   markers.clear();
+  //   polylines.clear();
+  //
+  //   // Add markers from the trip's MarkerData
+  //   for (var markerData in trip.markers) {
+  //     markers.add(
+  //       Marker(
+  //         markerId: MarkerId(markerData.id),
+  //         position: markerData.position,
+  //         // // // icon: _markerIcon,
+  //         infoWindow: InfoWindow(
+  //           title: markerData.title,
+  //           snippet: markerData.snippet,
+  //         ),
+  //       ),
+  //     );
+  //   }
+  //
+  //   // Draw polyline from routePoints in the trip
+  //   polylines.add(
+  //     Polyline(
+  //       polylineId: PolylineId("route"),
+  //       points: trip.routePoints, // Use routePoints from the TripModel
+  //       color: Colors.blue,
+  //       width: 5,
+  //     ),
+  //   );
+  //   points = trip.routePoints;
+  //
+  //   distance = _calculateTotalDistance();
+  //   // Optionally, add start and end markers with special titles
+  //   if (trip.routePoints.isNotEmpty) {
+  //     var start = trip.routePoints.first;
+  //     var end = trip.routePoints.last;
+  //
+  //     markers.add(
+  //       Marker(
+  //         markerId: MarkerId("start"),
+  //         // // icon: _markerIcon,
+  //         position: start,
+  //         infoWindow: InfoWindow(title: "Start"),
+  //       ),
+  //     );
+  //
+  //     markers.add(
+  //       Marker(
+  //         markerId: MarkerId("end"),
+  //         position: end,
+  //         // // icon: _markerIcon,
+  //         infoWindow: InfoWindow(title: "End"),
+  //       ),
+  //     );
+  //   }
+  //   isLoading = false;
+  //
+  //   notifyListeners();
+  // }
 
-    // Add markers from the trip's MarkerData
-    for (var markerData in trip.markers) {
-      markers.add(
-        Marker(
-          markerId: MarkerId(markerData.id),
-          position: markerData.position,
-          // // // icon: _markerIcon,
-          infoWindow: InfoWindow(
-            title: markerData.title,
-            snippet: markerData.snippet,
-          ),
-        ),
-      );
-    }
-
-    // Draw polyline from routePoints in the trip
-    polylines.add(
-      Polyline(
-        polylineId: PolylineId("route"),
-        points: trip.routePoints, // Use routePoints from the TripModel
-        color: Colors.blue,
-        width: 5,
-      ),
-    );
-    points = trip.routePoints;
-
-    distance = _calculateTotalDistance();
-    // Optionally, add start and end markers with special titles
-    if (trip.routePoints.isNotEmpty) {
-      var start = trip.routePoints.first;
-      var end = trip.routePoints.last;
-
-      markers.add(
-        Marker(
-          markerId: MarkerId("start"),
-          // // icon: _markerIcon,
-          position: start,
-          infoWindow: InfoWindow(title: "Start"),
-        ),
-      );
-
-      markers.add(
-        Marker(
-          markerId: MarkerId("end"),
-          position: end,
-          // // icon: _markerIcon,
-          infoWindow: InfoWindow(title: "End"),
-        ),
-      );
-    }
-    isLoading = false;
-
-    notifyListeners();
-  }
-
-  void saveTrip() async {
+  void saveTrip(BuildContext context) async {
     isLoading = true;
     notifyListeners();
     if (points.isEmpty) {
@@ -319,21 +332,29 @@ class MapProvider with ChangeNotifier {
       totalDistance: distance,
       createdAt: DateTime.now(),
       routePoints: List.from(points),
-      markers: markers.map((marker) {
-        return MarkerData(
-          id: marker.markerId.value,
-          position: marker.position,
-          title: marker.infoWindow.title ?? '',
-          snippet: marker.infoWindow.snippet ?? '',
-        );
-      }).toList(),
-      timeDurations: timeDurations,
+      markers: markers
+      // markers: markers.map((marker) {
+      //   return MarkerData(
+      //     id: marker.markerId.value,
+      //     position: marker.position,
+      //     title: marker.infoWindow.title ?? '',
+      //     snippet: marker.infoWindow.snippet ?? '',
+      //     duration: timeDurations,
+      //     markerType: "Start"
+      //   );
+      // }).toList(),
+
     );
 
     var res = await _tripAPIs.addTrip(trip);
     if (res.success) {
+      print(res);
       trips.add(trip);
       resetFields();
+    } else {
+      AppDialog.showErrorDialog(context, res.message, () {
+        Navigator.of(context).pop();
+      });
     }
     isLoading = false;
     notifyListeners();
@@ -354,8 +375,8 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setTimeDuration(String id, Duration duration) async {
-    timeDurations[id] = duration;
+  Future<void> setTimeDuration( int duration) async {
+    timeDurations = duration;
     notifyListeners();
   }
 
@@ -595,15 +616,26 @@ class MapProvider with ChangeNotifier {
 
         final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
         markerId = uniqueId;
-        markers.add(Marker(
-          markerId: MarkerId(uniqueId),
-          // // icon: _markerIcon,
+        markers.add(MarkerData(
+          id: uniqueId,
           position: latAndLng,
-          infoWindow: InfoWindow(
-            title: 'Point ${points.length}',
-            snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
-          ),
+          icon: "assets/images/stop.icon",
+          title: 'Point ${points.length}',
+          snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
+          duration: timeDurations,
+          markerType: "inbetween",
+
+
         ));
+        // markers.add(Marker(
+        //   markerId: MarkerId(uniqueId),
+        //   // // icon: _markerIcon,
+        //   position: latAndLng,
+        //   infoWindow: InfoWindow(
+        //     title: 'Point ${points.length}',
+        //     snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
+        //   ),
+        // ));
 
         if (points.isNotEmpty) {
           initialPosition = LatLng(points[0].latitude, points[0].longitude);
@@ -674,10 +706,11 @@ class MapProvider with ChangeNotifier {
     String locationName = await _getLocationName(position);
 
     if (points.length == 1) {
-      // startController.text = locationName;
+       startController.text = locationName;
     } else {
       final controller = TextEditingController(text: locationName);
       destinationControllers.add(controller);
+      destinationController =  controller;
     }
 
     if (points.length >= 2) {
@@ -690,15 +723,24 @@ class MapProvider with ChangeNotifier {
 
     final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
     markerId = uniqueId;
-
-    markers.add(Marker(
-      markerId: MarkerId(uniqueId),
+   markers.add(MarkerData(
+      id: uniqueId,
       position: position,
-      infoWindow: InfoWindow(
-        title: 'Point ${points.length}',
-        snippet: locationName,
-      ),
+      icon: "assets/images/stop.icon",
+      title: 'Point ${points.length}',
+      snippet:  locationName,
+      duration: timeDurations,
+      markerType: "inbetween",
     ));
+
+    // markers.add(Marker(
+    //   markerId: MarkerId(uniqueId),
+    //   position: position,
+    //   infoWindow: InfoWindow(
+    //     title: 'Point ${points.length}',
+    //     snippet: locationName,
+    //   ),
+    // ));
 
     if (points.length >= 2) {
       await fetchRouteWithWaypoints(path);

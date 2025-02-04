@@ -1,6 +1,7 @@
 import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/services/server_calls/auth_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/notification.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/model/plans.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
@@ -17,6 +18,7 @@ class UserViewModel extends ChangeNotifier {
   Map<String, dynamic>? userData;
   List<Plan> lstPlan = [];
   UserModel user = UserModel(
+    userId: '',
       name: '',
       number: '',
       email: '',
@@ -39,6 +41,8 @@ class UserViewModel extends ChangeNotifier {
         SharedPrefUtil.setValue(accessTokenPref, response.data["accessToken"]);
         SharedPrefUtil.setValue(
             refreshTokenPref, response.data["refreshToken"]);
+
+        NotificationService.getDeviceToken();
         await getUser();
 
         // Navigator.of(context).push(
@@ -71,6 +75,7 @@ class UserViewModel extends ChangeNotifier {
       final response = await _loginAPIs.getUserById();
       if (response.success) {
         user = UserModel.fromJson(response.data);
+        SharedPrefUtil.setValue(userIdPref, user.userId);
         print(user);
         return response;
       } else {

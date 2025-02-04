@@ -1,3 +1,4 @@
+import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/data_entry.dart';
 import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
@@ -62,7 +63,7 @@ class _MapScreenState extends State<MapScreen> {
                 if (minuteController.text.isNotEmpty) {
                   int minutes = int.parse(minuteController.text);
                   await provider.setTimeDuration(
-                      provider.markerId, Duration(minutes: minutes));
+                      minutes);
                   Navigator.of(context).pop(null);
 
                   //  Navigator.of(context).pop(Duration(minutes: minutes));
@@ -91,10 +92,20 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
   }
 
+
   @override
   Widget build(BuildContext context) {
+Set<Marker> markers={};
     return Consumer<MapProvider>(
       builder: (context, provider, child) {
+
+        for(var item in provider.markers){
+         provider.mapMarkers.add(Marker(markerId: MarkerId(item.id),
+          position: item.position,
+            infoWindow: InfoWindow(title: item.title,snippet: item.snippet),
+          )
+          );
+        }
         return provider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : Scaffold(
@@ -112,7 +123,7 @@ class _MapScreenState extends State<MapScreen> {
                       mapToolbarEnabled: true,
                       fortyFiveDegreeImageryEnabled: true,
                       polylines: provider.polylines,
-                      markers: provider.markers,
+                      markers:  provider.mapMarkers,
                       onTap: provider.onMapTapped,
                       zoomGesturesEnabled: true,
                       onMapCreated: (controller) {
@@ -136,20 +147,20 @@ class _MapScreenState extends State<MapScreen> {
                                   itemCount: provider.markers.length,
                                   scrollDirection: Axis.horizontal,
                                   itemBuilder: (context, index) {
-                                    List<Marker> markerList =
-                                        provider.markers.toList();
-                                    Marker _marker = markerList[index];
+                                    MarkerData _marker =  provider.markers[index];
+
+                                   // Marker _marker = markerList[index];
 
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 4.0),
                                       child: Chip(
                                         label: Text(
-                                          (_marker.infoWindow.snippet != null &&
-                                                  _marker.infoWindow.snippet!
+                                          (_marker.snippet != null &&
+                                                  _marker.snippet!
                                                           .length >
                                                       1)
-                                              ? _marker.infoWindow.snippet!
+                                              ? _marker.snippet!
                                                   .substring(
                                                       0) // Hides first letter
                                               : "",
@@ -236,7 +247,7 @@ class _MapScreenState extends State<MapScreen> {
                               const SizedBox(
                                 height: 10,
                               ),
-                            if (provider.startController.text.isNotEmpty)
+                            if (provider.startController.text.isNotEmpty&&!provider.onTapOnMap)
                               Container(
                                 height: (provider.destinationCount + 1) *
                                     (40 + 10), // Item height + spacing
@@ -711,7 +722,7 @@ class _MapScreenState extends State<MapScreen> {
                     isUnfocus: true,
                     name: "Save Trip",
                     onPressed: () {
-                      provider.saveTrip();
+                      provider.saveTrip(context);
                     },
                   ),
                 ),

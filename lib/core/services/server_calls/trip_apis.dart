@@ -9,15 +9,22 @@ import 'package:http/http.dart' as http;
 
 class TripAPIs extends ApiBase {
   TripAPIs() : super();
-
+  final String apiKey = '7a698daa9a39296bb22dfac21380b303';
   Future<ApiResponseWithData<Map<String, dynamic>>> addTrip(
       TripModel trip_model) async {
     Map<String, dynamic> data = trip_model.toJson();
+    print(data);
 
     return await CallHelper().postWithData('api/trips/', data, {});
   }
 
-  final String apiKey = '7a698daa9a39296bb22dfac21380b303';
+  Future<ApiResponseWithData<Map<String, dynamic>>> getUserTrip(
+      TripModel trip_model) async {
+    Map<String, dynamic> data = trip_model.toJson();
+    print(data);
+
+    return await CallHelper().postWithData('api/trips/${userId}', data, {});
+  }
 
   // Endpoint for weather API
   final String endPoint = 'https://api.openweathermap.org/data/2.5/weather';

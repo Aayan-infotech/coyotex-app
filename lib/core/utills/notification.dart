@@ -15,7 +15,7 @@ class NotificationService {
     var initializationSettings = InitializationSettings(android: androidInit);
     _flutterLocalNotificationPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: (details) async {
-      print(details.payload);
+
     });
   }
 
@@ -79,6 +79,23 @@ class NotificationService {
       debugPrint("onMeessageApp");
     });
   }
+  static void testFirebaseNotification() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint("🔔 New FCM Message Received!");
+      debugPrint("Title: ${message.notification?.title}");
+      debugPrint("Body: ${message.notification?.body}");
+      debugPrint("Data: ${message.data}");
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint("🔔 Notification Clicked!");
+      debugPrint("Title: ${message.notification?.title}");
+      debugPrint("Body: ${message.notification?.body}");
+      debugPrint("Data: ${message.data}");
+    });
+
+    debugPrint("📡 Listening for Firebase messages...");
+  }
 
   _handleNotificationTap(String payloadd, BuildContext context) {
     // if (payloadd == 'chat') {
@@ -106,6 +123,9 @@ class NotificationService {
 
 //SET DEVICE TOKEN
   static getDeviceToken() async {
-    await FirebaseMessaging.instance.getToken().then((value) {});
+    await FirebaseMessaging.instance.getToken().then((value) {
+      print("device token");
+      print(value);
+    });
   }
 }

@@ -173,7 +173,7 @@ class CallHelper {
     final Map<String, dynamic> data = jsonDecode(response.body);
     String message = data["message"] ?? internalServerErrorMessage;
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
+
       return ApiResponseWithData(data as T, true);
     }
     return ApiResponseWithData(defaultData, false, message: message);

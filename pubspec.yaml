@@ -32,7 +32,7 @@ dependencies:
   geocoding: ^3.0.0
   http: 
   shared_preferences: ^2.2.3
-  flutter_local_notifications: ^17.2.2
+  flutter_local_notifications: 
   firebase_messaging:
 
 
