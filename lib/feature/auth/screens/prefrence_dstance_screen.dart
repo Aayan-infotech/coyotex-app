@@ -87,9 +87,13 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
     final userViewModel = Provider.of<UserViewModel>(context, listen: false);
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
       body: userViewModel.isLoading
           ? Center(child: CircularProgressIndicator())
-          : Stack(
+          : Column(
               children: [
                 Center(
                   child: Padding(
@@ -190,7 +194,9 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
                               isUnfocus: true,
                               isEnabled: true,
                               name: "Cancel",
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
                             ),
                           ],
                         )
@@ -210,7 +216,7 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
                                       _selectedDistance!;
                                   Navigator.of(context).push(
                                       MaterialPageRoute(builder: (context) {
-                                    return WeatherPrefernceScreen(
+                                    return WeatherPreferenceScreen(
                                       userPreferences: widget.userPreferences,
                                     );
                                   }));
@@ -224,7 +230,7 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
                                   widget.userPreferences?.userUnit = '';
                                   Navigator.of(context).push(
                                       MaterialPageRoute(builder: (context) {
-                                    return WeatherPrefernceScreen(
+                                    return WeatherPreferenceScreen(
                                       userPreferences: widget.userPreferences,
                                     );
                                   }));

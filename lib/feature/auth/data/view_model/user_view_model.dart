@@ -48,9 +48,8 @@ class UserViewModel extends ChangeNotifier {
         // );
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-              builder: (context) => HomeScreen()),
-              (route) => false,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+          (route) => false,
         );
 
         return response;
@@ -124,6 +123,31 @@ class UserViewModel extends ChangeNotifier {
     } catch (e) {
       errorMessage = e.toString();
       return ApiResponseWithData({}, false);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<ApiResponse> updateUserProfile(
+    String name,
+    String mobileNumber,
+    String userUnit,
+    String weather,
+  ) async {
+    _setLoading(true);
+    try {
+      final response =
+          await _loginAPIs.updateProfile(name, mobileNumber, userUnit, weather);
+      if (response.success) {
+        await getUser();
+        return response;
+      } else {
+        errorMessage = response.message;
+        return response;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      return ApiResponse(errorMessage, false);
     } finally {
       _setLoading(false);
     }
@@ -216,12 +240,11 @@ class UserViewModel extends ChangeNotifier {
 
   // Password Reset
   Future<ApiResponse> changePassword(
-      String oldPassword,
-      String newPassword,
-      String confirmNewPassword) async {
+      String oldPassword, String newPassword, String confirmNewPassword) async {
     _setLoading(true);
     try {
-      final response = await _loginAPIs.changePassword(oldPassword, newPassword,confirmNewPassword);
+      final response = await _loginAPIs.changePassword(
+          oldPassword, newPassword, confirmNewPassword);
       if (!response.success) {
         return response;
       } else {

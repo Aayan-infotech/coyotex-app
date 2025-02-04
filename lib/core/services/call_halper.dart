@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:exponential_back_off/exponential_back_off.dart';
 
 class ApiResponse {
   final String message;
@@ -23,209 +21,161 @@ class ApiResponseWithData<T> {
 }
 
 class CallHelper {
-  static final Dio dio = Dio();
-
-  final exponentialBackOff = ExponentialBackOff(
-    interval:
-        const Duration(milliseconds: 5000), // Retry after 2, 4, 8, 16 seconds
-    maxAttempts: 5,
-    maxRandomizationFactor: 0.0,
-    maxDelay: const Duration(seconds: 30),
-  );
-
-  static String url = "http://44.196.64.110:5647/";
-  int timeoutInSeconds = 20;
-  String internalServerErrorMessage = "Internal server error.";
+  static const String baseUrl = "http://44.196.64.110:5647/";
+  static const int timeoutInSeconds = 20;
+  static const String internalServerErrorMessage = "Internal server error.";
 
   Future<Map<String, String>> getHeaders() async {
     String accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
-    const String role = '';
-    const String id = '';
-
-    var headers = {
-      'role': role.toUpperCase(),
-      'id': id,
-      'Authorization': 'Bearer $accessToken', // Uncomment if needed
+    return {
+      'Authorization': 'Bearer $accessToken',
       'Content-Type': 'application/json',
     };
-    return headers;
   }
 
   Future<ApiResponse> get(String urlSuffix,
       {Map<String, dynamic>? queryParams}) async {
-    Uri uri = Uri.parse('$url$urlSuffix').replace(queryParameters: queryParams);
+    Uri uri =
+        Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
 
     try {
-      final response = await dio
-          .getUri(uri, options: Options(headers: await getHeaders()))
-          .timeout(
+      final response = await http.get(uri, headers: await getHeaders()).timeout(
             Duration(seconds: timeoutInSeconds),
           );
-
-      if (kDebugMode) {
-        print('Response: ${response.data}');
-      }
-
-      if (response.statusCode == 200) {
-        String message = response.data['message'] ?? internalServerErrorMessage;
-        return ApiResponse(message, true);
-      } else {
-        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
-      }
-    } on DioException catch (e) {
-      return _handleDioError(e);
+      return _processResponse(response);
+    } catch (e) {
+      return ApiResponse("Request failed", false);
     }
   }
 
   Future<ApiResponseWithData<T>> getWithData<T>(String urlSuffix, T defaultData,
       {Map<String, dynamic>? queryParams}) async {
-    Uri uri = Uri.parse('$url$urlSuffix').replace(queryParameters: queryParams);
+    Uri uri =
+        Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
 
     try {
-      final response = await dio
-          .getUri(uri, options: Options(headers: await getHeaders()))
-          .timeout(
+      final response = await http.get(uri, headers: await getHeaders()).timeout(
             Duration(seconds: timeoutInSeconds),
           );
-
-      if (kDebugMode) {
-        print('Response: ${response.data}');
-      }
-
-      if (response.statusCode == 200) {
-        return ApiResponseWithData(response.data as T, true);
-      } else if (response.statusCode == 404) {
-        return ApiResponseWithData(defaultData, false, message: "Not Found");
-      } else {
-        return ApiResponseWithData(
-          defaultData,
-          false,
-          message: response.data['message'] ?? internalServerErrorMessage,
-        );
-      }
-    } on DioException catch (e) {
-      return ApiResponseWithData(defaultData, false, message: '');
+      return _processResponseWithData(response, defaultData);
+    } catch (e) {
+      return ApiResponseWithData(defaultData, false, message: "Request failed");
     }
   }
 
   Future<ApiResponse> post(String urlSuffix, Map<String, dynamic> body) async {
     try {
-      final response = await dio
-          .post('$url$urlSuffix',
-              data: jsonEncode(body),
-              options: Options(headers: await getHeaders()))
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$urlSuffix'),
+            headers: await getHeaders(),
+            body: jsonEncode(body),
+          )
           .timeout(
             Duration(seconds: timeoutInSeconds),
           );
-
-      if (response.statusCode == 200) {
-        return ApiResponse(
-            response.data['message'] ?? internalServerErrorMessage, true);
-      } else {
-        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
-      }
-    } on DioException catch (e) {
-      return _handleDioError(e);
+      return _processResponse(response);
+    } catch (e) {
+      return ApiResponse("Request failed", false);
     }
   }
 
   Future<ApiResponseWithData<T>> postWithData<T>(
       String urlSuffix, Map<String, dynamic> body, T defaultData) async {
     try {
-      final response = await dio
-          .post('$url$urlSuffix',
-              data: jsonEncode(body),
-              options: Options(headers: await getHeaders()))
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$urlSuffix'),
+            headers: await getHeaders(),
+            body: jsonEncode(body),
+          )
           .timeout(
             Duration(seconds: timeoutInSeconds),
           );
-      internalServerErrorMessage =
-          response.data['message'] ?? "Internal Server Error";
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return ApiResponseWithData(response.data as T, true);
-      } else {
-        return ApiResponseWithData(defaultData, false,
-            message: response.data['message'] ?? internalServerErrorMessage);
-      }
-    } on DioException catch (e) {
-      return ApiResponseWithData(defaultData, false,
-          message: internalServerErrorMessage);
+      return _processResponseWithData(response, defaultData);
+    } catch (e) {
+      return ApiResponseWithData(defaultData, false, message: "Request failed");
     }
   }
 
   Future<ApiResponse> delete(
       String urlSuffix, Map<String, dynamic> body) async {
     try {
-      final response = await dio
-          .delete('$url$urlSuffix',
-              data: jsonEncode(body),
-              options: Options(headers: await getHeaders()))
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl$urlSuffix'),
+            headers: await getHeaders(),
+            body: jsonEncode(body),
+          )
           .timeout(
             Duration(seconds: timeoutInSeconds),
           );
-
-      if (response.statusCode == 200) {
-        return ApiResponse(
-            response.data['message'] ?? internalServerErrorMessage, true);
-      } else {
-        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
-      }
-    } on DioException catch (e) {
-      return _handleDioError(e);
+      return _processResponse(response);
+    } catch (e) {
+      return ApiResponse("Request failed", false);
     }
   }
 
   Future<ApiResponse> put(String urlSuffix, Map<String, dynamic> body) async {
     try {
-      final response = await dio
-          .put('$url$urlSuffix',
-              data: jsonEncode(body),
-              options: Options(headers: await getHeaders()))
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl$urlSuffix'),
+            headers: await getHeaders(),
+            body: jsonEncode(body),
+          )
           .timeout(
             Duration(seconds: timeoutInSeconds),
           );
-
-      if (response.statusCode == 200) {
-        return ApiResponse(
-            response.data['message'] ?? internalServerErrorMessage, true);
-      } else {
-        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
-      }
-    } on DioException catch (e) {
-      return _handleDioError(e);
+      return _processResponse(response);
+    } catch (e) {
+      return ApiResponse("Request failed", false);
     }
   }
 
   Future<ApiResponse> patch(String urlSuffix, Map<String, dynamic> body) async {
     try {
-      final response = await dio
-          .patch('$url$urlSuffix',
-              data: jsonEncode(body),
-              options: Options(headers: await getHeaders()))
+      final response = await http
+          .patch(
+            Uri.parse('$baseUrl$urlSuffix'),
+            headers: await getHeaders(),
+            body: jsonEncode(body),
+          )
           .timeout(
             Duration(seconds: timeoutInSeconds),
           );
-
-      if (response.statusCode == 200) {
-        return ApiResponse(
-            response.data['message'] ?? internalServerErrorMessage, true);
-      } else {
-        return ApiResponse(response.data['message'] ??internalServerErrorMessage, false);
-      }
-    } on DioException catch (e) {
-      return _handleDioError(e);
+      return _processResponse(response);
+    } catch (e) {
+      return ApiResponse("Request failed", false);
     }
   }
 
-  ApiResponse _handleDioError(DioError error) {
-    if (error.type == DioExceptionType.cancel ||
-        error.type == DioExceptionType.receiveTimeout) {
-      return ApiResponse("Request timed out", false);
-    } else if (error.response != null) {
-      return ApiResponse(
-          error.response?.data['message'] ?? internalServerErrorMessage, false);
-    } else {
-      return ApiResponse(error.response?.data['message'], false);
+  ApiResponse _processResponse(http.Response response) {
+    final Map<String, dynamic> data = jsonDecode(response.body);
+    String message = data["message"] ?? internalServerErrorMessage;
+    if (kDebugMode) {
+      print('Response: ${response.body}');
     }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return ApiResponse(data['message'] ?? internalServerErrorMessage, true);
+    }
+    return ApiResponse(message, false);
+  }
+
+  ApiResponseWithData<T> _processResponseWithData<T>(
+      http.Response response, T defaultData) {
+    if (kDebugMode) {
+      print('Response: ${response.body}');
+    }
+
+    final Map<String, dynamic> data = jsonDecode(response.body);
+    String message = data["message"] ?? internalServerErrorMessage;
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return ApiResponseWithData(data as T, true);
+    }
+    return ApiResponseWithData(defaultData, false, message: message);
   }
 }
