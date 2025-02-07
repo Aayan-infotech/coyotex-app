@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
@@ -56,12 +58,19 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
                         widget.controller.text =
                             suggestion['description'] ?? '';
                         mapProvider.startSuggestions.clear();
-                        await mapProvider
-                            .onSuggestionSelected(suggestion['place_id'],
-                                widget.isStart, widget.controller)
-                            .then((valueKey) {
-                          Navigator.of(context).pop(true);
-                        });
+                        // await mapProvider
+                        //     .onSuggestionSelected(suggestion['place_id'],
+                        //         widget.isStart, widget.controller)
+                        //     .then((valueKey) {
+                        //   Navigator.of(context).pop(true);
+                        // });
+                        Map<String, dynamic> mapData = {
+                          "placeId": suggestion['place_id'],
+                          "isStart": widget.isStart,
+                          // "controller": widget.controller.text
+                        };
+                        String data = jsonEncode(mapData);
+                        Navigator.of(context).pop(data);
                       },
                     );
                   },

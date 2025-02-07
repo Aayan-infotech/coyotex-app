@@ -6,6 +6,9 @@ import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class TripAPIs extends ApiBase {
   TripAPIs() : super();
@@ -13,43 +16,80 @@ class TripAPIs extends ApiBase {
   Future<ApiResponseWithData<Map<String, dynamic>>> addTrip(
       TripModel trip_model) async {
     Map<String, dynamic> data = trip_model.toJson();
-    print(data);
+
+    print(jsonEncode(data));
 
     return await CallHelper().postWithData('api/trips/', data, {});
   }
 
-  Future<ApiResponseWithData<Map<String, dynamic>>> getUserTrip(
-      TripModel trip_model) async {
-    Map<String, dynamic> data = trip_model.toJson();
-    print(data);
+  Future<ApiResponseWithData<Map<String, dynamic>>> addStop(
+      MarkerData markerData, String id) async {
+    Map<String, dynamic> data = markerData.toJson();
 
-    return await CallHelper().postWithData('api/trips/${userId}', data, {});
+    return await CallHelper()
+        .postWithData('api/trips/${id}/add-marker', data, {});
   }
 
-  // Endpoint for weather API
+  Future<ApiResponseWithData<Map<String, dynamic>>> addWayPoints(
+      String id, List<String> lstWayPoints) async {
+    Map<String, dynamic> data = {"waypoints": lstWayPoints};
+
+    return await CallHelper()
+        .postWithData('api/trips/${id}/add-waypoint', data, {});
+  }
+
+  Future<ApiResponse> addAnimalSeenAndKilled(Map<String, dynamic> data) async {
+    return await CallHelper().patch(
+      
+      'trips/update-animals',
+      data,
+    );
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> addPoint(
+      String id, List<Map<String, dynamic>> points) async {
+    Map<String, dynamic> data = {"routePoints": points};
+
+    return await CallHelper()
+        .postWithData('api/trips/${id}/add-route-point', data, {});
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> getUserTrip() async {
+    return await CallHelper().getWithData('api/trips/', {});
+  }
+
   final String endPoint = 'https://api.openweathermap.org/data/2.5/weather';
 
-  // Fetch weather data based on latitude and longitude
   Future<Map<String, dynamic>> getWeather(double lat, double lon) async {
-    // Construct the final endpoint URL
     final String finalUrl =
-        '$endPoint?lat=$lat&lon=$lon&appid=$apiKey&units=metric'; // `units=metric` for Celsius
+        '$endPoint?lat=$lat&lon=$lon&appid=$apiKey&units=metric';
 
     try {
-      // Make the HTTP GET request
       final response = await http.get(Uri.parse(finalUrl));
 
       if (response.statusCode == 200) {
-        // If the server returns a 200 OK response, parse the JSON
         return json.decode(response.body);
       } else {
-        // If the server returns an error, throw an exception
         throw Exception('Failed to load weather data');
       }
     } catch (e) {
-      // Handle errors like no internet connection
       print('Error: $e');
       throw Exception('Failed to load weather data');
     }
+  }
+
+  Future<ApiResponse> updateProfile(String name, String number, String userUnit,
+      String userWeatherPref) async {
+    Map<String, String> data = {
+      "name": name,
+      "number": number,
+      "userUnit": userUnit,
+      "userWeatherPref": userWeatherPref
+    };
+
+    return await CallHelper().post(
+      'api/update-details',
+      data,
+    );
   }
 }

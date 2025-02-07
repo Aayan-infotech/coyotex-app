@@ -17,9 +17,9 @@ class UserContextData {
     _user = user;
     List<Future> lstFutures = <Future>[];
 
-    lstFutures.add(userProvider.getUser());
-    lstFutures.add(mapProvider.getCurrentLocation());
-// lstFutures.add()
+    // lstFutures.add(userProvider.getUser());
+    // lstFutures.add(mapProvider.getCurrentLocation());
+    // lstFutures.add(mapProvider.getTrips());
     // lstFutures.add(cartProvider.getCoupon(context));
     // lstFutures
     //     .add(productProvider.getOrderList(userProvider.user!.id, context));
