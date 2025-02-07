@@ -2,6 +2,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class TripModel {
   final String id;
+  final String userId;
   final String name;
   final String startLocation;
   final String destination;
@@ -10,10 +11,14 @@ class TripModel {
   final DateTime createdAt;
   final List<LatLng> routePoints;
   final List<MarkerData> markers;
-  final Map<String, Duration> timeDurations;
+  final List<WeatherMarker> weatherMarkers;
+  final List<String> images;
+  int animalKilled;
+  int animalSeen;
 
   TripModel({
     required this.id,
+    required this.userId,
     required this.name,
     required this.startLocation,
     required this.destination,
@@ -22,31 +27,45 @@ class TripModel {
     required this.createdAt,
     required this.routePoints,
     required this.markers,
-    required this.timeDurations,
+    required this.weatherMarkers,
+    required this.animalKilled,
+    required this.animalSeen,
+    required this.images,
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
     return TripModel(
-      id: json['id'],
-      name: json['name'],
-      startLocation: json['startLocation'],
-      destination: json['destination'],
-      waypoints: List<String>.from(json['waypoints']),
-      totalDistance: json['totalDistance'],
-      createdAt: DateTime.parse(json['createdAt']),
-      routePoints: (json['routePoints'] as List)
-          .map((e) => LatLng(e['latitude'], e['longitude']))
-          .toList(),
-      markers:
-          (json['markers'] as List).map((e) => MarkerData.fromJson(e)).toList(),
-      timeDurations: (json['timeDurations'] as Map<String, dynamic>)
-          .map((key, value) => MapEntry(key, Duration(seconds: value))),
+      id: json['_id'] ?? '',
+      userId: json['userId'] ?? '',
+      name: json['name'] ?? '',
+      startLocation: json['startLocation'] ?? '',
+      destination: json['destination'] ?? '',
+      waypoints: List<String>.from(json['waypoints'] ?? []),
+      totalDistance: (json['totalDistance'] ?? 0).toDouble(),
+      createdAt:
+          DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      routePoints: (json['routePoints'] as List?)
+              ?.map((e) => LatLng(e['latitude'], e['longitude']))
+              .toList() ??
+          [],
+      markers: (json['markers'] as List?)
+              ?.map((e) => MarkerData.fromJson(e))
+              .toList() ??
+          [],
+      weatherMarkers: (json['weatherMarkers'] as List?)
+              ?.map((e) => WeatherMarker.fromJson(e))
+              .toList() ??
+          [],
+      animalKilled: json['animalsKilled'] ?? 0,
+      animalSeen: json['animalsSeen'] ?? 0,
+      images: List<String>.from(json['photos'] ?? []),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      '_id': id,
+      'userId': userId,
       'name': name,
       'startLocation': startLocation,
       'destination': destination,
@@ -57,8 +76,10 @@ class TripModel {
           .map((e) => {'latitude': e.latitude, 'longitude': e.longitude})
           .toList(),
       'markers': markers.map((e) => e.toJson()).toList(),
-      'timeDurations': timeDurations
-          .map((key, value) => MapEntry(key.toString(), value.inSeconds)),
+      'weatherMarkers': weatherMarkers.map((e) => e.toJson()).toList(),
+      // 'animalsKilled': animalKilled,
+      // 'animalsSeen': animalSeen,
+      // 'photos': images,
     };
   }
 }
@@ -68,30 +89,262 @@ class MarkerData {
   final LatLng position;
   final String title;
   final String snippet;
+  final String icon;
+  final String markerType;
+  int duration;
 
   MarkerData({
     required this.id,
     required this.position,
     required this.title,
     required this.snippet,
+    required this.icon,
+    required this.markerType,
+    required this.duration,
   });
 
   factory MarkerData.fromJson(Map<String, dynamic> json) {
     return MarkerData(
-      id: json['id'],
-      position: LatLng(json['latitude'], json['longitude']),
-      title: json['title'],
-      snippet: json['snippet'],
+      id: json['_id'] ?? "",
+      position: LatLng(json['latitude'] ?? 0, json['longitude'] ?? 0),
+      title: json['title'] ?? '',
+      snippet: json['snippet'] ?? "",
+      icon: json['icon'] ?? '',
+      markerType: json['markerType'] ?? "inbetween",
+      duration: json['timeDurations'] ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      //  '_id': id,
       'latitude': position.latitude,
       'longitude': position.longitude,
       'title': title,
       'snippet': snippet,
+      'icon': icon,
+      'timeDurations': duration,
+      'markerType': markerType,
+    };
+  }
+}
+
+// class WeatherMarker {
+//   final String id;
+//   final LatLng position;
+//   final String locationName;
+//   final String country;
+//   final int timezone;
+//   final WeatherData weather;
+
+//   WeatherMarker({
+//     required this.id,
+//     required this.position,
+//     required this.locationName,
+//     required this.country,
+//     required this.timezone,
+//     required this.weather,
+//   });
+
+//   factory WeatherMarker.fromJson(Map<String, dynamic> json) {
+//     return WeatherMarker(
+//       id: json['_id'] ?? '',
+//       position: LatLng(json['location']['latitude'] ?? 0, json['location']['longitude'] ?? 0),
+//       locationName: json['location']['name'] ?? '',
+//       country: json['location']['country'] ?? '',
+//       timezone: json['location']['timezone'] ?? 0,
+//       weather: WeatherData.fromJson(json['weather'] ?? {}),
+//     );
+//   }
+
+//   Map<String, dynamic> toJson() {
+//     return {
+//       '_id': id,
+//       'location': {
+//         'latitude': position.latitude,
+//         'longitude': position.longitude,
+//         'name': locationName,
+//         'country': country,
+//         'timezone': timezone,
+//       },
+//       'weather': weather.toJson(),
+//     };
+//   }
+// }
+
+// class WeatherData {
+//   final double temperature;
+//   final double feelsLike;
+//   final String weatherMain;
+//   final String weatherDescription;
+//   final String weatherIcon;
+
+//   WeatherData({
+//     required this.temperature,
+//     required this.feelsLike,
+//     required this.weatherMain,
+//     required this.weatherDescription,
+//     required this.weatherIcon,
+//   });
+
+//   factory WeatherData.fromJson(Map<String, dynamic> json) {
+//     return WeatherData(
+//       temperature: (json['temperature'] ?? 0).toDouble(),
+//       feelsLike: (json['feels_like'] ?? 0).toDouble(),
+//       weatherMain: json['weather_main'] ?? '',
+//       weatherDescription: json['weather_description'] ?? '',
+//       weatherIcon: json['weather_icon'] ?? '',
+//     );
+//   }
+
+//   Map<String, dynamic> toJson() {
+//     return {
+//       'temperature': temperature,
+//       'feels_like': feelsLike,
+//       'weather_main': weatherMain,
+//       'weather_description': weatherDescription,
+//       'weather_icon': weatherIcon,
+//     };
+//   }
+// }
+
+class WeatherMarker {
+  final Weatherlocation location;
+  final WeatherData weather;
+
+  WeatherMarker({required this.location, required this.weather});
+
+  factory WeatherMarker.fromJson(Map<String, dynamic> json) {
+    return WeatherMarker(
+      location: Weatherlocation.fromJson(json['location']),
+      weather: WeatherData.fromJson(json['weather']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'location': location.toJson(),
+      'weather': weather.toJson(),
+    };
+  }
+}
+
+class Weatherlocation {
+  final String name;
+  final String country;
+  final double latitude;
+  final double longitude;
+  final int timezone;
+
+  Weatherlocation({
+    required this.name,
+    required this.country,
+    required this.latitude,
+    required this.longitude,
+    required this.timezone,
+  });
+
+  factory Weatherlocation.fromJson(Map<String, dynamic> json) {
+    return Weatherlocation(
+      name: json['name'],
+      country: json['country'],
+      latitude: json['latitude'].toDouble(),
+      longitude: json['longitude'].toDouble(),
+      timezone: json['timezone'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'country': country,
+      'latitude': latitude,
+      'longitude': longitude,
+      'timezone': timezone,
+    };
+  }
+}
+
+class WeatherData {
+  final double temperature;
+  final double feelsLike;
+  final double tempMin;
+  final double tempMax;
+  final int pressure;
+  final int humidity;
+  final int visibility;
+  final double windSpeed;
+  final int windDegree;
+  final double windGust;
+  final int cloudiness;
+  final String weatherMain;
+  final String weatherDescription;
+  final String weatherIcon;
+  final int sunrise;
+  final int sunset;
+  final int recordedAt;
+
+  WeatherData({
+    required this.temperature,
+    required this.feelsLike,
+    required this.tempMin,
+    required this.tempMax,
+    required this.pressure,
+    required this.humidity,
+    required this.visibility,
+    required this.windSpeed,
+    required this.windDegree,
+    required this.windGust,
+    required this.cloudiness,
+    required this.weatherMain,
+    required this.weatherDescription,
+    required this.weatherIcon,
+    required this.sunrise,
+    required this.sunset,
+    required this.recordedAt,
+  });
+
+  factory WeatherData.fromJson(Map<String, dynamic> json) {
+    return WeatherData(
+      temperature: json['temperature'].toDouble(),
+      feelsLike: json['feels_like'].toDouble(),
+      tempMin: json['temp_min'].toDouble(),
+      tempMax: json['temp_max'].toDouble(),
+      pressure: json['pressure'],
+      humidity: json['humidity'],
+      visibility: json['visibility'],
+      windSpeed: json['wind_speed'].toDouble(),
+      windDegree: json['wind_degree'],
+      windGust: json['wind_gust'].toDouble(),
+      cloudiness: json['cloudiness'],
+      weatherMain: json['weather_main'],
+      weatherDescription: json['weather_description'],
+      weatherIcon: json['weather_icon'],
+      sunrise: json['sunrise'],
+      sunset: json['sunset'],
+      recordedAt: json['recorded_at'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'temperature': temperature,
+      'feels_like': feelsLike,
+      'temp_min': tempMin,
+      'temp_max': tempMax,
+      'pressure': pressure,
+      'humidity': humidity,
+      'visibility': visibility,
+      'wind_speed': windSpeed,
+      'wind_degree': windDegree,
+      'wind_gust': windGust,
+      'cloudiness': cloudiness,
+      'weather_main': weatherMain,
+      'weather_description': weatherDescription,
+      'weather_icon': weatherIcon,
+      'sunrise': sunrise,
+      'sunset': sunset,
+      'recorded_at': recordedAt,
     };
   }
 }

@@ -1,9 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/feature/map/presentation/trip_history.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 
+import '../../../../core/utills/notification.dart';
 import '../../../map/view_model/map_provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,12 +18,14 @@ class _HomePageState extends State<HomePage> {
   TextEditingController _searchController = TextEditingController();
   @override
   void initState() {
-    // TODO: implement initState
-    final mapProvider = Provider.of<MapProvider>(context, listen: false);
-
-    mapProvider.getCurrentLocation();
-
+    asyncInit();
     super.initState();
+  }
+
+  asyncInit() async {
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+    mapProvider.getCurrentLocation();
+    mapProvider.getTrips();
   }
 
   @override
@@ -36,28 +41,33 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Logo and Search Field
-                Padding(
-                  padding: const EdgeInsets.only(
-                      top: 40.0), // Add top padding for spacing
-                  child: Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          width: 50, // Set a width for the logo
-                          height: 50, // Set a height for the logo
+                GestureDetector(
+                  onTap: () {
+                    NotificationService.getDeviceToken();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        top: 40.0), // Add top padding for spacing
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            width: 50, // Set a width for the logo
+                            height: 50, // Set a height for the logo
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: BrandedTextField(
-                          height: 40,
-                          controller: _searchController,
-                          labelText: '',
-                          prefix: Icon(Icons.search),
+                        Expanded(
+                          child: BrandedTextField(
+                            height: 40,
+                            controller: _searchController,
+                            labelText: '',
+                            prefix: Icon(Icons.search),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 SizedBox(height: 16),
@@ -160,60 +170,89 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Card(
-                        color: Colors.grey[900],
-                        child: Column(
-                          children: [
-                            Image.asset('assets/images/trip1.png',
-                                fit: BoxFit.cover), // Replace with image asset
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                'Trip 1',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
+                SizedBox(
+                  height: 200,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: mapProvider.trips.length,
+                    itemBuilder: (context, index) {
+                      final trip = mapProvider.trips[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Card(
+                          color: Colors.grey[900],
+                          child: Stack(
+                            // mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                    10), // Adjust the radius as needed
+                                child: CachedNetworkImage(
+                                  imageUrl: trip.images.isNotEmpty
+                                      ? trip.images.first
+                                      : '',
+                                  width: 200,
+                                  height: 200,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    width: 150,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(
+                                          10), // Apply same radius
+                                    ),
+                                    child: Center(
+                                        child: CircularProgressIndicator()),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                    width: 150,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          const Color.fromARGB(255, 58, 55, 55),
+                                      borderRadius: BorderRadius.circular(
+                                          10), // Apply same radius
+                                    ),
+                                    child: Icon(Icons.error, color: Colors.red),
+                                  ),
+                                ),
                               ),
-                            ),
-                            Text(
-                              '720 Locations',
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Card(
-                        color: Colors.grey[900],
-                        child: Column(
-                          children: [
-                            Image.asset('assets/images/trip2.png',
-                                fit: BoxFit.cover), // Replace with image asset
-                            const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                'Trip 2',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
+                              Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10, bottom: 30),
+                                  child: SizedBox(
+                                    width: 150,
+                                    child: Text(
+                                      trip.name,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                            const Text(
-                              '120 Locations',
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 12),
-                            ),
-                          ],
+                              Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10, bottom: 10),
+                                  child: Text(
+                                    '${trip.markers.length} Locations',
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                      );
+                    },
+                  ),
                 ),
                 SizedBox(height: 16),
 
@@ -236,27 +275,25 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-                ListTile(
-                  leading: Icon(Icons.location_pin, color: Colors.orange),
-                  title: Text('Trip 1', style: TextStyle(color: Colors.white)),
-                  subtitle: Text(
-                    'Lorem Ipsum is simply dummy',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  trailing:
-                      Text('12 Miles', style: TextStyle(color: Colors.white)),
-                ),
-                ListTile(
-                  leading: Icon(Icons.location_pin, color: Colors.orange),
-                  title: Text('Trip 2', style: TextStyle(color: Colors.white)),
-                  subtitle: Text(
-                    'Lorem Ipsum is simply dummy',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                  trailing:
-                      Text('3 Miles', style: TextStyle(color: Colors.white)),
-                ),
-                SizedBox(height: 16),
+
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount:
+                      min(mapProvider.trips.length, 6), // Show up to 6 items
+                  itemBuilder: (context, index) {
+                    final trip = mapProvider.trips[index];
+                    return ListTile(
+                      leading: Icon(Icons.location_pin, color: Colors.orange),
+                      title: Text(trip.name,
+                          style: TextStyle(color: Colors.white)),
+                      subtitle: Text(trip.startLocation,
+                          style: TextStyle(color: Colors.white70)),
+                      trailing: Text(trip.totalDistance.toStringAsFixed(2),
+                          style: TextStyle(color: Colors.white)),
+                    );
+                  },
+                )
               ],
             ),
           ),
