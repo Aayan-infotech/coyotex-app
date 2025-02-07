@@ -93,7 +93,7 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
       ),
       body: userViewModel.isLoading
           ? Center(child: CircularProgressIndicator())
-          : Column(
+          : Stack(
               children: [
                 Center(
                   child: Padding(

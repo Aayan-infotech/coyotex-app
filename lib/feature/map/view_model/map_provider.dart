@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'dart:convert';
 import 'dart:math';
 import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
+import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -13,24 +17,27 @@ import 'package:geocoding/geocoding.dart';
 
 class MapProvider with ChangeNotifier {
   final TextEditingController startController = TextEditingController();
-  final TextEditingController destinationController = TextEditingController();
+  TextEditingController destinationController = TextEditingController();
   final List<TextEditingController> destinationControllers = [];
   int destinationCount = 1;
-  final List<TripModel> trips = [];
+  List<TripModel> trips = [];
   bool isTap = true;
   final Set<Polyline> polylines = {};
-  final Set<Marker> markers = {};
+  Set<Marker> mapMarkers = {};
+  List<MarkerData> markers = [];
   List<LatLng> points = [];
+  List<LatLng> path = [];
+  late TripModel selectedTripModel;
+  bool providerLetsHuntButton = false;
 
   final String sessionToken = const Uuid().v4();
   var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
   String markerId = '';
-
   List<dynamic> startSuggestions = [];
   List<dynamic> destinationSuggestions = [];
   GoogleMapController? mapController;
   LatLng initialPosition = const LatLng(26.862421770613125, 80.99804357972356);
-  final Map<String, Duration> timeDurations = {};
+  int timeDurations = 0;
   LatLng? pointA;
   LatLng? pointB;
   bool isSave = false;
@@ -46,6 +53,132 @@ class MapProvider with ChangeNotifier {
   TripAPIs _tripAPIs = TripAPIs();
   late WeatherResponse weather = defaultWeatherResponse;
   final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
+  int totalTime = 0;
+  getTrips() async {
+    isLoading = true;
+    // notifyListeners();
+    var response = await _tripAPIs.getUserTrip();
+    if (response.success) {
+      trips = (response.data["data"] as List).map((item) {
+        return TripModel.fromJson(item);
+      }).toList();
+    }
+    notifyListeners();
+    isLoading = false;
+  }
+
+  void updateCameraPosition(LatLng newPosition) {
+    if (mapController != null) {
+      mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(newPosition, 10),
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<void> showDurationPicker(
+    BuildContext context,
+  ) async {
+    TextEditingController minuteController = TextEditingController();
+
+    Duration? selectedDuration = await showDialog<Duration>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          elevation: 8.0,
+          backgroundColor: Colors.white,
+          title: const Center(
+            child: Text(
+              "Set Duration",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey,
+              ),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: minuteController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Enter time in minutes",
+                  labelStyle: TextStyle(color: Colors.blueGrey[600]),
+                  hintText: "e.g., 30",
+                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: const BorderSide(color: Colors.blueGrey),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide:
+                        const BorderSide(color: Colors.blueAccent, width: 2.0),
+                  ),
+                  filled: true,
+                  fillColor: Colors.blueGrey[50],
+                ),
+                style: const TextStyle(color: Colors.blueGrey, fontSize: 16),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(null); // No duration selected
+              },
+              child: const Text(
+                "Cancel",
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (minuteController.text.isNotEmpty) {
+                  int minutes = int.parse(minuteController.text);
+                  await setTimeDuration(minutes);
+                  Navigator.of(context).pop(null);
+                } else {
+                  Navigator.of(context).pop(true); // No duration selected
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text(
+                "Set",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (selectedDuration != null) {
+      // Use the selected duration as needed
+      // provider.setMarkerDuration(markerId, selectedDuration);
+    }
+  }
 
   Future<void> getWeather(LatLng latAndLng) async {
     isLoading = true;
@@ -147,7 +280,14 @@ class MapProvider with ChangeNotifier {
       // Fetch the route only once
       await fetchRouteWithWaypoints(path);
       isLoading = false;
-
+// updateCameraPosition(LatLng(initialPosition.latitude, initialPosition.longitude));
+      if (mapController != null) {
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(
+              LatLng(initialPosition.latitude, initialPosition.longitude), 15),
+        );
+      }
+      notifyListeners();
       // Start listening to location updates for the user pointer
       Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
@@ -170,42 +310,60 @@ class MapProvider with ChangeNotifier {
 
   void addStop() async {
     try {
-      isLoading = true; // Indicate loading state
+      isLoading = true;
       isHurryUp = true;
       isKeyDataPoint = false;
       isTripStart = false;
 
       notifyListeners();
 
-      // Fetch the user's current location
       Position currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
       LatLng currentStop =
           LatLng(currentPosition.latitude, currentPosition.longitude);
 
-      // Add the current location as a new stop in the path
       points.add(currentStop);
       path.add(currentStop);
+      String locationName = await _getLocationName(
+          LatLng(currentStop.latitude, currentStop.longitude));
 
-      // Update the list of markers
       final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
       markerId = uniqueId;
-      markers.add(Marker(
-        markerId: MarkerId(uniqueId),
+      markers.add(MarkerData(
+        id: uniqueId,
         position: currentStop,
-        // // // icon: _markerIcon,
-        infoWindow: InfoWindow(
-          title: 'Stop ${points.length}',
-          snippet: '${currentStop.latitude}, ${currentStop.longitude}',
-        ),
+        icon: "assets/images/stop.icon",
+        title: "Stop",
+        snippet: locationName,
+        duration: timeDurations,
+        markerType: "inbetween",
       ));
+      var response = await _tripAPIs.addStop(
+        MarkerData(
+          id: uniqueId,
+          position: currentStop,
+          icon: "assets/images/stop.icon",
+          title: "Stop",
+          snippet: locationName,
+          duration: timeDurations,
+          markerType: "inbetween",
+        ),
+        selectedTripModel.id,
+      );
+      List<Map<String, dynamic>> dataPoint = [
+        {"latitude": currentStop.latitude, "longitude": currentStop.longitude},
+      ];
 
-      // Add a new destination controller for the stop
-      // TextEditingController stopController = TextEditingController(
-      //   text: '${currentStop.latitude}, ${currentStop.longitude}',
-      // );
-      // destinationControllers.add(stopController);
+      response = await _tripAPIs.addPoint(
+        selectedTripModel.id,
+        dataPoint,
+      );
+      List<String> waypoint = [locationName, locationName];
+      response = await _tripAPIs.addWayPoints(
+        selectedTripModel.id,
+        waypoint,
+      );
 
       // Fetch and redraw the updated route
       await fetchRouteWithWaypoints(path);
@@ -236,107 +394,225 @@ class MapProvider with ChangeNotifier {
     isKeyDataPoint = false;
     resetFields();
     Navigator.of(context).pop();
+    Navigator.of(context).pop();
     notifyListeners();
   }
 
-  Future<void> drawPolylineWithMarkers(TripModel trip) async {
-    // Clear existing markers and polylines
-    isLoading = true;
-    isSave = true;
-    notifyListeners();
-    markers.clear();
-    polylines.clear();
-
-    // Add markers from the trip's MarkerData
-    for (var markerData in trip.markers) {
-      markers.add(
-        Marker(
-          markerId: MarkerId(markerData.id),
-          position: markerData.position,
-          // // // icon: _markerIcon,
-          infoWindow: InfoWindow(
-            title: markerData.title,
-            snippet: markerData.snippet,
-          ),
-        ),
-      );
-    }
-
-    // Draw polyline from routePoints in the trip
-    polylines.add(
-      Polyline(
-        polylineId: PolylineId("route"),
-        points: trip.routePoints, // Use routePoints from the TripModel
-        color: Colors.blue,
-        width: 5,
-      ),
-    );
-    points = trip.routePoints;
-
-    distance = _calculateTotalDistance();
-    // Optionally, add start and end markers with special titles
-    if (trip.routePoints.isNotEmpty) {
-      var start = trip.routePoints.first;
-      var end = trip.routePoints.last;
-
-      markers.add(
-        Marker(
-          markerId: MarkerId("start"),
-          // // icon: _markerIcon,
-          position: start,
-          infoWindow: InfoWindow(title: "Start"),
-        ),
-      );
-
-      markers.add(
-        Marker(
-          markerId: MarkerId("end"),
-          position: end,
-          // // icon: _markerIcon,
-          infoWindow: InfoWindow(title: "End"),
-        ),
-      );
-    }
-    isLoading = false;
-
-    notifyListeners();
-  }
-
-  void saveTrip() async {
+  void saveTrip(BuildContext context) async {
     isLoading = true;
     notifyListeners();
     if (points.isEmpty) {
       debugPrint("Cannot save trip. Please ensure all fields are filled.");
       return;
     }
+    String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
+    WeatherMarker _weatherMarker = WeatherMarker(
+        location: Weatherlocation(
+            timezone: weather.timezone,
+            name: weather.name,
+            country: weather.sys.country,
+            latitude: weather.coord.lat,
+            longitude: weather.coord.lon),
+        weather: WeatherData(
+            temperature: weather.main.temp,
+            feelsLike: weather.main.feelsLike,
+            tempMin: weather.main.tempMin,
+            tempMax: weather.main.tempMax,
+            pressure: weather.main.pressure,
+            humidity: weather.main.humidity,
+            visibility: weather.visibility,
+            windSpeed: weather.wind.speed,
+            windDegree: weather.wind.deg,
+            windGust: weather.wind.gust,
+            cloudiness: weather.clouds.all,
+            weatherMain: weather.weather.first.main,
+            weatherDescription: weather.weather.first.description,
+            weatherIcon: weather.weather.first.icon,
+            sunrise: weather.sys.sunrise,
+            sunset: weather.sys.sunset,
+            recordedAt: weather.timezone));
 
+    // WeatherMarker _weatherMarker = WeatherMarker(
+
+    //   location: Location(name: name, country: country, latitude: latitude, longitude: longitude, timezone: timezone),
+    //     id: '',
+    //     // position: LatLng(weather.coord.lat, weather.coord.lon),
+    //     // locationName: weather.name,
+    //     // country: weather.sys.country,
+    //     // timezone: weather.timezone,
+    //     weather: WeatherData(
+    //         temperature: weather.main.temp,
+    //         feelsLike: weather.main.feelsLike,
+    //         weatherMain: weather.weather.first.main,
+    //         weatherDescription: weather.weather.first.description,
+    //         weatherIcon: weather.weather.first.icon
+    // ));
+    List<WeatherMarker> lstWeatherMarker = [];
+
+    lstWeatherMarker.add(_weatherMarker);
     final trip = TripModel(
-      id: const Uuid().v4(),
-      name: 'Trip ${trips.length + 1}',
-      startLocation: startController.text,
-      destination: destinationController.text,
-      waypoints: destinationControllers.map((c) => c.text).toList(),
-      totalDistance: distance,
-      createdAt: DateTime.now(),
-      routePoints: List.from(points),
-      markers: markers.map((marker) {
-        return MarkerData(
-          id: marker.markerId.value,
-          position: marker.position,
-          title: marker.infoWindow.title ?? '',
-          snippet: marker.infoWindow.snippet ?? '',
-        );
-      }).toList(),
-      timeDurations: timeDurations,
-    );
+        id: const Uuid().v4(),
+        animalSeen: 0,
+        animalKilled: 0,
+        name: 'Trip ${trips.length + 1}',
+        startLocation: startController.text,
+        destination: destinationController.text,
+        waypoints: destinationControllers.map((c) => c.text).toList(),
+        totalDistance: distance,
+        createdAt: DateTime.now(),
+        routePoints: List.from(points),
+        markers: markers,
+        images: [],
+        weatherMarkers: lstWeatherMarker,
+        userId: userId);
 
     var res = await _tripAPIs.addTrip(trip);
     if (res.success) {
-      trips.add(trip);
+      await getTrips();
+      // trips.add(trip);
       resetFields();
+    } else {
+      AppDialog.showErrorDialog(context, res.message, () {
+        Navigator.of(context).pop();
+      });
     }
     isLoading = false;
     notifyListeners();
+  }
+
+  late BuildContext context;
+  Future<void> onSuggestionSelected(String placeId, bool isStartField,
+      TextEditingController _controller, BuildContext buildContext) async {
+    isLoading = true;
+    final url =
+        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$kGoogleApiKey';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      final data = jsonDecode(response.body);
+
+      if (data['status'] == 'OK') {
+        final location = data['result']['geometry']['location'];
+        final latAndLng = LatLng(location['lat'], location['lng']);
+        _controller.text = data['result']['formatted_address'];
+        if (isStartField) {
+          startController.text = data['result']['formatted_address'];
+
+          TextEditingController _1stController = TextEditingController();
+          destinationControllers.add((_1stController));
+          // pointA = latAndLng;
+          // markerId = 'start';
+        } else {
+          destinationController.text = data['result']['formatted_address'];
+          destinationControllers.last.text =
+              data['result']['formatted_address'];
+          // pointB = latAndLng;
+          // markerId = 'destination';
+        }
+        updateCameraPosition(latAndLng);
+        String locationName = await _getLocationName(latAndLng);
+
+        points.add(latAndLng);
+        path.add(latAndLng);
+
+        if (points.length >= 2) {
+          distance = _calculateTotalDistance();
+          isSave = true;
+          isHurryUp = false;
+          isKeyDataPoint = false;
+          isTripStart = false;
+        }
+
+        final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
+        markerId = uniqueId;
+
+        markers.add(MarkerData(
+          id: uniqueId,
+          position: latAndLng,
+          icon: "assets/images/stop.icon",
+          title: 'Point ${points.length}',
+          snippet: locationName,
+          duration: timeDurations,
+          markerType: "inbetween",
+        ));
+        // markers.add(Marker(
+        //   markerId: MarkerId(uniqueId),
+        //   // // icon: _markerIcon,
+        //   position: latAndLng,
+        //   infoWindow: InfoWindow(
+        //     title: 'Point ${points.length}',
+        //     snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
+        //   ),
+        // ));
+
+        if (points.isNotEmpty) {
+          initialPosition = LatLng(points[0].latitude, points[0].longitude);
+        }
+        isSavedTrip = false;
+        providerLetsHuntButton = false;
+        await fetchRouteWithWaypoints(
+          path,
+        );
+        isLoading = false;
+
+        notifyListeners();
+        await showDurationPicker(context);
+      }
+    } catch (e) {
+      debugPrint("Error fetching place details: $e");
+    }
+  }
+
+  void onMapTapped(LatLng position, BuildContext buildContext) async {
+    isLoading = true;
+    isSavedTrip = false;
+    onTapOnMap = true;
+
+    points.add(position);
+    path.add(position);
+
+    // Fetch location name
+    String locationName = await _getLocationName(position);
+
+    if (points.length == 1) {
+      startController.text = locationName;
+    } else {
+      final controller = TextEditingController(text: locationName);
+      destinationControllers.add(controller);
+      destinationController = controller;
+    }
+
+    if (points.length >= 2) {
+      distance = _calculateTotalDistance();
+      isSave = true;
+      isHurryUp = false;
+      isKeyDataPoint = false;
+      isTripStart = false;
+    }
+
+    final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
+    markerId = uniqueId;
+
+    markers.add(MarkerData(
+      id: uniqueId,
+      position: position,
+      icon: "assets/images/stop.icon",
+      title: 'Point ${points.length}',
+      snippet: locationName,
+      duration: timeDurations,
+      markerType: "inbetween",
+    ));
+
+    if (points.length >= 2) {
+      await fetchRouteWithWaypoints(path);
+    }
+
+    isLoading = false;
+
+    notifyListeners();
+    Future.delayed(Duration(seconds: 1)).then((value) {
+      showDurationPicker(buildContext);
+    });
   }
 
   // Reset input fields and points
@@ -344,18 +620,25 @@ class MapProvider with ChangeNotifier {
     startController.clear();
     destinationController.clear();
     destinationControllers.clear();
+    mapMarkers.clear();
     points.clear();
     path.clear();
+    providerLetsHuntButton = false;
     polylines.clear();
     markers.clear();
     onTapOnMap = false;
     isSave = false;
     distance = 0.0;
+    totalTime = 0;
     notifyListeners();
   }
 
-  Future<void> setTimeDuration(String id, Duration duration) async {
-    timeDurations[id] = duration;
+  Future<void> setTimeDuration(int duration) async {
+    timeDurations = duration;
+    totalTime += duration;
+    if (markers.isNotEmpty) {
+      markers.last.duration = duration;
+    }
     notifyListeners();
   }
 
@@ -370,6 +653,20 @@ class MapProvider with ChangeNotifier {
     }
   }
 
+  Future<String> getPlaceName(LatLng location) async {
+    final url =
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=${location.latitude},${location.longitude}&key=$apiKey';
+
+    final response = await http.get(Uri.parse(url));
+    final data = jsonDecode(response.body);
+
+    if (data['status'] == 'OK' && data['results'].isNotEmpty) {
+      return data['results'][0]['formatted_address']; // Return first result
+    } else {
+      return "${location.latitude}, ${location.longitude}"; // Fallback to LatLng
+    }
+  }
+
   Future<void> fetchRouteWithWaypoints(List<LatLng> locations,
       {bool isRemove = false}) async {
     if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
@@ -378,51 +675,56 @@ class MapProvider with ChangeNotifier {
     }
 
     if (locations.length == 1) {
-      locations.add((locations.first));
+      locations.add(locations.first);
     }
+
     isLoading = true;
     notifyListeners();
 
     try {
-      // Convert the LatLng locations to a string of waypoints
-      String waypoints = locations
-          .skip(1) // Skip the first point, as it's the origin
-          .map((location) => '${location.latitude},${location.longitude}')
-          .join('|'); // Join with a '|' to separate the points
+      // Convert LatLng to Place Names
+      List<String> placeNames = await Future.wait(locations.map(getPlaceName));
 
-      // Include `optimize:true` to get the shortest path and `alternatives=true` for multiple routes
+      String origin = placeNames.first;
+      String destination = placeNames.last;
+      String waypoints = placeNames
+          .sublist(1, placeNames.length - 1)
+          .join('|'); // Middle points as waypoints
+
+      // Fetch routes using Place Names
       final url =
-          'https://maps.googleapis.com/maps/api/directions/json?origin=${locations.first.latitude},${locations.first.longitude}&destination=${locations.last.latitude},${locations.last.longitude}&waypoints=$waypoints&mode=driving&alternatives=true&key=$apiKey';
+          'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&waypoints=optimize:true|$waypoints&mode=driving&alternatives=true&key=$apiKey';
 
       final response = await http.get(Uri.parse(url));
       final data = jsonDecode(response.body);
 
       if (data['status'] == 'OK') {
-        polylines.clear(); // Clear existing polylines
+        polylines.clear();
 
-        // Iterate through all the routes provided by the API
+        List<Color> routeColors = [
+          Colors.blue,
+          Colors.green,
+          Colors.red,
+          Colors.orange,
+          Colors.purple
+        ];
+
         for (int i = 0; i < data['routes'].length; i++) {
           final route = data['routes'][i];
           final encodedPolyline = route['overview_polyline']['points'];
           final polylinePoints = _decodePolyline(encodedPolyline);
 
-          // Add the polyline for the route
+          // Assign unique colors to routes
           polylines.add(Polyline(
             polylineId: PolylineId('route_$i'),
             points: polylinePoints,
-            color: Colors.blue.withOpacity((i + 1) /
-                data['routes'].length), // Different opacity for each route
+            color: routeColors[i % routeColors.length],
             width: 5,
           ));
 
-          // Optionally log optimized waypoint order for each route
-          if (route['waypoint_order'] != null) {
-            debugPrint(
-                "Route $i optimized waypoint order: ${route['waypoint_order']}");
-          }
+          debugPrint("Route $i: ${route['summary']}"); // Logs route names
         }
 
-        // Adjust the map camera to fit the first route (or the most optimal route)
         if (polylines.isNotEmpty && mapController != null) {
           LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
           mapController
@@ -553,161 +855,6 @@ class MapProvider with ChangeNotifier {
     return polyline;
   }
 
-  String start = '';
-  String end = '';
-  Future<void> onSuggestionSelected(String placeId, bool isStartField,
-      TextEditingController _controller) async {
-    final url =
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$kGoogleApiKey';
-
-    try {
-      final response = await http.get(Uri.parse(url));
-      final data = jsonDecode(response.body);
-
-      if (data['status'] == 'OK') {
-        final location = data['result']['geometry']['location'];
-        final latAndLng = LatLng(location['lat'], location['lng']);
-        _controller.text = data['result']['formatted_address'];
-        if (isStartField) {
-          startController.text = data['result']['formatted_address'];
-
-          TextEditingController _1stController = TextEditingController();
-          destinationControllers.add((_1stController));
-          // pointA = latAndLng;
-          // markerId = 'start';
-        } else {
-          // destinationController.text = data['result']['formatted_address'];
-          destinationControllers.last.text =
-              data['result']['formatted_address'];
-          // pointB = latAndLng;
-          // markerId = 'destination';
-        }
-        points.add(latAndLng);
-        path.add(latAndLng);
-
-        if (points.length >= 2) {
-          distance = _calculateTotalDistance();
-          isSave = true;
-          isHurryUp = false;
-          isKeyDataPoint = false;
-          isTripStart = false;
-        }
-
-        final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
-        markerId = uniqueId;
-        markers.add(Marker(
-          markerId: MarkerId(uniqueId),
-          // // icon: _markerIcon,
-          position: latAndLng,
-          infoWindow: InfoWindow(
-            title: 'Point ${points.length}',
-            snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
-          ),
-        ));
-
-        if (points.isNotEmpty) {
-          initialPosition = LatLng(points[0].latitude, points[0].longitude);
-        }
-
-        await fetchRouteWithWaypoints(
-          path,
-        );
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint("Error fetching place details: $e");
-    }
-  }
-
-  List<LatLng> path = [];
-  // void onMapTapped(LatLng position) async {
-  //   isLoading = true;
-  //   isSavedTrip = false;
-
-  //   points.add(position);
-  //   path.add(position);
-  //   if (points.length == 1) {
-  //     // startController.text = "${position.latitude}, ${position.longitude}";
-  //   } else {
-  //     final controller = TextEditingController(
-  //       text: "${position.latitude}, ${position.longitude}",
-  //     );
-  //     destinationControllers.add(controller);
-  //   }
-
-  //   if (points.length >= 2) {
-  //     distance = _calculateTotalDistance();
-  //     isSave = true;
-  //     isHurryUp = false;
-  //     isKeyDataPoint = false;
-  //     isTripStart = false;
-  //   }
-  //   final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
-  //   markerId = uniqueId;
-
-  //   markers.add(Marker(
-  //     markerId: MarkerId(uniqueId),
-  //     // // icon: _markerIcon,
-  //     position: position,
-  //     infoWindow: InfoWindow(
-  //       title: 'Point ${points.length}',
-  //       snippet: '${position.latitude}, ${position.longitude}',
-  //     ),
-  //   ));
-  //   if (points.length >= 2) {
-  //     await fetchRouteWithWaypoints(path);
-  //   }
-  //   isLoading = false;
-  //   // drawPolyline();
-  //   notifyListeners();
-  // }
-
-  void onMapTapped(LatLng position) async {
-    isLoading = true;
-    isSavedTrip = false;
-    onTapOnMap = true;
-
-    points.add(position);
-    path.add(position);
-
-    // Fetch location name
-    String locationName = await _getLocationName(position);
-
-    if (points.length == 1) {
-      // startController.text = locationName;
-    } else {
-      final controller = TextEditingController(text: locationName);
-      destinationControllers.add(controller);
-    }
-
-    if (points.length >= 2) {
-      distance = _calculateTotalDistance();
-      isSave = true;
-      isHurryUp = false;
-      isKeyDataPoint = false;
-      isTripStart = false;
-    }
-
-    final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
-    markerId = uniqueId;
-
-    markers.add(Marker(
-      markerId: MarkerId(uniqueId),
-      position: position,
-      infoWindow: InfoWindow(
-        title: 'Point ${points.length}',
-        snippet: locationName,
-      ),
-    ));
-
-    if (points.length >= 2) {
-      await fetchRouteWithWaypoints(path);
-    }
-
-    isLoading = false;
-    notifyListeners();
-  }
-
   Future<String> _getLocationName(LatLng position) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -733,7 +880,7 @@ class MapProvider with ChangeNotifier {
     path.remove(position);
 
     markers.removeWhere((marker) => marker.position == position);
-
+    mapMarkers.removeWhere((marker) => marker.position == position);
     destinationControllers.removeWhere(
       (controller) =>
           controller.text == "${position.latitude}, ${position.longitude}",

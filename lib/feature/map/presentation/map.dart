@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/data_entry.dart';
 import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
@@ -19,73 +22,67 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  Future<void> _showDurationPicker(
-      BuildContext context, MarkerId markerId, MapProvider provider) async {
-    TextEditingController minuteController = TextEditingController();
-
-    Duration? selectedDuration = await showDialog<Duration>(
+  void showCustomDialog(BuildContext context, MapProvider mapProvider) {
+    showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          title: const Text(
-            "Set Duration",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          content: Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: minuteController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Enter time in minutes",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
+              const Text(
+                "Stop Duration",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              // List of iteFms
+              ListView.separated(
+                shrinkWrap: true,
+                itemCount: mapProvider.markers.length,
+                separatorBuilder: (_, __) => const Divider(),
+                itemBuilder: (context, index) {
+                  List<MarkerData> listMarkerData =
+                      List.from(mapProvider.markers);
+                  MarkerData markerData = listMarkerData[index];
+                  return ListTile(
+                    title: Text(markerData.snippet),
+                    trailing: Text(
+                      "${markerData.duration.toString()} min",
+                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                    ),
+                    onTap: () {},
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              // Close button
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+                child: const Text("Close"),
               ),
-              const SizedBox(height: 20),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(null); // No duration selected
-              },
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (minuteController.text.isNotEmpty) {
-                  int minutes = int.parse(minuteController.text);
-                  await provider.setTimeDuration(
-                      provider.markerId, Duration(minutes: minutes));
-                  Navigator.of(context).pop(null);
-
-                  //  Navigator.of(context).pop(Duration(minutes: minutes));
-                } else {
-                  Navigator.of(context).pop(null); // No duration selected
-                }
-              },
-              child: const Text("Set"),
-            ),
-          ],
         );
       },
     );
-
-    if (selectedDuration != null) {
-      // Use the selected duration as needed
-      // provider.setMarkerDuration(markerId, selectedDuration);
-    }
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     final mapProvider = Provider.of<MapProvider>(context, listen: false);
     mapProvider.loadCustomLiveLocationIcon();
     super.initState();
@@ -95,6 +92,14 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Consumer<MapProvider>(
       builder: (context, provider, child) {
+        for (var item in provider.markers) {
+          provider.mapMarkers.add(Marker(
+            markerId: MarkerId(item.id),
+            position: item.position,
+            infoWindow: InfoWindow(title: item.title, snippet: item.snippet),
+          ));
+        }
+        provider.context = context;
         return provider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : Scaffold(
@@ -102,18 +107,22 @@ class _MapScreenState extends State<MapScreen> {
                   children: [
                     GoogleMap(
                       initialCameraPosition: CameraPosition(
-                        target: provider.initialPosition,
-                        zoom: 10,
+                        target: provider.mapMarkers.isNotEmpty
+                            ? provider.mapMarkers.last.position
+                            : provider.initialPosition,
+                        zoom: 15,
                       ),
                       myLocationEnabled: true,
-                      mapType: MapType.terrain,
+                      mapType: MapType.satellite,
                       myLocationButtonEnabled: true,
                       buildingsEnabled: true,
                       mapToolbarEnabled: true,
-                      fortyFiveDegreeImageryEnabled: true,
+                      fortyFiveDegreeImageryEnabled: false,
                       polylines: provider.polylines,
-                      markers: provider.markers,
-                      onTap: provider.onMapTapped,
+                      markers: provider.mapMarkers,
+                      onTap: (latlanng) async {
+                        provider.onMapTapped(latlanng, context);
+                      },
                       zoomGesturesEnabled: true,
                       onMapCreated: (controller) {
                         provider.mapController = controller;
@@ -127,6 +136,59 @@ class _MapScreenState extends State<MapScreen> {
                         padding: const EdgeInsets.only(top: 80),
                         child: Column(
                           children: [
+                            // if (!provider.onTapOnMap)
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: BrandedTextField(
+                                    height: 40,
+                                    controller: provider.startController,
+                                    labelText: "Search here",
+                                    onTap: () {
+                                      provider.resetFields();
+
+                                      Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (context) {
+                                        return SearchLocationScreen(
+                                          controller: provider.startController,
+                                          isStart: true,
+                                        );
+                                      })).then((value) async {
+                                        print(value);
+                                        Map<String, dynamic> data =
+                                            jsonDecode(value);
+
+                                        await provider.onSuggestionSelected(
+                                            data['placeId'],
+                                            data["isStart"],
+                                            provider.startController,
+                                            // data["controller"],
+                                            context);
+                                        // provider.showDurationPicker(context);
+                                      });
+                                    },
+                                    prefix: Icon(Icons.location_on),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                GestureDetector(
+                                  onTap: () async {},
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                          color: Colors.white, width: 2),
+                                    ),
+                                    child: const Icon(
+                                      Icons.person,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                             if (provider.onTapOnMap)
                               Container(
                                 height: 50, // Item height + spacing
@@ -136,24 +198,20 @@ class _MapScreenState extends State<MapScreen> {
                                   itemCount: provider.markers.length,
                                   scrollDirection: Axis.horizontal,
                                   itemBuilder: (context, index) {
-                                    List<Marker> markerList =
-                                        provider.markers.toList();
-                                    Marker _marker = markerList[index];
+                                    MarkerData _marker =
+                                        provider.markers[index];
 
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 4.0),
                                       child: Chip(
                                         label: Text(
-                                          (_marker.infoWindow.snippet != null &&
-                                                  _marker.infoWindow.snippet!
-                                                          .length >
-                                                      1)
-                                              ? _marker.infoWindow.snippet!
-                                                  .substring(
-                                                      0) // Hides first letter
+                                          (_marker.snippet != null &&
+                                                  _marker.snippet!.length > 1)
+                                              ? _marker.snippet!.substring(
+                                                  0) // Hides first letter
                                               : "",
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                             color: Colors
@@ -165,13 +223,13 @@ class _MapScreenState extends State<MapScreen> {
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(20),
-                                          side: BorderSide(
+                                          side: const BorderSide(
                                               color: Colors.white,
                                               width: 1), // Optional border
                                         ),
-                                        padding: EdgeInsets.symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                             horizontal: 12, vertical: 6),
-                                        deleteIcon: Icon(Icons.close,
+                                        deleteIcon: const Icon(Icons.close,
                                             color: Colors
                                                 .white), // Styled delete icon
                                         onDeleted: () {
@@ -182,61 +240,14 @@ class _MapScreenState extends State<MapScreen> {
                                   },
                                 ),
                               ),
-                            if (!provider.onTapOnMap)
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: BrandedTextField(
-                                      height: 40,
-                                      controller: provider.startController,
-                                      labelText: "Search here",
-                                      onTap: () {
-                                        provider.resetFields();
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return SearchLocationScreen(
-                                            controller:
-                                                provider.startController,
-                                            isStart: true,
-                                          );
-                                        })).then((value) {});
-                                      },
-                                      prefix: Icon(Icons.location_on),
-                                      // sufix: GestureDetector(
-                                      //   onTap: () {},
-                                      //   child: const Icon(
-                                      //     Icons.person,
-                                      //     color: Colors.red,
-                                      //   ),
-                                      // ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  GestureDetector(
-                                    onTap: () async {},
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                            color: Colors.white, width: 2),
-                                      ),
-                                      child: const Icon(
-                                        Icons.person,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+
                             if (provider.startController.text.isNotEmpty &&
                                 provider.trips.isEmpty)
                               const SizedBox(
                                 height: 10,
                               ),
-                            if (provider.startController.text.isNotEmpty)
+                            if (provider.startController.text.isNotEmpty &&
+                                !provider.onTapOnMap)
                               Container(
                                 height: (provider.destinationCount + 1) *
                                     (40 + 10), // Item height + spacing
@@ -270,8 +281,15 @@ class _MapScreenState extends State<MapScreen> {
                                                       );
                                                     },
                                                   ),
-                                                ).then((value) {
-                                                  // provider.destinationControllers.add(controller);
+                                                ).then((value) async {
+                                                  Map<String, dynamic> data =
+                                                      jsonDecode(value);
+                                                  await provider
+                                                      .onSuggestionSelected(
+                                                          data['placeId'],
+                                                          data["isStart"],
+                                                          controller,
+                                                          context);
                                                 });
                                               },
                                               prefix: Icon(Icons.location_on),
@@ -322,48 +340,48 @@ class _MapScreenState extends State<MapScreen> {
                                   },
                                 ),
                               ),
-                            if (provider.trips.isNotEmpty &&
-                                provider.startController.text.isEmpty)
-                              Container(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.2,
-                                child: ListView.builder(
-                                    padding: EdgeInsets.all(0),
-                                    itemCount: provider.trips.length,
-                                    itemBuilder: (context, item) {
-                                      return GestureDetector(
-                                        onTap: () {
-                                          // Navigator.of(context).push(
-                                          //     MaterialPageRoute(
-                                          //         builder: (context) {
-                                          //   return SearchLocationScreen();
-                                          // }));
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 5),
-                                          child: _buildTextField(
-                                            provider.destinationController,
-                                            provider.trips[item].name,
-                                            false,
-                                            provider,
-                                            const Icon(Icons.check,
-                                                size: 20, color: Colors.red),
-                                            const Icon(
-                                              Icons.drag_handle,
-                                              size: 20,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                              ),
+                            // if (provider.trips.isNotEmpty &&
+                            //     provider.startController.text.isEmpty)
+                            // SizedBox(
+                            //   height:
+                            //       MediaQuery.of(context).size.height * 0.2,
+                            //   child: ListView.builder(
+                            //       padding: const EdgeInsets.all(0),
+                            //       itemCount: provider.trips.length,
+                            //       itemBuilder: (context, item) {
+                            //         return GestureDetector(
+                            //           onTap: () {
+                            //             // Navigator.of(context).push(
+                            //             //     MaterialPageRoute(
+                            //             //         builder: (context) {
+                            //             //   return SearchLocationScreen();
+                            //             // }));
+                            //           },
+                            //           child: Padding(
+                            //             padding: const EdgeInsets.symmetric(
+                            //                 vertical: 5),
+                            //             child: _buildTextField(
+                            //               provider.destinationController,
+                            //               provider.trips[item].name,
+                            //               false,
+                            //               provider,
+                            //               const Icon(Icons.check,
+                            //                   size: 20, color: Colors.red),
+                            //               const Icon(
+                            //                 Icons.drag_handle,
+                            //                 size: 20,
+                            //                 color: Colors.white,
+                            //               ),
+                            //             ),
+                            //           ),
+                            //         );
+                            //       }),
+                            // ),
                           ],
                         ),
                       ),
                     ),
-                    if (provider.trips.length > 0)
+                    if (provider.trips.isNotEmpty)
                       Positioned(
                         top: MediaQuery.of(context).size.height * 0.5,
                         left: 10,
@@ -376,10 +394,16 @@ class _MapScreenState extends State<MapScreen> {
                             child: Row(
                               children:
                                   List.generate(provider.trips.length, (index) {
+                                TripModel tripModel = provider.trips[index];
+
                                 return GestureDetector(
                                   onTap: () async {
                                     provider.isSavedTrip = true;
                                     provider.isSave = true;
+                                    provider.markers = tripModel.markers;
+                                    provider.distance = tripModel.totalDistance;
+                                    provider.selectedTripModel = tripModel;
+                                    provider.providerLetsHuntButton = true;
                                     provider.path =
                                         provider.trips[index].routePoints;
                                     await provider.fetchRouteWithWaypoints(
@@ -418,7 +442,7 @@ class _MapScreenState extends State<MapScreen> {
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    "Trip ${index + 1}",
+                                                    tripModel.name,
                                                     style: const TextStyle(
                                                         fontSize: 16,
                                                         fontWeight:
@@ -447,7 +471,9 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     if (provider.isSave) tripCard(provider, context),
-                    if (provider.isTripStart) add_stop_card(provider, context),
+                    if (provider.isTripStart)
+                      add_stop_card(
+                          provider, context, provider.selectedTripModel),
                     if (provider.isHurryUp) hurry_up_card(provider, context),
                     if (provider.isKeyDataPoint)
                       keyDataPoint(provider, context),
@@ -458,7 +484,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Positioned hurry_up_card(MapProvider provider, BuildContextcontext) {
+  Positioned hurry_up_card(MapProvider provider, BuildContext context) {
     return Positioned(
       bottom: 20,
       left: 10,
@@ -494,7 +520,7 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ],
               ),
-              SizedBox(
+              const SizedBox(
                 height: 5,
               ),
               SizedBox(
@@ -515,7 +541,12 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Positioned add_stop_card(MapProvider provider, BuildContext context) {
+  Positioned add_stop_card(
+      MapProvider provider, BuildContext context, TripModel trip_data) {
+    int totalTime = 0;
+    for (var item in trip_data.markers) {
+      totalTime += item.duration;
+    }
     return Positioned(
       bottom: 20,
       left: 10,
@@ -541,31 +572,28 @@ class _MapScreenState extends State<MapScreen> {
                             fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       Text(
-                        "${provider.distance.toStringAsFixed(2)} KM",
+                        "${provider.selectedTripModel.totalDistance.toStringAsFixed(2)} KM",
                         style: TextStyle(fontSize: 10),
                       ),
                     ],
                   ),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      _showDurationPicker(context, MarkerId("value"), provider);
-                    },
-                    child: const Text(
-                      "Set Time",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  // GestureDetector(
+                  //     onTap: () {
+                  //       provider.resetFields();
+                  //     },
+                  //     child: IconButton(
+                  //         onPressed: () {}, icon: const Icon(Icons.close))),
                 ],
               ),
-              SizedBox(
+              const SizedBox(
                 height: 5,
               ),
               Row(
                 children: [
                   Image.asset("assets/images/break_time.png"),
                   const SizedBox(width: 10),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -574,7 +602,7 @@ class _MapScreenState extends State<MapScreen> {
                             fontWeight: FontWeight.bold, fontSize: 12),
                       ),
                       Text(
-                        "15 Min",
+                        "${totalTime.toString()} Min",
                         style: TextStyle(fontSize: 10),
                       ),
                     ],
@@ -635,15 +663,11 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      _showDurationPicker(context, MarkerId("value"), provider);
-                    },
-                    child: const Text(
-                      "Set Time",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  IconButton(
+                      onPressed: () {
+                        provider.resetFields();
+                      },
+                      icon: Icon(Icons.close)),
                 ],
               ),
               Row(
@@ -651,14 +675,32 @@ class _MapScreenState extends State<MapScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            "22\u00B0",
-                            style: TextStyle(fontSize: 22),
+                          SizedBox(
+                            width: 200,
+                            child: Row(
+                              children: [
+                                Text(
+                                  "${provider.weather.main.temp}\u00B0",
+                                  style: TextStyle(fontSize: 22),
+                                ),
+                                SizedBox(width: 5),
+                                Text(
+                                    "(${provider.weather.weather.first.description})"),
+                              ],
+                            ),
                           ),
-                          SizedBox(width: 5),
-                          Text("(Great Weather)"),
+                          GestureDetector(
+                            onTap: () {
+                              showCustomDialog(context, provider);
+                            },
+                            child: Text(
+                              " ${provider.totalTime.toString()} Min",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          )
                         ],
                       ),
                       Text(
@@ -679,10 +721,11 @@ class _MapScreenState extends State<MapScreen> {
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.23,
                           ),
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text("Humidity: 75%"),
+                              Text(
+                                  "Humidity: ${provider.weather.main.humidity}%"),
                             ],
                           ),
                         ],
@@ -692,6 +735,7 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
               const SizedBox(height: 10),
+               if (provider.providerLetsHuntButton)
               SizedBox(
                 height: 35,
                 child: BrandedPrimaryButton(
@@ -711,7 +755,7 @@ class _MapScreenState extends State<MapScreen> {
                     isUnfocus: true,
                     name: "Save Trip",
                     onPressed: () {
-                      provider.saveTrip();
+                      provider.saveTrip(context);
                     },
                   ),
                 ),
@@ -746,21 +790,21 @@ class _MapScreenState extends State<MapScreen> {
                         "Distance",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      Text(
-                        "${provider.distance.toStringAsFixed(2)} KM",
-                      ),
+                      Text("${30} KM"
+                          //"${provider.distance.toStringAsFixed(2)} KM",
+                          ),
                     ],
                   ),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      _showDurationPicker(context, MarkerId("value"), provider);
-                    },
-                    child: const Text(
-                      "Set Time",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     // _showDurationPicker(context, MarkerId("value"), provider);
+                  //   },
+                  //   child: const Text(
+                  //     "Set Time",
+                  //     style: TextStyle(fontWeight: FontWeight.bold),
+                  //   ),
+                  // ),
                 ],
               ),
               Row(
@@ -827,7 +871,7 @@ class _MapScreenState extends State<MapScreen> {
                   onPressed: () {
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
-                      return DataPointsScreen();
+                      return AddPhotoScreen();
                     }));
                   },
                 ),
