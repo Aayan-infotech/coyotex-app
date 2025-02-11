@@ -154,7 +154,7 @@ class CallHelper {
     final Map<String, dynamic> data = jsonDecode(response.body);
     String message = data["message"] ?? internalServerErrorMessage;
     if (kDebugMode) {
-      print('Response: ${response.body}');
+      // print('Response: ${response.body}');
     }
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -167,7 +167,7 @@ class CallHelper {
   ApiResponseWithData<T> _processResponseWithData<T>(
       http.Response response, T defaultData) {
     if (kDebugMode) {
-      print('Response: ${response.body}');
+      //  print('Response: ${response.body}');
     }
 
     final Map<String, dynamic> data = jsonDecode(response.body);

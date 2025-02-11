@@ -6,7 +6,8 @@ class BrandedPrimaryButton extends StatelessWidget {
   final VoidCallback onPressed;
   final bool isEnabled;
   final bool isUnfocus;
-  final Widget? suffixIcon; // New parameter for suffix icon
+  final Widget? suffixIcon;
+  final double borderRadius; // New parameter for border radius
 
   const BrandedPrimaryButton({
     super.key,
@@ -14,47 +15,33 @@ class BrandedPrimaryButton extends StatelessWidget {
     required this.name,
     required this.onPressed,
     this.isEnabled = false,
-    this.suffixIcon, // Include suffixIcon in the constructor
+    this.suffixIcon,
+    this.borderRadius = 10.0, // Default border radius
   });
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: isEnabled
-          ? SizedBox(
-              height: 45,
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      isUnfocus ? Pallete.whiteColor : Pallete.primaryColor,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    side: const BorderSide(
-                      color: Pallete.primaryColor,
-                    ),
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                child: getButtonText(context),
-              ),
-            )
-          : SizedBox(
-              height: 45,
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: null, // Disabled button, onPressed is null
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).disabledColor,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6.0),
-                  ),
-                ),
-                child: getButtonText(context),
-              ),
+      child: SizedBox(
+        height: 45,
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: isEnabled ? onPressed : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isEnabled
+                ? (isUnfocus ? Pallete.whiteColor : Pallete.primaryColor)
+                : Theme.of(context).disabledColor,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              side: isEnabled
+                  ? const BorderSide(color: Pallete.primaryColor)
+                  : BorderSide.none,
+              borderRadius: BorderRadius.circular(borderRadius),
             ),
+          ),
+          child: getButtonText(context),
+        ),
+      ),
     );
   }
 
@@ -71,8 +58,8 @@ class BrandedPrimaryButton extends StatelessWidget {
               ),
         ),
         if (suffixIcon != null) ...[
-          const SizedBox(width: 8), // Add space between text and icon
-          suffixIcon!, // Display the suffix icon if it's provided
+          const SizedBox(width: 8),
+          suffixIcon!,
         ],
       ],
     );

@@ -17,19 +17,20 @@ class UserViewModel extends ChangeNotifier {
   String errorMessage = '';
   Map<String, dynamic>? userData;
   List<Plan> lstPlan = [];
-  UserModel user = UserModel(
-    userId: '',
-      name: '',
-      number: '',
-      email: '',
-      isVerified: false,
-      referralCode: '',
-      userPlan: '',
-      userUnit: '',
-      userWeatherPref: '',
-      insIp: '',
-      userStatus: 1,
-      insDate: DateTime.now());
+  late UserModel user;
+  // UserModel(
+  //     userId: '',
+  //     name: '',
+  //     number: '',
+  //     email: '',
+  //     isVerified: false,
+  //     referralCode: '',
+  //     userPlan: '',
+  //     userUnit: 'KM',
+  //     userWeatherPref: '',
+  //     insIp: '',
+  //     userStatus: 1,
+  //     insDate: DateTime.now());
 
   // Login
   Future<ApiResponseWithData> login(
@@ -76,7 +77,7 @@ class UserViewModel extends ChangeNotifier {
       if (response.success) {
         user = UserModel.fromJson(response.data);
         SharedPrefUtil.setValue(userIdPref, user.userId);
-        print(user);
+
         return response;
       } else {
         errorMessage = response.message;

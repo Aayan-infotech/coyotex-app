@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/data_entry.dart';
 import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
@@ -22,6 +23,15 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  int selectedMode = 0;
+  final List<String> modes = ["Drive", "Bike", "Bus", "Walk"];
+  final List<IconData> modeIcons = [
+    Icons.directions_car,
+    Icons.two_wheeler,
+    Icons.directions_bus,
+    Icons.directions_walk,
+  ];
+  String time = "0";
   void showCustomDialog(BuildContext context, MapProvider mapProvider) {
     showModalBottomSheet(
       context: context,
@@ -85,11 +95,14 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     final mapProvider = Provider.of<MapProvider>(context, listen: false);
     mapProvider.loadCustomLiveLocationIcon();
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserViewModel>(context, listen: false);
+
     return Consumer<MapProvider>(
       builder: (context, provider, child) {
         for (var item in provider.markers) {
@@ -105,28 +118,191 @@ class _MapScreenState extends State<MapScreen> {
             : Scaffold(
                 body: Stack(
                   children: [
-                    GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: provider.mapMarkers.isNotEmpty
-                            ? provider.mapMarkers.last.position
-                            : provider.initialPosition,
-                        zoom: 15,
-                      ),
-                      myLocationEnabled: true,
-                      mapType: MapType.satellite,
-                      myLocationButtonEnabled: true,
-                      buildingsEnabled: true,
-                      mapToolbarEnabled: true,
-                      fortyFiveDegreeImageryEnabled: false,
-                      polylines: provider.polylines,
-                      markers: provider.mapMarkers,
-                      onTap: (latlanng) async {
-                        provider.onMapTapped(latlanng, context);
-                      },
-                      zoomGesturesEnabled: true,
-                      onMapCreated: (controller) {
-                        provider.mapController = controller;
-                      },
+                    Column(
+                      children: [
+                        Expanded(
+                          child: GoogleMap(
+                            initialCameraPosition: CameraPosition(
+                              target: provider.mapMarkers.isNotEmpty
+                                  ? provider.mapMarkers.last.position
+                                  : provider.initialPosition,
+                              zoom: 15,
+                            ),
+                            myLocationEnabled: true,
+                            mapType: MapType.terrain,
+                            onCameraMoveStarted: () {
+                              print("object");
+                            },
+                            onCameraMove: (value) {
+                              print("object");
+                            },
+                            compassEnabled: true,
+                            myLocationButtonEnabled: true,
+                            buildingsEnabled: true,
+                            mapToolbarEnabled: true,
+                            fortyFiveDegreeImageryEnabled: false,
+                            polylines: provider.polylines,
+                            markers: provider.mapMarkers,
+                            onTap: (latlanng) async {
+                              provider.onMapTapped(latlanng, context);
+                            },
+                            zoomGesturesEnabled: true,
+                            onMapCreated: (controller) {
+                              provider.mapController = controller;
+                            },
+                          ),
+                        ),
+                        if (provider.isTripStart)
+                          SizedBox(
+                            height: 200,
+                            child: Column(
+                              children: [
+                                // Drag Handle
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Center(
+                                    child: Container(
+                                      width: 40,
+                                      height: 5,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[400],
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                // Horizontal Mode Selector
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0, vertical: 10),
+                                  child: Row(
+                                    children:
+                                        List.generate(modes.length, (index) {
+                                      final isSelected = selectedMode == index;
+                                      return GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            selectedMode =
+                                                index; // Update selectedMode first
+                                          });
+
+                                          String selectedTransport = modes[
+                                              index]; // Get the correct mode
+
+                                          if (selectedTransport == "Drive") {
+                                            provider.speed = 45;
+                                          } else if (selectedTransport ==
+                                              "Bike") {
+                                            provider.speed = 35;
+                                          } else if (selectedTransport ==
+                                              "Bus") {
+                                            provider.speed = 30;
+                                          } else if (selectedTransport ==
+                                              "Walk") {
+                                            provider.speed = 5;
+                                          } else {
+                                            provider.speed = 45;
+                                          }
+
+                                          provider.convertMinutesToHours();
+                                        },
+                                        child: Container(
+                                          margin:
+                                              const EdgeInsets.only(right: 10),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16.0, vertical: 8.0),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? Colors.blue
+                                                : Colors.grey[200],
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                modeIcons[index],
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                modes[index],
+                                                style: TextStyle(
+                                                  color: isSelected
+                                                      ? Colors.white
+                                                      : Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                  ),
+                                ),
+
+                                // Route Info
+                                const SizedBox(height: 10),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(modeIcons[selectedMode],
+                                              size: 28, color: Colors.blue),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              provider.totalTravelTime,
+                                              style: const TextStyle(
+                                                  fontSize: 20,
+                                                  height: 1.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.green),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 40),
+                                        child: Text(provider.distance
+                                                .toStringAsFixed(2) +
+                                            " ${userProvider.user.userUnit}"),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                // Start Button
+                                const SizedBox(height: 10),
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 5),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: BrandedPrimaryButton(
+                                          isEnabled: true,
+                                          isUnfocus: false,
+                                          name: "Add Stop",
+                                          onPressed: () {},
+                                          borderRadius: 20,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+                          )
+                      ],
                     ),
                     Positioned(
                       top: -45,
@@ -340,48 +516,11 @@ class _MapScreenState extends State<MapScreen> {
                                   },
                                 ),
                               ),
-                            // if (provider.trips.isNotEmpty &&
-                            //     provider.startController.text.isEmpty)
-                            // SizedBox(
-                            //   height:
-                            //       MediaQuery.of(context).size.height * 0.2,
-                            //   child: ListView.builder(
-                            //       padding: const EdgeInsets.all(0),
-                            //       itemCount: provider.trips.length,
-                            //       itemBuilder: (context, item) {
-                            //         return GestureDetector(
-                            //           onTap: () {
-                            //             // Navigator.of(context).push(
-                            //             //     MaterialPageRoute(
-                            //             //         builder: (context) {
-                            //             //   return SearchLocationScreen();
-                            //             // }));
-                            //           },
-                            //           child: Padding(
-                            //             padding: const EdgeInsets.symmetric(
-                            //                 vertical: 5),
-                            //             child: _buildTextField(
-                            //               provider.destinationController,
-                            //               provider.trips[item].name,
-                            //               false,
-                            //               provider,
-                            //               const Icon(Icons.check,
-                            //                   size: 20, color: Colors.red),
-                            //               const Icon(
-                            //                 Icons.drag_handle,
-                            //                 size: 20,
-                            //                 color: Colors.white,
-                            //               ),
-                            //             ),
-                            //           ),
-                            //         );
-                            //       }),
-                            // ),
                           ],
                         ),
                       ),
                     ),
-                    if (provider.trips.isNotEmpty)
+                    if (provider.trips.isNotEmpty && !provider.isTripStart)
                       Positioned(
                         top: MediaQuery.of(context).size.height * 0.5,
                         left: 10,
@@ -403,6 +542,7 @@ class _MapScreenState extends State<MapScreen> {
                                     provider.markers = tripModel.markers;
                                     provider.distance = tripModel.totalDistance;
                                     provider.selectedTripModel = tripModel;
+                                    provider.points = tripModel.routePoints;
                                     provider.providerLetsHuntButton = true;
                                     provider.path =
                                         provider.trips[index].routePoints;
@@ -471,9 +611,9 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     if (provider.isSave) tripCard(provider, context),
-                    if (provider.isTripStart)
-                      add_stop_card(
-                          provider, context, provider.selectedTripModel),
+                    // if (provider.isTripStart)
+                    //   add_stop_card(
+                    //       provider, context, provider.selectedTripModel),
                     if (provider.isHurryUp) hurry_up_card(provider, context),
                     if (provider.isKeyDataPoint)
                       keyDataPoint(provider, context),
@@ -634,6 +774,7 @@ class _MapScreenState extends State<MapScreen> {
     MapProvider provider,
     BuildContext context,
   ) {
+    
     return Positioned(
       bottom: 20,
       left: 10,
@@ -658,7 +799,7 @@ class _MapScreenState extends State<MapScreen> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        "${provider.distance.toStringAsFixed(2)} KM",
+                        "${provider.distance.toStringAsFixed(2)} ${Provider.of<UserViewModel>(context, listen: false).user.userUnit}",
                       ),
                     ],
                   ),
@@ -697,8 +838,9 @@ class _MapScreenState extends State<MapScreen> {
                               showCustomDialog(context, provider);
                             },
                             child: Text(
-                              " ${provider.totalTime.toString()} Min",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              provider.totalTravelTime,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           )
                         ],
@@ -735,17 +877,18 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-               if (provider.providerLetsHuntButton)
-              SizedBox(
-                height: 35,
-                child: BrandedPrimaryButton(
-                  isEnabled: true,
-                  name: "Let's Hunt",
-                  onPressed: () {
-                    provider.letsHunt();
-                  },
+              if (provider.providerLetsHuntButton)
+                SizedBox(
+                  height: 35,
+                  child: BrandedPrimaryButton(
+                    isEnabled: true,
+                    name: "Let's Hunt",
+                    onPressed: () {
+                      provider.context = context;
+                      provider.letsHunt();
+                    },
+                  ),
                 ),
-              ),
               const SizedBox(height: 10),
               if (!provider.isSavedTrip)
                 SizedBox(
@@ -783,10 +926,10 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   Image.asset("assets/images/distance_icons.png"),
                   const SizedBox(width: 10),
-                  Column(
+                  const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Distance",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
@@ -796,15 +939,6 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                   const Spacer(),
-                  // GestureDetector(
-                  //   onTap: () {
-                  //     // _showDurationPicker(context, MarkerId("value"), provider);
-                  //   },
-                  //   child: const Text(
-                  //     "Set Time",
-                  //     style: TextStyle(fontWeight: FontWeight.bold),
-                  //   ),
-                  // ),
                 ],
               ),
               Row(
