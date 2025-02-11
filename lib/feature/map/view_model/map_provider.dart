@@ -1,18 +1,24 @@
 import 'dart:convert';
 import 'dart:convert';
+// import 'dart:ffi';
 import 'dart:math';
 import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
+import 'package:coyotex/feature/map/presentation/start_trip_bootom_sheat.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import '../data/trip_model.dart';
+import 'package:flutter/widgets.dart';
+
 import 'package:geocoding/geocoding.dart';
 
 class MapProvider with ChangeNotifier {
@@ -38,6 +44,7 @@ class MapProvider with ChangeNotifier {
   GoogleMapController? mapController;
   LatLng initialPosition = const LatLng(26.862421770613125, 80.99804357972356);
   int timeDurations = 0;
+  // int travelTime = 0;
   LatLng? pointA;
   LatLng? pointB;
   bool isSave = false;
@@ -49,14 +56,17 @@ class MapProvider with ChangeNotifier {
   bool isSavedTrip = false;
   bool isKeyDataPoint = false;
   bool isStartSuggestions = false;
+  double speed = 45;
   late BitmapDescriptor _markerIcon;
   TripAPIs _tripAPIs = TripAPIs();
   late WeatherResponse weather = defaultWeatherResponse;
   final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
   int totalTime = 0;
+  String totalTravelTime = "";
+  String totalStopTime = "";
   getTrips() async {
     isLoading = true;
-    // notifyListeners();
+    notifyListeners();
     var response = await _tripAPIs.getUserTrip();
     if (response.success) {
       trips = (response.data["data"] as List).map((item) {
@@ -72,6 +82,7 @@ class MapProvider with ChangeNotifier {
       mapController!.animateCamera(
         CameraUpdate.newLatLngZoom(newPosition, 10),
       );
+      CameraUpdate.scrollBy(24, 80);
     }
     notifyListeners();
   }
@@ -234,12 +245,43 @@ class MapProvider with ChangeNotifier {
     );
   }
 
+  String convertMinutesToHours({bool isTotal = true, bool}) {
+    double minutes = isTotal
+        ? (totalTime + ((distance) / speed) * 60)
+        : ((distance) / speed) * 60;
+
+    int hours = minutes ~/ 60;
+    int remainingMinutes =
+        (minutes % 60).truncate(); // Ensures an integer value
+
+    String hourText = hours > 0 ? "$hours hr" : "";
+    String minuteText = remainingMinutes > 0 ? "$remainingMinutes min" : "";
+    totalTravelTime =
+        [hourText, minuteText].where((element) => element.isNotEmpty).join(" ");
+    notifyListeners();
+
+    return [hourText, minuteText]
+        .where((element) => element.isNotEmpty)
+        .join(" ");
+  }
+
   void increaseCount() {
     destinationCount += destinationCount;
     TextEditingController _textController = TextEditingController();
     destinationControllers.add(_textController);
     notifyListeners();
   }
+
+  // void showNavigationBottomSheet(BuildContext context) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     backgroundColor: Colors.transparent,
+  //     builder: (context) {
+  //       return const GoogleMapsBottomSheet();
+  //     },
+  //   );
+  // }
 
   void letsHunt() async {
     isTripStart = true;
@@ -273,14 +315,15 @@ class MapProvider with ChangeNotifier {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      print(
-          'Initial location: ${initialPosition.latitude}, ${initialPosition.longitude}');
       path.add(LatLng(initialPosition.latitude, initialPosition.longitude));
 
       // Fetch the route only once
       await fetchRouteWithWaypoints(path);
+      updateCameraPosition(
+          LatLng(initialPosition.latitude, initialPosition.longitude));
+
       isLoading = false;
-// updateCameraPosition(LatLng(initialPosition.latitude, initialPosition.longitude));
+
       if (mapController != null) {
         mapController!.animateCamera(
           CameraUpdate.newLatLngZoom(
@@ -295,16 +338,19 @@ class MapProvider with ChangeNotifier {
           distanceFilter: 0, // Trigger updates regardless of distance
         ),
       ).listen((Position position) {
-        if (position != null) {
-          print(
-              'Updated location: ${position.latitude}, ${position.longitude}');
-          notifyListeners();
-        }
+        double distanceTravelled = Geolocator.distanceBetween(
+          initialPosition.latitude,
+          initialPosition.longitude,
+          position.latitude,
+          position.longitude,
+        );
+        distance - distanceTravelled;
+        convertMinutesToHours();
+        // notifyListeners();
       });
     } catch (e) {
       isLoading = false;
       notifyListeners();
-      print('Error: $e');
     }
   }
 
@@ -730,6 +776,7 @@ class MapProvider with ChangeNotifier {
           mapController
               ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
         }
+        distance = _calculateTotalDistance();
 
         debugPrint("Successfully fetched ${data['routes'].length} routes.");
       } else {
@@ -795,7 +842,9 @@ class MapProvider with ChangeNotifier {
   }
 
   double _calculateTotalDistance() {
+    final userProvider = Provider.of<UserViewModel>(context, listen: false);
     double totalDistance = 0.0;
+
     for (int i = 0; i < points.length - 1; i++) {
       totalDistance += Geolocator.distanceBetween(
         points[i].latitude,
@@ -804,7 +853,13 @@ class MapProvider with ChangeNotifier {
         points[i + 1].longitude,
       );
     }
-    totalDistance = totalDistance / 1000;
+
+    if (userProvider.user.userUnit == "KM") {
+      totalDistance = totalDistance / 1000; // Convert meters to kilometers
+    } else if (userProvider.user.userUnit == "Miles") {
+      totalDistance = totalDistance / 1609.34; // Convert meters to miles
+    }
+
     return totalDistance;
   }
 
@@ -893,7 +948,7 @@ class MapProvider with ChangeNotifier {
       isTripStart = false;
       distance = 0.0;
     } else if (points.length >= 2) {
-      distance = _calculateTotalDistance();
+      // distance = _calculateTotalDistance();
     }
     await fetchRouteWithWaypoints(path, isRemove: true);
 

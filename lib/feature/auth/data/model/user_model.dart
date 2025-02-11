@@ -12,7 +12,6 @@ class UserModel {
   final int userStatus;
   final DateTime insDate;
 
-
   UserModel({
     required this.userId,
     required this.name,
@@ -30,14 +29,14 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      userId: json["_id"]??'',
+      userId: json["_id"] ?? '',
       name: json['name'] ?? '',
       number: json['number'] ?? '',
       email: json['email'] ?? "",
       isVerified: json['isVerified'] ?? true,
       referralCode: json['referralCode'] ?? "",
       userPlan: json['userPlan'] ?? '',
-      userUnit: json['userUnit'] ?? "",
+      userUnit: json['userUnit'] ?? "KM",
       userWeatherPref: json['userWeatherPref'] ?? "",
       insIp: json['ins_ip'] ?? '',
       userStatus: json['user_status'] ?? 1,
