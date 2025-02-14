@@ -63,15 +63,19 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
+        AppDialog.showSuccessDialog(
+            context, "Photos/Videos uploaded successfully", () {
+          Navigator.of(context).pop();
+        });
         // Navigate to next screen on success
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => DataPointsScreen(
-                    id: provider.selectedTripModel.id,
-                  )),
-        );
+        // if (!mounted) return;
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(
+        //       builder: (context) => DataPointsScreen(
+        //             id: provider.selectedTripModel.id,
+        //           )),
+        // );
       } else {
         if (!mounted) return;
         AppDialog.showErrorDialog(context, 'Upload failed: $responseBody', () {
@@ -97,6 +101,8 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<MapProvider>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(""),
@@ -105,6 +111,34 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
+      persistentFooterButtons: isLoading
+          ? null
+          : [
+              Row(
+                children: [
+                  Expanded(
+                    child: BrandedPrimaryButton(
+                        isEnabled: true,
+                        name: "Save",
+                        onPressed: () async {
+                          await _uploadPhotos();
+                        }),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Expanded(
+                    child: BrandedPrimaryButton(
+                        isEnabled: true,
+                        isUnfocus: true,
+                        name: "Finish",
+                        onPressed: () async {
+                          _showFinishWarningDialog(provider);
+                        }),
+                  ),
+                ],
+              )
+            ],
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : Padding(
@@ -112,12 +146,12 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 20),
+                  // const SizedBox(height: 20),
                   Column(
                     children: [
                       Image.asset(
                         "assets/images/add_photo_icons.png",
-                        height: 100,
+                        height: 70,
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -216,20 +250,37 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                       },
                     ),
                   ),
-                  const Spacer(),
-                  BrandedPrimaryButton(
-                      isEnabled: true,
-                      name: "Save",
-                      onPressed: () async {
-                        await _uploadPhotos();
-                        // Navigator.of(context)
-                        //     .push(MaterialPageRoute(builder: (context) {
-                        //   return DataPointsScreen();
-                        // }));
-                      })
                 ],
               ),
             ),
+    );
+  }
+
+  void _showFinishWarningDialog(MapProvider map_provider) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Finish Trip"),
+          content: const Text("Are you sure you want to finish the trip?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                map_provider.resetFields();
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text("Finish"),
+            ),
+          ],
+        );
+      },
     );
   }
 }

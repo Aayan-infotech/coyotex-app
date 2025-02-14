@@ -56,7 +56,9 @@
         <string>We use your location to ensure a seamless experience by offering features like location-based services and precise delivery tracking.</string>
 
     <!-- Google Maps API Key -->
-    <key>GMSAPIKey</key>
+    <key>GMSApiKey</key>
     <string>AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s</string>
+    <key>io.flutter.embedded_views_preview</key>
+    <true/>
   </dict>
 </plist>

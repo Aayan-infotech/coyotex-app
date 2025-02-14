@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/data_entry.dart';
+import 'package:coyotex/feature/map/presentation/marker_bottom_sheat.dart';
 import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
+import 'package:coyotex/feature/map/presentation/show_duration_and_animal_details_sheet.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +27,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   int selectedMode = 0;
-  final List<String> modes = ["Drive", "Bike", "Bus", "Walk"];
+  final List<String> modes = ["Drive", "Bike", "Walk"];
   final List<IconData> modeIcons = [
     Icons.directions_car,
     Icons.two_wheeler,
@@ -32,7 +35,9 @@ class _MapScreenState extends State<MapScreen> {
     Icons.directions_walk,
   ];
   String time = "0";
-  void showCustomDialog(BuildContext context, MapProvider mapProvider) {
+
+  void showCustomDialog(BuildContext context, MapProvider provider,
+      {bool isLocation = false}) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -40,52 +45,9 @@ class _MapScreenState extends State<MapScreen> {
       ),
       backgroundColor: Colors.white,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Stop Duration",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              // List of iteFms
-              ListView.separated(
-                shrinkWrap: true,
-                itemCount: mapProvider.markers.length,
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (context, index) {
-                  List<MarkerData> listMarkerData =
-                      List.from(mapProvider.markers);
-                  MarkerData markerData = listMarkerData[index];
-                  return ListTile(
-                    title: Text(markerData.snippet),
-                    trailing: Text(
-                      "${markerData.duration.toString()} min",
-                      style: const TextStyle(fontSize: 16, color: Colors.black),
-                    ),
-                    onTap: () {},
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              // Close button
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text("Close"),
-              ),
-            ],
-          ),
+        return CustomDialog(
+          isLocation: isLocation,
+          mapProvider: provider,
         );
       },
     );
@@ -143,9 +105,11 @@ class _MapScreenState extends State<MapScreen> {
                             fortyFiveDegreeImageryEnabled: false,
                             polylines: provider.polylines,
                             markers: provider.mapMarkers,
-                            onTap: (latlanng) async {
-                              provider.onMapTapped(latlanng, context);
-                            },
+                            onTap: provider.isSavedTrip
+                                ? null
+                                : (latlanng) async {
+                                    provider.onMapTapped(latlanng, context);
+                                  },
                             zoomGesturesEnabled: true,
                             onMapCreated: (controller) {
                               provider.mapController = controller;
@@ -154,7 +118,7 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                         if (provider.isTripStart)
                           SizedBox(
-                            height: 200,
+                            height: 220,
                             child: Column(
                               children: [
                                 // Drag Handle
@@ -262,10 +226,35 @@ class _MapScreenState extends State<MapScreen> {
                                             child: Text(
                                               provider.totalTravelTime,
                                               style: const TextStyle(
-                                                  fontSize: 20,
-                                                  height: 1.5,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.green),
+                                                fontSize: 20,
+                                                height: 1.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.green,
+                                              ),
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () {
+                                              showCustomDialog(
+                                                  context, provider);
+                                            },
+                                            child: const Text(
+                                              "Break Time ",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                          // Corrected part: Remove Expanded from GestureDetector
+                                          GestureDetector(
+                                            onTap: () {
+                                              showCustomDialog(
+                                                  context, provider,
+                                                  isLocation: true);
+                                            },
+                                            child: Image.asset(
+                                              "assets/images/location.png",
+                                              height: 30,
+                                              width: 30,
                                             ),
                                           ),
                                         ],
@@ -273,15 +262,14 @@ class _MapScreenState extends State<MapScreen> {
                                       Padding(
                                         padding:
                                             const EdgeInsets.only(left: 40),
-                                        child: Text(provider.distance
-                                                .toStringAsFixed(2) +
-                                            " ${userProvider.user.userUnit}"),
+                                        child: Text(
+                                            "${provider.distance.toStringAsFixed(2)} ${userProvider.user.userUnit}"),
                                       )
                                     ],
                                   ),
                                 ),
                                 // Start Button
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 20),
                                 Padding(
                                   padding:
                                       const EdgeInsets.symmetric(horizontal: 5),
@@ -290,9 +278,36 @@ class _MapScreenState extends State<MapScreen> {
                                       Expanded(
                                         child: BrandedPrimaryButton(
                                           isEnabled: true,
+                                          isUnfocus: true,
+                                          name: "Add Photos",
+                                          onPressed: () {
+                                            Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                    builder: (context) {
+                                              return const AddPhotoScreen();
+                                            }));
+                                          },
+                                          borderRadius: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        width: 10,
+                                      ),
+                                      Expanded(
+                                        child: BrandedPrimaryButton(
+                                          isEnabled: true,
                                           isUnfocus: false,
                                           name: "Add Stop",
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            provider
+                                                .showDurationPicker(context,
+                                                    isStop: true)
+                                                .then((value) {
+                                              if (value) {
+                                                provider.addStop();
+                                              }
+                                            });
+                                          },
                                           borderRadius: 20,
                                         ),
                                       ),
@@ -312,110 +327,149 @@ class _MapScreenState extends State<MapScreen> {
                         padding: const EdgeInsets.only(top: 80),
                         child: Column(
                           children: [
-                            // if (!provider.onTapOnMap)
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: BrandedTextField(
-                                    height: 40,
-                                    controller: provider.startController,
-                                    labelText: "Search here",
-                                    onTap: () {
-                                      provider.resetFields();
+                            if (!provider.onTapOnMap && !provider.isSavedTrip)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: BrandedTextField(
+                                      height: 40,
+                                      controller: provider.startController,
+                                      labelText: "Search here",
+                                      onTap: () {
+                                        provider.resetFields();
 
-                                      Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) {
-                                        return SearchLocationScreen(
-                                          controller: provider.startController,
-                                          isStart: true,
-                                        );
-                                      })).then((value) async {
-                                        print(value);
-                                        Map<String, dynamic> data =
-                                            jsonDecode(value);
+                                        Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return SearchLocationScreen(
+                                            controller:
+                                                provider.startController,
+                                            isStart: true,
+                                          );
+                                        })).then((value) async {
+                                          print(value);
+                                          Map<String, dynamic> data =
+                                              jsonDecode(value);
 
-                                        await provider.onSuggestionSelected(
-                                            data['placeId'],
-                                            data["isStart"],
-                                            provider.startController,
-                                            // data["controller"],
-                                            context);
-                                        // provider.showDurationPicker(context);
-                                      });
-                                    },
-                                    prefix: Icon(Icons.location_on),
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                GestureDetector(
-                                  onTap: () async {},
-                                  child: Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                          color: Colors.white, width: 2),
-                                    ),
-                                    child: const Icon(
-                                      Icons.person,
-                                      color: Colors.red,
+                                          await provider.onSuggestionSelected(
+                                              data['placeId'],
+                                              data["isStart"],
+                                              provider.startController,
+                                              // data["controller"],
+                                              context);
+                                          // provider.showDurationPicker(context);
+                                        });
+                                      },
+                                      prefix: Icon(Icons.location_on),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            if (provider.onTapOnMap)
-                              Container(
-                                height: 50, // Item height + spacing
-                                padding: const EdgeInsets.all(0),
-                                child: ListView.builder(
-                                  padding: EdgeInsets.all(0),
-                                  itemCount: provider.markers.length,
-                                  scrollDirection: Axis.horizontal,
-                                  itemBuilder: (context, index) {
-                                    MarkerData _marker =
-                                        provider.markers[index];
-
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 4.0),
-                                      child: Chip(
-                                        label: Text(
-                                          (_marker.snippet != null &&
-                                                  _marker.snippet!.length > 1)
-                                              ? _marker.snippet!.substring(
-                                                  0) // Hides first letter
-                                              : "",
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors
-                                                .white, // Adjust text color
-                                          ),
-                                        ),
-                                        backgroundColor: Colors
-                                            .blueAccent, // Change as needed
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                          side: const BorderSide(
-                                              color: Colors.white,
-                                              width: 1), // Optional border
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        deleteIcon: const Icon(Icons.close,
-                                            color: Colors
-                                                .white), // Styled delete icon
-                                        onDeleted: () {
-                                          provider.onRemove(_marker.position);
-                                        },
+                                  const SizedBox(width: 5),
+                                  GestureDetector(
+                                    onTap: () async {},
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                            color: Colors.white, width: 2),
                                       ),
-                                    );
-                                  },
+                                      child: const Icon(
+                                        Icons.person,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            if (provider.onTapOnMap &&
+                                provider.mapMarkers.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  showMarkersBottomSheet(context, provider);
+                                },
+                                child: Container(
+                                  height: 50,
+                                  width: MediaQuery.of(context).size.width,
+                                  padding: const EdgeInsets.all(12),
+                                  // margin: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 6,
+                                        spreadRadius: 2,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    provider.mapMarkers.last.infoWindow.snippet
+                                        .toString(),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
                               ),
+                            //   Container(
+                            //     height: 50, // Item height + spacing
+                            //     padding: const EdgeInsets.all(0),
+                            //     child: ListView.builder(
+                            //       padding: EdgeInsets.all(0),
+                            //       itemCount: provider.markers.length,
+                            //       scrollDirection: Axis.horizontal,
+                            //       itemBuilder: (context, index) {
+                            //         MarkerData _marker =
+                            //             provider.markers[index];
+
+                            //         return Padding(
+                            //           padding: const EdgeInsets.symmetric(
+                            //               horizontal: 4.0),
+                            //           child: Chip(
+                            //             label: Text(
+                            //               (_marker.snippet != null &&
+                            //                       _marker.snippet!.length > 1)
+                            //                   ? _marker.snippet!.substring(
+                            //                       0) // Hides first letter
+                            //                   : "",
+                            //               style: const TextStyle(
+                            //                 fontSize: 16,
+                            //                 fontWeight: FontWeight.bold,
+                            //                 color: Colors
+                            //                     .white, // Adjust text color
+                            //               ),
+                            //             ),
+                            //             backgroundColor: Colors
+                            //                 .blueAccent, // Change as needed
+                            //             shape: RoundedRectangleBorder(
+                            //               borderRadius:
+                            //                   BorderRadius.circular(20),
+                            //               side: const BorderSide(
+                            //                   color: Colors.white,
+                            //                   width: 1), // Optional border
+                            //             ),
+                            //             padding: const EdgeInsets.symmetric(
+                            //                 horizontal: 12, vertical: 6),
+                            //             deleteIcon: const Icon(Icons.close,
+                            //                 color: Colors
+                            //                     .white), // Styled delete icon
+                            //             onDeleted: () {
+                            //               provider.onRemove(_marker.position);
+                            //             },
+                            //           ),
+                            //         );
+                            //       },
+                            //     ),
+                            //   ),
 
                             if (provider.startController.text.isNotEmpty &&
                                 provider.trips.isEmpty)
@@ -563,12 +617,36 @@ class _MapScreenState extends State<MapScreen> {
                                             child: ClipRRect(
                                               borderRadius: BorderRadius.circular(
                                                   8.0), // Adjust the radius as needed
-                                              child: Image.network(
-                                                "https://images.pexels.com/photos/1386604/pexels-photo-1386604.jpeg",
+                                              child: CachedNetworkImage(
+                                                imageUrl:
+                                                    tripModel.images.isNotEmpty
+                                                        ? tripModel.images.first
+                                                        : '',
                                                 height:
                                                     100, // Image height should match the card height
                                                 width: 100, // Image width
                                                 fit: BoxFit.cover,
+                                                placeholder: (context, url) =>
+                                                    Container(
+                                                  height: 100,
+                                                  width: 100,
+                                                  color: Colors.grey[
+                                                      300], // Placeholder color
+                                                  child: const Center(
+                                                      child:
+                                                          CircularProgressIndicator()), // Loading indicator
+                                                ),
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        Container(
+                                                  height: 100,
+                                                  width: 100,
+                                                  color: Colors.grey[
+                                                      300], // Background for error case
+                                                  child: Icon(Icons.error,
+                                                      color: Colors
+                                                          .red), // Error icon
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -590,8 +668,8 @@ class _MapScreenState extends State<MapScreen> {
                                                     overflow:
                                                         TextOverflow.ellipsis,
                                                   ),
-                                                  const Text(
-                                                    "Lorem IpsumLorem Ipsum",
+                                                  Text(
+                                                    tripModel.startLocation,
                                                     style: TextStyle(
                                                         color: Colors.grey,
                                                         fontSize: 12),
@@ -774,7 +852,6 @@ class _MapScreenState extends State<MapScreen> {
     MapProvider provider,
     BuildContext context,
   ) {
-    
     return Positioned(
       bottom: 20,
       left: 10,
@@ -837,10 +914,9 @@ class _MapScreenState extends State<MapScreen> {
                             onTap: () {
                               showCustomDialog(context, provider);
                             },
-                            child: Text(
-                              provider.totalTravelTime,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                            child: const Text(
+                              'Break Time',
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           )
                         ],

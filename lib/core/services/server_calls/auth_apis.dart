@@ -128,10 +128,7 @@ class LoginAPIs extends ApiBase {
       "newPassword": newPassword,
       "confirmNewPassword": confirmNewPassword,
     };
-    return await CallHelper().patch(
-      'api/auth/change-password',
-      data,
-    );
+    return await CallHelper().patch('api/auth/change-password', data, );
   }
 
   Future<ApiResponse> updatePref(UserPreferences prefrences) async {
@@ -144,7 +141,7 @@ class LoginAPIs extends ApiBase {
     };
 
     prefrences.toJson();
-    return await CallHelper().patch('api/update-preferences', data);
+    return await CallHelper().patch('api/update-preferences', data,);
   }
 
   Future<ApiResponseWithData> getUserById() async {

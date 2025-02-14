@@ -35,6 +35,7 @@ class MapProvider with ChangeNotifier {
   List<LatLng> path = [];
   late TripModel selectedTripModel;
   bool providerLetsHuntButton = false;
+  String selectedWindDirection = 'North';
 
   final String sessionToken = const Uuid().v4();
   var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
@@ -57,6 +58,7 @@ class MapProvider with ChangeNotifier {
   bool isKeyDataPoint = false;
   bool isStartSuggestions = false;
   double speed = 45;
+
   late BitmapDescriptor _markerIcon;
   TripAPIs _tripAPIs = TripAPIs();
   late WeatherResponse weather = defaultWeatherResponse;
@@ -78,117 +80,147 @@ class MapProvider with ChangeNotifier {
   }
 
   void updateCameraPosition(LatLng newPosition) {
-    if (mapController != null) {
-      mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(newPosition, 10),
-      );
-      CameraUpdate.scrollBy(24, 80);
-    }
+    if (mapController == null) return;
+
+    mapController!.animateCamera(
+      CameraUpdate.newLatLngZoom(newPosition, 10),
+    );
+
+    mapController!.animateCamera(CameraUpdate.scrollBy(24, 80));
+
     notifyListeners();
   }
 
-  Future<void> showDurationPicker(
-    BuildContext context,
-  ) async {
+  Future<bool> showDurationPicker(BuildContext context,
+      {bool isStop = false}) async {
     TextEditingController minuteController = TextEditingController();
+    // String? selectedWindDirection;
+    List<String> windDirections = [
+      "North",
+      "South",
+      "East",
+      "West",
+      "Northeast",
+      "Northwest",
+      "Southeast",
+      "Southwest"
+    ];
 
-    Duration? selectedDuration = await showDialog<Duration>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          elevation: 8.0,
-          backgroundColor: Colors.white,
-          title: const Center(
-            child: Text(
-              "Set Duration",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey,
+    bool isDurationSet = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
               ),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: minuteController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Enter time in minutes",
-                  labelStyle: TextStyle(color: Colors.blueGrey[600]),
-                  hintText: "e.g., 30",
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: const BorderSide(color: Colors.blueGrey),
+              elevation: 8.0,
+              backgroundColor: Colors.white,
+              title: const Center(
+                child: Text(
+                  "Set Duration",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide:
-                        const BorderSide(color: Colors.blueAccent, width: 2.0),
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: minuteController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Enter time in minutes",
+                      labelStyle: TextStyle(color: Colors.blueGrey[600]),
+                      hintText: "e.g., 30",
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: const BorderSide(color: Colors.blueGrey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: const BorderSide(
+                            color: Colors.blueAccent, width: 2.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.blueGrey[50],
+                    ),
+                    style:
+                        const TextStyle(color: Colors.blueGrey, fontSize: 16),
                   ),
-                  filled: true,
-                  fillColor: Colors.blueGrey[50],
-                ),
-                style: const TextStyle(color: Colors.blueGrey, fontSize: 16),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: "Select Wind Direction",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                    ),
+                    value: selectedWindDirection,
+                    items: windDirections.map((String direction) {
+                      return DropdownMenuItem<String>(
+                        value: direction,
+                        child: Text(direction),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      selectedWindDirection = newValue!;
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(null); // No duration selected
-              },
-              child: const Text(
-                "Cancel",
-                style: TextStyle(
-                  color: Colors.redAccent,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (minuteController.text.isNotEmpty) {
-                  int minutes = int.parse(minuteController.text);
-                  await setTimeDuration(minutes);
-                  Navigator.of(context).pop(null);
-                } else {
-                  Navigator.of(context).pop(true); // No duration selected
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (minuteController.text.isNotEmpty &&
+                        selectedWindDirection != null) {
+                      int minutes = int.parse(minuteController.text);
+                      await setTimeDuration(minutes, isStop: isStop);
+                      Navigator.of(context).pop(true);
+                    } else {
+                      Navigator.of(context).pop(false);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                  ),
+                  child: const Text(
+                    "Set",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              child: const Text(
-                "Set",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+              ],
+            );
+          },
+        ) ??
+        false;
 
-    if (selectedDuration != null) {
-      // Use the selected duration as needed
-      // provider.setMarkerDuration(markerId, selectedDuration);
-    }
+    return isDurationSet;
   }
 
   Future<void> getWeather(LatLng latAndLng) async {
@@ -266,33 +298,23 @@ class MapProvider with ChangeNotifier {
   }
 
   void increaseCount() {
-    destinationCount += destinationCount;
+    destinationCount += 1;
     TextEditingController _textController = TextEditingController();
     destinationControllers.add(_textController);
     notifyListeners();
   }
-
-  // void showNavigationBottomSheet(BuildContext context) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     backgroundColor: Colors.transparent,
-  //     builder: (context) {
-  //       return const GoogleMapsBottomSheet();
-  //     },
-  //   );
-  // }
 
   void letsHunt() async {
     isTripStart = true;
     isSave = false;
     isLoading = true;
     onTapOnMap = false;
-    // isTap = false;
 
     notifyListeners();
+
     try {
       // Request location permissions
+      final user = Provider.of<UserViewModel>(context, listen: false);
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw Exception('Location services are disabled.');
@@ -319,23 +341,16 @@ class MapProvider with ChangeNotifier {
 
       // Fetch the route only once
       await fetchRouteWithWaypoints(path);
-      updateCameraPosition(
-          LatLng(initialPosition.latitude, initialPosition.longitude));
+      // updateCameraPosition(LatLng(initialPosition.latitude, initialPosition.longitude));
 
       isLoading = false;
-
-      if (mapController != null) {
-        mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(
-              LatLng(initialPosition.latitude, initialPosition.longitude), 15),
-        );
-      }
       notifyListeners();
+
       // Start listening to location updates for the user pointer
       Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 0, // Trigger updates regardless of distance
+          distanceFilter: 5, // Update only if user moves 5 meters
         ),
       ).listen((Position position) {
         double distanceTravelled = Geolocator.distanceBetween(
@@ -344,8 +359,22 @@ class MapProvider with ChangeNotifier {
           position.latitude,
           position.longitude,
         );
-        distance - distanceTravelled;
+        // print(distanceTravelled);
+        if (user.user.userUnit == "KM") {
+          distance = distance - distanceTravelled / 1000;
+        } else {
+          distance = distance - distanceTravelled / 1609.34;
+        }
+
         convertMinutesToHours();
+
+        if (mapController != null) {
+          mapController!.animateCamera(
+            CameraUpdate.newLatLng(
+                LatLng(position.latitude, position.longitude)),
+          );
+        }
+
         // notifyListeners();
       });
     } catch (e) {
@@ -357,9 +386,9 @@ class MapProvider with ChangeNotifier {
   void addStop() async {
     try {
       isLoading = true;
-      isHurryUp = true;
+      isHurryUp = false;
       isKeyDataPoint = false;
-      isTripStart = false;
+      isTripStart = true;
 
       notifyListeners();
 
@@ -377,6 +406,10 @@ class MapProvider with ChangeNotifier {
       final uniqueId = DateTime.now().millisecondsSinceEpoch.toString();
       markerId = uniqueId;
       markers.add(MarkerData(
+        animalSeen: '0',
+        animalKilled: '0',
+        wind_degree: 0,
+        wind_direction: selectedWindDirection,
         id: uniqueId,
         position: currentStop,
         icon: "assets/images/stop.icon",
@@ -387,6 +420,10 @@ class MapProvider with ChangeNotifier {
       ));
       var response = await _tripAPIs.addStop(
         MarkerData(
+          animalSeen: '0',
+          animalKilled: '0',
+          wind_degree: 0,
+          wind_direction: selectedWindDirection,
           id: uniqueId,
           position: currentStop,
           icon: "assets/images/stop.icon",
@@ -415,7 +452,7 @@ class MapProvider with ChangeNotifier {
       await fetchRouteWithWaypoints(path);
 
       // Recalculate the total distance
-      distance = _calculateTotalDistance();
+      distance = calculateTotalDistance();
       isSave = false;
     } catch (e) {
       debugPrint("Error while adding a stop: $e");
@@ -438,6 +475,7 @@ class MapProvider with ChangeNotifier {
     isSave = false;
     isHurryUp = false;
     isKeyDataPoint = false;
+
     resetFields();
     Navigator.of(context).pop();
     Navigator.of(context).pop();
@@ -478,21 +516,6 @@ class MapProvider with ChangeNotifier {
             sunset: weather.sys.sunset,
             recordedAt: weather.timezone));
 
-    // WeatherMarker _weatherMarker = WeatherMarker(
-
-    //   location: Location(name: name, country: country, latitude: latitude, longitude: longitude, timezone: timezone),
-    //     id: '',
-    //     // position: LatLng(weather.coord.lat, weather.coord.lon),
-    //     // locationName: weather.name,
-    //     // country: weather.sys.country,
-    //     // timezone: weather.timezone,
-    //     weather: WeatherData(
-    //         temperature: weather.main.temp,
-    //         feelsLike: weather.main.feelsLike,
-    //         weatherMain: weather.weather.first.main,
-    //         weatherDescription: weather.weather.first.description,
-    //         weatherIcon: weather.weather.first.icon
-    // ));
     List<WeatherMarker> lstWeatherMarker = [];
 
     lstWeatherMarker.add(_weatherMarker);
@@ -562,7 +585,7 @@ class MapProvider with ChangeNotifier {
         path.add(latAndLng);
 
         if (points.length >= 2) {
-          distance = _calculateTotalDistance();
+          distance = calculateTotalDistance();
           isSave = true;
           isHurryUp = false;
           isKeyDataPoint = false;
@@ -573,6 +596,10 @@ class MapProvider with ChangeNotifier {
         markerId = uniqueId;
 
         markers.add(MarkerData(
+          animalSeen: '0',
+          animalKilled: '0',
+          wind_degree: 0,
+          wind_direction: selectedWindDirection,
           id: uniqueId,
           position: latAndLng,
           icon: "assets/images/stop.icon",
@@ -629,7 +656,7 @@ class MapProvider with ChangeNotifier {
     }
 
     if (points.length >= 2) {
-      distance = _calculateTotalDistance();
+      distance = calculateTotalDistance();
       isSave = true;
       isHurryUp = false;
       isKeyDataPoint = false;
@@ -640,6 +667,10 @@ class MapProvider with ChangeNotifier {
     markerId = uniqueId;
 
     markers.add(MarkerData(
+      animalSeen: '0',
+      animalKilled: '0',
+      wind_degree: 0,
+      wind_direction: selectedWindDirection,
       id: uniqueId,
       position: position,
       icon: "assets/images/stop.icon",
@@ -669,6 +700,10 @@ class MapProvider with ChangeNotifier {
     mapMarkers.clear();
     points.clear();
     path.clear();
+    markers.clear();
+    isSavedTrip = false;
+    onTapOnMap = false;
+    isTripStart = false;
     providerLetsHuntButton = false;
     polylines.clear();
     markers.clear();
@@ -676,15 +711,21 @@ class MapProvider with ChangeNotifier {
     isSave = false;
     distance = 0.0;
     totalTime = 0;
+    destinationCount = 1;
+    timeDurations = 0;
     notifyListeners();
   }
 
-  Future<void> setTimeDuration(int duration) async {
+  Future<void> setTimeDuration(int duration, {bool isStop = false}) async {
     timeDurations = duration;
     totalTime += duration;
-    if (markers.isNotEmpty) {
-      markers.last.duration = duration;
+    if (!isStop) {
+      if (markers.isNotEmpty) {
+        markers.last.duration = duration;
+        markers.last.wind_direction = selectedWindDirection;
+      }
     }
+
     notifyListeners();
   }
 
@@ -749,10 +790,6 @@ class MapProvider with ChangeNotifier {
 
         List<Color> routeColors = [
           Colors.blue,
-          Colors.green,
-          Colors.red,
-          Colors.orange,
-          Colors.purple
         ];
 
         for (int i = 0; i < data['routes'].length; i++) {
@@ -776,7 +813,7 @@ class MapProvider with ChangeNotifier {
           mapController
               ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
         }
-        distance = _calculateTotalDistance();
+        //s distance = calculateTotalDistance();
 
         debugPrint("Successfully fetched ${data['routes'].length} routes.");
       } else {
@@ -841,7 +878,7 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  double _calculateTotalDistance() {
+  double calculateTotalDistance({bool isRefresh = false}) {
     final userProvider = Provider.of<UserViewModel>(context, listen: false);
     double totalDistance = 0.0;
 
@@ -859,7 +896,10 @@ class MapProvider with ChangeNotifier {
     } else if (userProvider.user.userUnit == "Miles") {
       totalDistance = totalDistance / 1609.34; // Convert meters to miles
     }
-
+    if (isRefresh) {
+      distance = totalDistance;
+      notifyListeners();
+    }
     return totalDistance;
   }
 
@@ -948,7 +988,7 @@ class MapProvider with ChangeNotifier {
       isTripStart = false;
       distance = 0.0;
     } else if (points.length >= 2) {
-      // distance = _calculateTotalDistance();
+      // distance = calculateTotalDistance();
     }
     await fetchRouteWithWaypoints(path, isRemove: true);
 

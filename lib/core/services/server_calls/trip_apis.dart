@@ -38,10 +38,19 @@ class TripAPIs extends ApiBase {
         .postWithData('api/trips/${id}/add-waypoint', data, {});
   }
 
-  Future<ApiResponse> addAnimalSeenAndKilled(Map<String, dynamic> data) async {
+  Future<ApiResponse> addAnimalSeenAndKilled(
+      MarkerData markerData, String tripId) async {
+    Map<String, dynamic> data = {
+      "tripId": tripId,
+      "markerId": markerData.id,
+      "animalSeen": markerData.animalSeen,
+      "animalKilled": markerData.animalKilled,
+      "wind_speed": '',
+      "wind_degree": markerData.wind_degree,
+      "wind_direction": markerData.wind_direction
+    };
     return await CallHelper().patch(
-      
-      'trips/update-animals',
+      'api/trips/update-animals',
       data,
     );
   }

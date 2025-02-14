@@ -182,81 +182,91 @@ class _HomePageState extends State<HomePage> {
                           itemCount: mapProvider.trips.length,
                           itemBuilder: (context, index) {
                             final trip = mapProvider.trips[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: Card(
-                                color: Colors.grey[900],
-                                child: Stack(
-                                  // mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                          10), // Adjust the radius as needed
-                                      child: CachedNetworkImage(
-                                        imageUrl: trip.images.isNotEmpty
-                                            ? trip.images.first
-                                            : '',
-                                        width: 200,
-                                        height: 200,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) =>
-                                            Container(
-                                          width: 150,
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius: BorderRadius.circular(
-                                                10), // Apply same radius
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.of(context)
+                                    .push(MaterialPageRoute(builder: (context) {
+                                  return TripsHistoryScreen();
+                                }));
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Card(
+                                  color: Colors.grey[900],
+                                  child: Stack(
+                                    // mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(
+                                            10), // Adjust the radius as needed
+                                        child: CachedNetworkImage(
+                                          imageUrl: trip.images.isNotEmpty
+                                              ? trip.images.first
+                                              : '',
+                                          width: 200,
+                                          height: 200,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Container(
+                                            width: 150,
+                                            height: 100,
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[300],
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      10), // Apply same radius
+                                            ),
+                                            child: Center(
+                                                child:
+                                                    CircularProgressIndicator()),
                                           ),
-                                          child: Center(
-                                              child:
-                                                  CircularProgressIndicator()),
-                                        ),
-                                        errorWidget: (context, url, error) =>
-                                            Container(
-                                          width: 150,
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            color: const Color.fromARGB(
-                                                255, 58, 55, 55),
-                                            borderRadius: BorderRadius.circular(
-                                                10), // Apply same radius
+                                          errorWidget: (context, url, error) =>
+                                              Container(
+                                            width: 150,
+                                            height: 100,
+                                            decoration: BoxDecoration(
+                                              color: const Color.fromARGB(
+                                                  255, 58, 55, 55),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      10), // Apply same radius
+                                            ),
+                                            child: Icon(Icons.error,
+                                                color: Colors.red),
                                           ),
-                                          child: Icon(Icons.error,
-                                              color: Colors.red),
                                         ),
                                       ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.bottomLeft,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(
-                                            left: 10, bottom: 30),
-                                        child: SizedBox(
-                                          width: 150,
+                                      Align(
+                                        alignment: Alignment.bottomLeft,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 10, bottom: 30),
+                                          child: SizedBox(
+                                            width: 150,
+                                            child: Text(
+                                              trip.name,
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.bottomLeft,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                              left: 10, bottom: 10),
                                           child: Text(
-                                            trip.name,
+                                            '${trip.markers.length} Locations',
                                             style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
+                                                color: Colors.white70,
+                                                fontSize: 12),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.bottomLeft,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(
-                                            left: 10, bottom: 10),
-                                        child: Text(
-                                          '${trip.markers.length} Locations',
-                                          style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 12),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             );
