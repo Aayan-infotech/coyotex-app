@@ -83,6 +83,11 @@ class TripModel {
     };
   }
 }
+// "animalKilled": "4",
+//   "animalSeen": "6",
+//   "wind_speed": "25",
+//   "wind_degree": "68",
+//   "wind_direction": "South",
 
 class MarkerData {
   final String id;
@@ -92,19 +97,30 @@ class MarkerData {
   final String icon;
   final String markerType;
   int duration;
+  String animalKilled;
+  String animalSeen;
+  int wind_degree;
+  String wind_direction;
 
-  MarkerData({
-    required this.id,
-    required this.position,
-    required this.title,
-    required this.snippet,
-    required this.icon,
-    required this.markerType,
-    required this.duration,
-  });
+  MarkerData(
+      {required this.id,
+      required this.position,
+      required this.title,
+      required this.snippet,
+      required this.icon,
+      required this.markerType,
+      required this.duration,
+      required this.animalKilled,
+      required this.animalSeen,
+      required this.wind_degree,
+      required this.wind_direction});
 
   factory MarkerData.fromJson(Map<String, dynamic> json) {
     return MarkerData(
+      animalKilled: json["animalKilled"] ?? '0',
+      animalSeen: json["animalSeen"] ?? '0',
+      wind_degree: 0, //json["wind_degree"] ?? '',
+      wind_direction: json["wind_direction"] ?? "",
       id: json['_id'] ?? "",
       position: LatLng(json['latitude'] ?? 0, json['longitude'] ?? 0),
       title: json['title'] ?? '',
@@ -123,7 +139,10 @@ class MarkerData {
       'title': title,
       'snippet': snippet,
       'icon': icon,
-      'timeDurations': duration,
+      'animalKilled': animalKilled,
+      'animalSeen': animalSeen,
+      ''
+          'timeDurations': duration,
       'markerType': markerType,
     };
   }

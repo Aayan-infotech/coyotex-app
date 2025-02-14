@@ -1,6 +1,15 @@
+import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:flutter/material.dart';
 
-class TripDetailsScreen extends StatelessWidget {
+class TripDetailsScreen extends StatefulWidget {
+  TripModel tripModel;
+
+  TripDetailsScreen({required this.tripModel, super.key});
+  @override
+  State<TripDetailsScreen> createState() => _TripDetailsScreenState();
+}
+
+class _TripDetailsScreenState extends State<TripDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -8,7 +17,7 @@ class TripDetailsScreen extends StatelessWidget {
         backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -33,8 +42,7 @@ class TripDetailsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStopInfo(
-                    'Hunting Park Gate no. 2', isHighlighted: true),
+                _buildStopInfo('Hunting Park Gate no. 2', isHighlighted: true),
                 _buildStopInfo('Coyote area phase - 2', isHighlighted: false),
                 SizedBox(height: 16),
                 Text(
@@ -78,15 +86,19 @@ class TripDetailsScreen extends StatelessWidget {
                 SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildStatCard('Total Time', '08:45', 'Hours')),
+                    Expanded(
+                        child: _buildStatCard('Total Time', '08:45', 'Hours')),
                     SizedBox(width: 16),
-                    Expanded(child: _buildStatCard('Distance', '80', 'Km', isCircular: true)),
+                    Expanded(
+                        child: _buildStatCard('Distance', '80', 'Km',
+                            isCircular: true)),
                   ],
                 ),
                 SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _buildStatCard('Weather', 'Cloudy', 'Mostly')),
+                    Expanded(
+                        child: _buildStatCard('Weather', 'Cloudy', 'Mostly')),
                   ],
                 ),
                 SizedBox(height: 16),
@@ -120,15 +132,23 @@ class TripDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStopInfo(String title, {bool isHighlighted = false}) {
+  Widget _buildStopInfo(String title, {bool isHighlighted = true}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            Icon(
-              Icons.check_circle,
-              color: isHighlighted ? Colors.orange : Colors.white,
+            Container(
+              padding: EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.check_circle_outline_sharp,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             SizedBox(width: 8),
             Text(
@@ -139,14 +159,6 @@ class TripDetailsScreen extends StatelessWidget {
               ),
             ),
           ],
-        ),
-        Text(
-          isHighlighted ? '+ 2 Stops' : '',
-          style: TextStyle(
-            color: Colors.red,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
         ),
       ],
     );
@@ -182,7 +194,8 @@ class TripDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, String unit, {bool isCircular = false}) {
+  Widget _buildStatCard(String title, String value, String unit,
+      {bool isCircular = false}) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(

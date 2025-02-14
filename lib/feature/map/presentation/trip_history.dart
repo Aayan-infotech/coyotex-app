@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/trip_details.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
@@ -66,7 +67,9 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                         onTap: () {
                           Navigator.of(context)
                               .push(MaterialPageRoute(builder: (context) {
-                            return TripDetailsScreen();
+                            return TripDetailsScreen(
+                              tripModel: trip,
+                            );
                           }));
                         },
                         child: _buildTripCard(trip),
@@ -145,31 +148,36 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
     }).toList();
   }
 
+// import 'package:cached_network_image/cached_network_image.dart';
+
   Widget _buildTripCard(TripModel trip) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: Colors.grey[850],
-        image: DecorationImage(
-          image: NetworkImage(trip.images.isNotEmpty
-              ? trip.images.first
-              : 'assets/trip_placeholder.jpg'),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.5),
-            BlendMode.darken,
-          ),
-        ),
       ),
       child: Stack(
         children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: CachedNetworkImage(
+              imageUrl: trip.images.isNotEmpty ? trip.images.first : '',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              placeholder: (context, url) =>
+                  const Center(child: CircularProgressIndicator()),
+              errorWidget: (context, url, error) =>
+                  const Icon(Icons.image_not_supported, color: Colors.white),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(bottom: 35, left: 5, right: 5),
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Text(
-                trip.name ?? 'Trip Name',
-                style: TextStyle(
+                trip.markers.isNotEmpty ? trip.markers.first.snippet : 'Trip',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -178,13 +186,12 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               ),
             ),
           ),
-          SizedBox(height: 4),
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
               height: 30,
-              padding: EdgeInsets.symmetric(vertical: 4),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              decoration: const BoxDecoration(
                 color: Colors.red,
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(16),
@@ -193,8 +200,8 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               ),
               child: Center(
                 child: Text(
-                  'Trip ${trip.id}',
-                  style: TextStyle(
+                  trip.name,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
