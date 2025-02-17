@@ -92,7 +92,7 @@ class TripModel {
 class MarkerData {
   final String id;
   final LatLng position;
-  final String title;
+   String title;
   final String snippet;
   final String icon;
   final String markerType;
