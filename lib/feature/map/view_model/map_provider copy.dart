@@ -7,7 +7,6 @@ import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
-import 'package:coyotex/feature/map/presentation/marker_bottom_sheet.dart';
 import 'package:coyotex/feature/map/presentation/start_trip_bootom_sheat.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
@@ -94,16 +93,135 @@ class MapProvider with ChangeNotifier {
 
   Future<bool> showDurationPicker(BuildContext context,
       {bool isStop = false}) async {
-    bool? result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DurationPickerBottomSheet(isStop: isStop),
-    );
-    return result ?? false;
-  }
+    TextEditingController minuteController = TextEditingController();
+    // String? selectedWindDirection;
+    List<String> windDirections = [
+      "North",
+      "South",
+      "East",
+      "West",
+      "Northeast",
+      "Northwest",
+      "Southeast",
+      "Southwest"
+    ];
 
+    bool isDurationSet = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              elevation: 8.0,
+              backgroundColor: Colors.white,
+              title: const Center(
+                child: Text(
+                  "Set Duration",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
+                  ),
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: minuteController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Enter time in minutes",
+                      labelStyle: TextStyle(color: Colors.blueGrey[600]),
+                      hintText: "e.g., 30",
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: const BorderSide(color: Colors.blueGrey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: const BorderSide(
+                            color: Colors.blueAccent, width: 2.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.blueGrey[50],
+                    ),
+                    style:
+                        const TextStyle(color: Colors.blueGrey, fontSize: 16),
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: "Select Wind Direction",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                    ),
+                    value: selectedWindDirection,
+                    items: windDirections.map((String direction) {
+                      return DropdownMenuItem<String>(
+                        value: direction,
+                        child: Text(direction),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      selectedWindDirection = newValue!;
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (minuteController.text.isNotEmpty &&
+                        selectedWindDirection != null) {
+                      int minutes = int.parse(minuteController.text);
+                      await setTimeDuration(minutes, isStop: isStop);
+                      Navigator.of(context).pop(true);
+                    } else {
+                      Navigator.of(context).pop(false);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                  ),
+                  child: const Text(
+                    "Set",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    return isDurationSet;
+  }
   //  Future<bool> showDurationPicker(BuildContext context,
   //     {bool isStop = false}) async {
   //   TextEditingController minuteController = TextEditingController();
@@ -404,23 +522,6 @@ class MapProvider with ChangeNotifier {
       isTripStart = true;
 
       notifyListeners();
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('Location services are disabled.');
-      }
-
-      // Check and request location permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions are denied.');
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied.');
-      }
 
       Position currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
@@ -442,53 +543,47 @@ class MapProvider with ChangeNotifier {
         wind_direction: selectedWindDirection,
         id: uniqueId,
         position: currentStop,
-        icon: "markerIcon",
+        icon: "assets/images/stop.icon",
         title: "Stop",
         snippet: locationName,
         duration: timeDurations,
         markerType: "inbetween",
       ));
+      var response = await _tripAPIs.addStop(
+        MarkerData(
+          animalSeen: '0',
+          animalKilled: '0',
+          wind_degree: 0,
+          wind_direction: selectedWindDirection,
+          id: uniqueId,
+          position: currentStop,
+          icon: "assets/images/stop.icon",
+          title: "Stop",
+          snippet: locationName,
+          duration: timeDurations,
+          markerType: "inbetween",
+        ),
+        selectedTripModel.id,
+      );
+      List<Map<String, dynamic>> dataPoint = [
+        {"latitude": currentStop.latitude, "longitude": currentStop.longitude},
+      ];
+
+      response = await _tripAPIs.addPoint(
+        selectedTripModel.id,
+        dataPoint,
+      );
+      List<String> waypoint = [locationName, locationName];
+      response = await _tripAPIs.addWayPoints(
+        selectedTripModel.id,
+        waypoint,
+      );
 
       // Fetch and redraw the updated route
       await fetchRouteWithWaypoints(path);
 
       // Recalculate the total distance
       distance = calculateTotalDistance();
-      notifyListeners();
-      await showDurationPicker(context).then((value) async {
-        var response = await _tripAPIs.addStop(
-          MarkerData(
-            animalSeen: '0',
-            animalKilled: '0',
-            wind_degree: 0,
-            wind_direction: selectedWindDirection,
-            id: uniqueId,
-            position: currentStop,
-            icon: "markerIcon",
-            title: "Stop",
-            snippet: locationName,
-            duration: timeDurations,
-            markerType: "inbetween",
-          ),
-          selectedTripModel.id,
-        );
-        List<Map<String, dynamic>> dataPoint = [
-          {
-            "latitude": currentStop.latitude,
-            "longitude": currentStop.longitude
-          },
-        ];
-
-        response = await _tripAPIs.addPoint(
-          selectedTripModel.id,
-          dataPoint,
-        );
-        List<String> waypoint = [locationName, locationName];
-        response = await _tripAPIs.addWayPoints(
-          selectedTripModel.id,
-          waypoint,
-        );
-      });
       isSave = false;
     } catch (e) {
       debugPrint("Error while adding a stop: $e");
@@ -709,7 +804,7 @@ class MapProvider with ChangeNotifier {
       wind_direction: selectedWindDirection,
       id: uniqueId,
       position: position,
-      icon: "markerIcon",
+      icon: "assets/images/stop.icon",
       title: 'Point ${points.length}',
       snippet: locationName,
       duration: timeDurations,
@@ -752,16 +847,12 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setTimeDuration(int duration, String name,
-      {bool isStop = false}) async {
+  Future<void> setTimeDuration(int duration, {bool isStop = false}) async {
     timeDurations = duration;
     totalTime += duration;
     if (!isStop) {
       if (markers.isNotEmpty) {
         markers.last.duration = duration;
-        if (name.isNotEmpty) {
-          markers.last.title = name;
-        }
         markers.last.wind_direction = selectedWindDirection;
       }
     }

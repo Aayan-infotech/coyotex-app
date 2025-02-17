@@ -18,7 +18,9 @@ class BrandedTextField extends StatefulWidget {
   final void Function()? onTap;
   final List<TextInputFormatter> inputFormatters;
   final String? Function(String?)? validator;
-  final Color? backgroundColor; // New background color property
+  final Color? backgroundColor;
+  final double? fontSize; // New font size property
+  final FocusNode? focusNode; // FocusNode parameter
 
   const BrandedTextField({
     super.key,
@@ -37,7 +39,9 @@ class BrandedTextField extends StatefulWidget {
     this.onChanged,
     this.onTap,
     this.isPassword = false,
-    this.backgroundColor, // Initialize the new background color property
+    this.backgroundColor,
+    this.fontSize, // Accept font size
+    this.focusNode, // Accept focus node
   });
 
   @override
@@ -49,49 +53,52 @@ class _BrandedTextFieldState extends State<BrandedTextField> {
 
   @override
   Widget build(BuildContext context) {
+    double defaultFontSize =
+        MediaQuery.of(context).size.width * 0.04; // Adaptive font size
+    double fontSize = widget.fontSize ??
+        defaultFontSize; // Use provided font size or fallback
+
     return TextFormField(
       validator: widget.validator,
       enabled: widget.isEnabled,
       onTap: widget.onTap,
       maxLines: widget.maxLines,
       minLines: widget.minLines,
-      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-          fontSize: 12, fontWeight: FontWeight.w500, color: Pallete.textColor),
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w500,
+        color: Pallete.textColor,
+      ),
       controller: widget.controller,
       keyboardType: widget.keyboardType,
       inputFormatters: widget.inputFormatters,
       onChanged: widget.onChanged,
       obscureText: widget.isPassword ? _isObscured : false,
       autovalidateMode: AutovalidateMode.onUserInteraction,
+      focusNode: widget.focusNode, // Assign FocusNode here
       decoration: InputDecoration(
-        fillColor: Colors.white, //const Color.fromARGB(255, 226, 226, 245),
+        fillColor: Colors.white,
         filled: widget.isFilled,
         border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(8),
-          ),
+          borderRadius: BorderRadius.all(Radius.circular(8)),
         ),
         disabledBorder: const OutlineInputBorder(
           borderSide: BorderSide(color: Pallete.whiteColor),
-          borderRadius: BorderRadius.all(
-            Radius.circular(8),
-          ),
+          borderRadius: BorderRadius.all(Radius.circular(8)),
         ),
         focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(
-              color: Pallete.accentColor), // Change the color as desired
-          borderRadius: BorderRadius.all(
-            Radius.circular(8),
-          ),
+          borderSide: BorderSide(color: Pallete.accentColor),
+          borderRadius: BorderRadius.all(Radius.circular(8)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(
-              color: Pallete.outLineColor), // Change the color as desired
-          borderRadius: const BorderRadius.all(
-            Radius.circular(8),
-          ),
+          borderSide: BorderSide(color: Pallete.outLineColor),
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
         ),
         hintText: widget.labelText,
+        hintStyle: TextStyle(
+          fontSize: fontSize * 0.9, // Slightly smaller hint text
+          color: Colors.grey,
+        ),
         suffixIcon: widget.isPassword
             ? IconButton(
                 icon: Icon(
@@ -108,20 +115,16 @@ class _BrandedTextFieldState extends State<BrandedTextField> {
               )
             : widget.sufix != null
                 ? Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: widget.sufix,
-                  )
+                    padding: const EdgeInsets.all(12), child: widget.sufix)
                 : null,
         prefixIcon: widget.prefix != null
-            ? Padding(
-                padding: const EdgeInsets.all(12),
-                child: widget.prefix,
-              )
+            ? Padding(padding: const EdgeInsets.all(12), child: widget.prefix)
             : null,
-        labelStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
-            fontWeight: FontWeight.w500,
-            color: const Color.fromRGBO(103, 103, 103, 1),
-            fontSize: 12),
+        labelStyle: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w500,
+          color: const Color.fromRGBO(103, 103, 103, 1),
+        ),
         contentPadding: const EdgeInsets.all(12),
       ),
     );

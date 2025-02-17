@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
@@ -9,14 +11,16 @@ import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
 import 'package:coyotex/feature/map/presentation/show_duration_and_animal_details_sheet.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-
 import 'add_photos.dart';
 import '../../../core/utills/app_colors.dart';
 import '../../../core/utills/branded_primary_button.dart';
 import '../../../core/utills/branded_text_filed.dart';
+import 'dart:ui' as ui;
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -34,6 +38,25 @@ class _MapScreenState extends State<MapScreen> {
     Icons.directions_bus,
     Icons.directions_walk,
   ];
+  final Map<String, BitmapDescriptor> _icons = {};
+  Future<void> _loadMarkers() async {
+    _icons['markerIcon'] = await _getIcon('assets/marker_icon.png', 100);
+    // _icons['stop'] = await _getIcon('assets/blue_marker.png', 100);
+    // _icons['green'] = await _getIcon('assets/green_marker.png', 100);
+    setState(() {}); // Refresh UI after loading markers
+  }
+
+  Future<BitmapDescriptor> _getIcon(String path, int width) async {
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+        targetWidth: width);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    return BitmapDescriptor.fromBytes(
+        (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
+            .buffer
+            .asUint8List());
+  }
+
   String time = "0";
 
   void showCustomDialog(BuildContext context, MapProvider provider,
@@ -57,7 +80,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     final mapProvider = Provider.of<MapProvider>(context, listen: false);
     mapProvider.loadCustomLiveLocationIcon();
-
+    _loadMarkers();
     super.initState();
   }
 
@@ -71,6 +94,7 @@ class _MapScreenState extends State<MapScreen> {
           provider.mapMarkers.add(Marker(
             markerId: MarkerId(item.id),
             position: item.position,
+            icon: _icons[item.icon]!,
             infoWindow: InfoWindow(title: item.title, snippet: item.snippet),
           ));
         }
@@ -91,13 +115,9 @@ class _MapScreenState extends State<MapScreen> {
                               zoom: 15,
                             ),
                             myLocationEnabled: true,
-                            mapType: MapType.terrain,
-                            onCameraMoveStarted: () {
-                              print("object");
-                            },
-                            onCameraMove: (value) {
-                              print("object");
-                            },
+                            mapType: MapType.satellite,
+                            onCameraMoveStarted: () {},
+                            onCameraMove: (value) {},
                             compassEnabled: true,
                             myLocationButtonEnabled: true,
                             buildingsEnabled: true,
@@ -299,14 +319,7 @@ class _MapScreenState extends State<MapScreen> {
                                           isUnfocus: false,
                                           name: "Add Stop",
                                           onPressed: () {
-                                            provider
-                                                .showDurationPicker(context,
-                                                    isStop: true)
-                                                .then((value) {
-                                              if (value) {
-                                                provider.addStop();
-                                              }
-                                            });
+                                            provider.addStop();
                                           },
                                           borderRadius: 20,
                                         ),
@@ -643,7 +656,7 @@ class _MapScreenState extends State<MapScreen> {
                                                   width: 100,
                                                   color: Colors.grey[
                                                       300], // Background for error case
-                                                  child: Icon(Icons.error,
+                                                  child: const Icon(Icons.error,
                                                       color: Colors
                                                           .red), // Error icon
                                                 ),
@@ -670,7 +683,10 @@ class _MapScreenState extends State<MapScreen> {
                                                   ),
                                                   Text(
                                                     tripModel.startLocation,
-                                                    style: TextStyle(
+                                                    maxLines: 4,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
                                                         color: Colors.grey,
                                                         fontSize: 12),
                                                   )
