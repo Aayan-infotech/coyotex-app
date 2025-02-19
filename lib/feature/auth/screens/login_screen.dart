@@ -76,7 +76,10 @@ class LoginScreen extends StatelessWidget {
             child: Consumer<UserViewModel>(
               builder: (context, userProvider, child) {
                 return userProvider.isLoading
-                    ? const CircularProgressIndicator()
+                    ? Center(
+                        child: CircularProgressIndicator.adaptive(
+                        backgroundColor: Colors.white,
+                      ))
                     : Form(
                         key: _formKey,
                         child: Column(

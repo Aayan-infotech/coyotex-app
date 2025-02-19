@@ -161,7 +161,8 @@ class CallHelper {
   Future<bool> _refreshToken() async {
     if (_isRefreshing) {
       await _refreshCompleter?.future;
-      return SharedPrefUtil.getValue(accessTokenPref, "") != null;
+      return (SharedPrefUtil.getValue(accessTokenPref, "") as String)
+          .isNotEmpty;
     }
 
     _isRefreshing = true;
@@ -171,7 +172,7 @@ class CallHelper {
       String refreshToken =
           SharedPrefUtil.getValue(refreshTokenPref, "") as String;
       final response = await http.post(
-        Uri.parse("${baseUrl}auth/refresh"),
+        Uri.parse("${baseUrl}api/auth/refresh-token"),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({"refreshToken": refreshToken}),
       );

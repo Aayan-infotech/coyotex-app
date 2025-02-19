@@ -1,7 +1,293 @@
+// import 'package:coyotex/core/utills/branded_primary_button.dart';
+// import 'package:coyotex/core/utills/constant.dart';
+// import 'package:coyotex/core/utills/shared_pref.dart';
+// import 'package:coyotex/feature/map/presentation/data_entry.dart';
+// import 'package:coyotex/feature/map/view_model/map_provider.dart';
+// import 'package:coyotex/utils/app_dialogue_box.dart';
+// import 'package:flutter/material.dart';
+// import 'package:image_picker/image_picker.dart';
+// import 'dart:io';
+// import 'package:http/http.dart' as http;
+// import 'package:provider/provider.dart';
+
+// class AddPhotoScreen extends StatefulWidget {
+//   const AddPhotoScreen({Key? key}) : super(key: key);
+
+//   @override
+//   State<AddPhotoScreen> createState() => _AddPhotoScreenState();
+// }
+
+// class _AddPhotoScreenState extends State<AddPhotoScreen> {
+//   final ImagePicker _picker = ImagePicker();
+//   List<File> _images = [];
+//   bool isLoading = false;
+
+//   Future<void> _pickImage() async {
+//     final XFile? pickedFile =
+//         await _picker.pickImage(source: ImageSource.gallery);
+//     if (pickedFile != null) {
+//       setState(() {
+//         _images.add(File(pickedFile.path));
+//       });
+//     }
+//   }
+
+//   Future<void> _uploadPhotos() async {
+//     setState(() {
+//       isLoading = true;
+//     });
+//     final provider = Provider.of<MapProvider>(context, listen: false);
+//     if (_images.isEmpty) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(content: Text('Please select at least one photo')),
+//       );
+//       return;
+//     }
+//     String accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
+//     String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
+
+//     final uri = Uri.parse(
+//         'http://44.196.64.110:5647/api/trips/${provider.selectedTripModel.id}/upload-media');
+//     final request = http.MultipartRequest('POST', uri);
+//     request.headers['Authorization'] = 'Bearer ${accessToken}';
+
+//     try {
+//       // Add all selected images to the request
+//       for (final image in _images) {
+//         final multipartFile =
+//             await http.MultipartFile.fromPath('photos', image.path);
+//         request.files.add(multipartFile);
+//       }
+
+//       final response = await request.send();
+//       final responseBody = await response.stream.bytesToString();
+
+//       if (response.statusCode == 200) {
+//         AppDialog.showSuccessDialog(
+//             context, "Photos/Videos uploaded successfully", () {
+//           Navigator.of(context).pop();
+//         });
+//         // Navigate to next screen on success
+//         // if (!mounted) return;
+//         // Navigator.push(
+//         //   context,
+//         //   MaterialPageRoute(
+//         //       builder: (context) => DataPointsScreen(
+//         //             id: provider.selectedTripModel.id,
+//         //           )),
+//         // );
+//       } else {
+//         if (!mounted) return;
+//         AppDialog.showErrorDialog(context, 'Upload failed: $responseBody', () {
+//           Navigator.of(context).pop();
+//         });
+//       }
+//     } catch (e) {
+//       if (!mounted) return;
+//       AppDialog.showErrorDialog(context, 'Upload failed.', () {
+//         Navigator.of(context).pop();
+//       });
+//     }
+//     setState(() {
+//       isLoading = false;
+//     });
+//   }
+
+//   void _removeImage(int index) {
+//     setState(() {
+//       _images.removeAt(index);
+//     });
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final provider = Provider.of<MapProvider>(context, listen: false);
+
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text(""),
+//         leading: IconButton(
+//           icon: const Icon(Icons.arrow_back),
+//           onPressed: () => Navigator.pop(context),
+//         ),
+//       ),
+//       persistentFooterButtons: isLoading
+//           ? null
+//           : [
+//               Row(
+//                 children: [
+//                   Expanded(
+//                     child: BrandedPrimaryButton(
+//                         isEnabled: true,
+//                         name: "Save",
+//                         onPressed: () async {
+//                           await _uploadPhotos();
+//                         }),
+//                   ),
+//                   SizedBox(
+//                     width: 10,
+//                   ),
+//                   Expanded(
+//                     child: BrandedPrimaryButton(
+//                         isEnabled: true,
+//                         isUnfocus: true,
+//                         name: "Finish",
+//                         onPressed: () async {
+//                           _showFinishWarningDialog(provider);
+//                         }),
+//                   ),
+//                 ],
+//               )
+//             ],
+//       body: isLoading
+//           ? Center(child: CircularProgressIndicator())
+//           : Padding(
+//               padding: const EdgeInsets.all(16.0),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.center,
+//                 children: [
+//                   // const SizedBox(height: 20),
+//                   Column(
+//                     children: [
+//                       Image.asset(
+//                         "assets/images/add_photo_icons.png",
+//                         height: 70,
+//                       ),
+//                       const SizedBox(height: 8),
+//                       const Text(
+//                         "Birds Hunt Area",
+//                         style: TextStyle(
+//                             fontSize: 24, fontWeight: FontWeight.bold),
+//                       ),
+//                       const Text(
+//                         "Lorem IpsumLorem Ipsum",
+//                         style: TextStyle(fontSize: 16, color: Colors.grey),
+//                       ),
+//                     ],
+//                   ),
+//                   const SizedBox(height: 20),
+//                   GestureDetector(
+//                     onTap: _pickImage,
+//                     child: Container(
+//                       height: 200,
+//                       width: double.infinity,
+//                       decoration: BoxDecoration(
+//                         border: Border.all(color: Colors.purple),
+//                         borderRadius: BorderRadius.circular(10),
+//                       ),
+//                       child: _images.isEmpty
+//                           ? const Center(
+//                               child: Text(
+//                                 "Tap to upload photo",
+//                                 style: TextStyle(color: Colors.grey),
+//                               ),
+//                             )
+//                           : Image.file(
+//                               _images.last,
+//                               fit: BoxFit.cover,
+//                             ),
+//                     ),
+//                   ),
+//                   const SizedBox(height: 20),
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.start,
+//                     children: [
+//                       Text(
+//                         "Upload photos/videos (${_images.length}/3)",
+//                         style: const TextStyle(fontSize: 16),
+//                       ),
+//                     ],
+//                   ),
+//                   const SizedBox(height: 10),
+//                   SizedBox(
+//                     height: 80,
+//                     child: ListView.separated(
+//                       scrollDirection: Axis.horizontal,
+//                       itemCount: _images.length + 1,
+//                       separatorBuilder: (context, index) =>
+//                           const SizedBox(width: 10),
+//                       itemBuilder: (context, index) {
+//                         if (index == _images.length) {
+//                           return GestureDetector(
+//                             onTap: _pickImage,
+//                             child: Container(
+//                               width: 80,
+//                               decoration: BoxDecoration(
+//                                 border: Border.all(color: Colors.grey),
+//                                 borderRadius: BorderRadius.circular(10),
+//                               ),
+//                               child: const Center(
+//                                 child: Icon(Icons.add),
+//                               ),
+//                             ),
+//                           );
+//                         }
+//                         return Stack(
+//                           children: [
+//                             Container(
+//                               width: 80,
+//                               decoration: BoxDecoration(
+//                                 borderRadius: BorderRadius.circular(10),
+//                                 image: DecorationImage(
+//                                   image: FileImage(_images[index]),
+//                                   fit: BoxFit.cover,
+//                                 ),
+//                               ),
+//                             ),
+//                             Positioned(
+//                               right: 0,
+//                               top: 0,
+//                               child: GestureDetector(
+//                                 onTap: () => _removeImage(index),
+//                                 child: const Icon(
+//                                   Icons.close,
+//                                   color: Colors.red,
+//                                 ),
+//                               ),
+//                             ),
+//                           ],
+//                         );
+//                       },
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+//     );
+//   }
+
+//   void _showFinishWarningDialog(MapProvider map_provider) {
+//     showDialog(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return AlertDialog(
+//           title: const Text("Finish Trip"),
+//           content: const Text("Are you sure you want to finish the trip?"),
+//           actions: [
+//             TextButton(
+//               onPressed: () {
+//                 Navigator.of(context).pop(); // Close dialog
+//               },
+//               child: const Text("Cancel"),
+//             ),
+//             TextButton(
+//               onPressed: () {
+//                 map_provider.resetFields();
+//                 Navigator.of(context).pop(); // Close dialog
+//                 Navigator.of(context).pop(); // Close dialog
+//               },
+//               child: const Text("Finish"),
+//             ),
+//           ],
+//         );
+//       },
+//     );
+//   }
+// }
+
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
-import 'package:coyotex/feature/map/presentation/data_entry.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +295,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:mime/mime.dart';
+import 'package:path/path.dart';
+import 'package:video_player/video_player.dart';
 
 class AddPhotoScreen extends StatefulWidget {
   const AddPhotoScreen({Key? key}) : super(key: key);
@@ -19,63 +308,139 @@ class AddPhotoScreen extends StatefulWidget {
 
 class _AddPhotoScreenState extends State<AddPhotoScreen> {
   final ImagePicker _picker = ImagePicker();
-  List<File> _images = [];
+  List<File> _mediaFiles = []; // Holds both images and videos
   bool isLoading = false;
+  VideoPlayerController? _controller;
+  bool isVideo = false;
 
-  Future<void> _pickImage() async {
-    final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _images.add(File(pickedFile.path));
-      });
+  Future<void> _pickMedia(BuildContext context) async {
+    isVideo = false;
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select Media',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Capture Image'),
+                onTap: () => Navigator.of(context).pop('camera_image'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Pick Image from Gallery'),
+                onTap: () => Navigator.of(context).pop('gallery_image'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.videocam),
+                title: const Text('Record Video'),
+                onTap: () => Navigator.of(context).pop('camera_video'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.video_library),
+                title: const Text('Pick Video from Gallery'),
+                onTap: () => Navigator.of(context).pop('gallery_video'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (action != null) {
+      XFile? pickedFile;
+      if (action == 'camera_image') {
+        isVideo = false;
+        pickedFile = await _picker.pickImage(source: ImageSource.camera);
+      } else if (action == 'gallery_image') {
+        isVideo = false;
+        pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      } else if (action == 'camera_video') {
+        isVideo = true;
+        pickedFile = await _picker.pickVideo(source: ImageSource.camera);
+        _controller?.dispose(); // Dispose the old controller
+        _controller = VideoPlayerController.file(File(pickedFile!.path))
+          ..initialize().then((_) {
+            setState(() {}); // Refresh the UI
+            _controller!.play(); // Auto-play the selected video
+          });
+      } else if (action == 'gallery_video') {
+        isVideo = true;
+        setState(() {});
+        pickedFile = await _picker.pickVideo(source: ImageSource.gallery);
+        _controller?.dispose(); // Dispose the old controller
+        _controller = VideoPlayerController.file(File(pickedFile!.path))
+          ..initialize().then((_) {
+            setState(() {}); // Refresh the UI
+            _controller!.play(); // Auto-play the selected video
+          });
+      }
+
+      if (pickedFile != null) {
+        setState(() {
+          _mediaFiles.add(File(pickedFile!.path));
+        });
+      }
     }
   }
 
-  Future<void> _uploadPhotos() async {
+  Future<void> _uploadMedia(BuildContext context) async {
     setState(() {
       isLoading = true;
     });
-    final provider = Provider.of<MapProvider>(context, listen: false);
-    if (_images.isEmpty) {
+
+    if (_mediaFiles.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one photo')),
+        const SnackBar(
+          content: Text('Please select at least one photo or video'),
+        ),
       );
+      setState(() {
+        isLoading = false;
+      });
       return;
     }
-    String accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
-    String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
 
-    final uri = Uri.parse(
-        'http://44.196.64.110:5647/api/trips/${provider.selectedTripModel.id}/upload-media');
+    String accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
+    final provider = Provider.of<MapProvider>(context, listen: false);
+    String tripId =
+        provider.selectedTripModel.id; // Replace with dynamic tripId if needed
+    String markerId = provider.selectedTripModel.markers.first
+        .id; // Replace with dynamic markerId if needed
+
+    final uri = Uri.parse('http://44.196.64.110:5647/api/trips/upload-media');
     final request = http.MultipartRequest('POST', uri);
-    request.headers['Authorization'] = 'Bearer ${accessToken}';
+    request.headers['Authorization'] = 'Bearer $accessToken';
 
     try {
-      // Add all selected images to the request
-      for (final image in _images) {
+      // Add all files under the "files" key
+      for (final file in _mediaFiles) {
         final multipartFile =
-            await http.MultipartFile.fromPath('photos', image.path);
+            await http.MultipartFile.fromPath('files', file.path);
         request.files.add(multipartFile);
       }
+
+      // Add form fields for tripId and markerId
+      request.fields['tripId'] = tripId;
+      request.fields['markerId'] = markerId;
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        AppDialog.showSuccessDialog(
-            context, "Photos/Videos uploaded successfully", () {
+        AppDialog.showSuccessDialog(context, "Media uploaded successfully", () {
           Navigator.of(context).pop();
         });
-        // Navigate to next screen on success
-        // if (!mounted) return;
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //       builder: (context) => DataPointsScreen(
-        //             id: provider.selectedTripModel.id,
-        //           )),
-        // );
       } else {
         if (!mounted) return;
         AppDialog.showErrorDialog(context, 'Upload failed: $responseBody', () {
@@ -88,14 +453,16 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
         Navigator.of(context).pop();
       });
     }
+
     setState(() {
       isLoading = false;
     });
   }
 
-  void _removeImage(int index) {
+ 
+  void _removeMedia(int index) {
     setState(() {
-      _images.removeAt(index);
+      _mediaFiles.removeAt(index);
     });
   }
 
@@ -121,19 +488,17 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                         isEnabled: true,
                         name: "Save",
                         onPressed: () async {
-                          await _uploadPhotos();
+                          await _uploadMedia(context);
                         }),
                   ),
-                  SizedBox(
-                    width: 10,
-                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: BrandedPrimaryButton(
                         isEnabled: true,
                         isUnfocus: true,
                         name: "Finish",
                         onPressed: () async {
-                          _showFinishWarningDialog(provider);
+                          _showFinishWarningDialog(provider, context);
                         }),
                   ),
                 ],
@@ -146,7 +511,6 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // const SizedBox(height: 20),
                   Column(
                     children: [
                       Image.asset(
@@ -167,7 +531,9 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                   ),
                   const SizedBox(height: 20),
                   GestureDetector(
-                    onTap: _pickImage,
+                    onTap: () {
+                      _pickMedia(context);
+                    },
                     child: Container(
                       height: 200,
                       width: double.infinity,
@@ -175,17 +541,22 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                         border: Border.all(color: Colors.purple),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: _images.isEmpty
+                      child: _mediaFiles.isEmpty
                           ? const Center(
                               child: Text(
-                                "Tap to upload photo",
+                                "Tap to upload photo or video",
                                 style: TextStyle(color: Colors.grey),
                               ),
                             )
-                          : Image.file(
-                              _images.last,
-                              fit: BoxFit.cover,
-                            ),
+                          : isVideo // Check if last media is video
+                              ? AspectRatio(
+                                  aspectRatio: _controller!.value.aspectRatio,
+                                  child: VideoPlayer(_controller!),
+                                )
+                              : Image.file(
+                                  _mediaFiles.last,
+                                  fit: BoxFit.cover,
+                                ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -193,7 +564,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Text(
-                        "Upload photos/videos (${_images.length}/3)",
+                        "Upload photos/videos (${_mediaFiles.length}/3)",
                         style: const TextStyle(fontSize: 16),
                       ),
                     ],
@@ -203,13 +574,15 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                     height: 80,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: _images.length + 1,
+                      itemCount: _mediaFiles.length + 1,
                       separatorBuilder: (context, index) =>
                           const SizedBox(width: 10),
                       itemBuilder: (context, index) {
-                        if (index == _images.length) {
+                        if (index == _mediaFiles.length) {
                           return GestureDetector(
-                            onTap: _pickImage,
+                            onTap: () {
+                              _pickMedia(context);
+                            },
                             child: Container(
                               width: 80,
                               decoration: BoxDecoration(
@@ -229,7 +602,13 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10),
                                 image: DecorationImage(
-                                  image: FileImage(_images[index]),
+                                  image: _mediaFiles[index]
+                                          .path
+                                          .endsWith('.mp4')
+                                      ? const AssetImage(
+                                          "assets/images/video_thumbnail.png")
+                                      : FileImage(_mediaFiles[index])
+                                          as ImageProvider,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -238,7 +617,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                               right: 0,
                               top: 0,
                               child: GestureDetector(
-                                onTap: () => _removeImage(index),
+                                onTap: () => _removeMedia(index),
                                 child: const Icon(
                                   Icons.close,
                                   color: Colors.red,
@@ -256,7 +635,8 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     );
   }
 
-  void _showFinishWarningDialog(MapProvider map_provider) {
+  void _showFinishWarningDialog(
+      MapProvider map_provider, BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -266,15 +646,15 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
               },
               child: const Text("Cancel"),
             ),
             TextButton(
               onPressed: () {
                 map_provider.resetFields();
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
               child: const Text("Finish"),
             ),
@@ -283,4 +663,4 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       },
     );
   }
-}
+} //add dropdown in this file and populate provider.selectedTripModel.marker after selecting the marker user will upload picture.

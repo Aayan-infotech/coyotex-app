@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
-import 'package:coyotex/feature/map/presentation/trip_details.dart';
+import 'package:coyotex/feature/trip/trip_details.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -30,7 +30,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                 Navigator.pop(context);
               },
             ),
-            title: Text(
+            title: const Text(
               'Trips History',
               style: TextStyle(color: Colors.white),
             ),

@@ -60,11 +60,36 @@
     <string>AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s</string>
     <key>io.flutter.embedded_views_preview</key>
     <true/>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to your photo library to select photos/videos.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>We need access to save photos/videos.</string>
+
 
     <!-- Camera and Microphone Usage Descriptions -->
     <key>NSCameraUsageDescription</key>
     <string>We need access to your camera for taking photos/videos.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>We need access to your microphone for recording videos.</string>
+     <!-- Firebase Cloud Messaging & Push Notifications -->
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <false/> <!-- Set false to manually handle notifications -->
+
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>fetch</string>
+      <string>remote-notification</string>
+    </array>
+
+    <key>NSUserNotificationAlert</key>
+    <true/>
+    <key>NSUserNotificationSound</key>
+    <true/>
+    <key>NSUserNotificationBadge</key>
+    <true/>
+
+    <!-- APNs (Apple Push Notification Service) -->
+    <key>aps-environment</key>
+    <string>production</string>
   </dict>
 </plist>

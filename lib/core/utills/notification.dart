@@ -83,9 +83,38 @@ class NotificationService {
     }
   }
 
-  static getDeviceToken() async {
-    await FirebaseMessaging.instance.getToken().then((value) {
-      debugPrint("Device Token: $value");
-    });
+
+
+  static Future<String?> getDeviceToken() async {
+    try {
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+      // Request permission for push notifications
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        debugPrint("Push notifications permission denied.");
+        return null;
+      }
+
+      // Ensure APNS token is available for iOS
+      String? apnsToken = await messaging.getAPNSToken();
+      if (apnsToken == null) {
+        debugPrint("APNS token not available yet.");
+        return null;
+      }
+
+      // Fetch the FCM token
+      String? token = await messaging.getToken();
+      debugPrint("FCM Device Token: $token");
+      return token;
+    } catch (e) {
+      debugPrint("Error getting device token: $e");
+      return null;
+    }
   }
 }
