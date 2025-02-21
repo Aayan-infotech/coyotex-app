@@ -14,19 +14,20 @@ class TripDetailsScreen extends StatefulWidget {
 
 class _TripDetailsScreenState extends State<TripDetailsScreen> {
   bool showAllStops = false;
+  int totalSeenAnimal = 0;
+  int totalKilledAnimal = 0;
 
   @override
   Widget build(BuildContext context) {
+    for (var item in widget.tripModel.markers) {
+      totalKilledAnimal += int.parse(item.animalKilled);
+      totalSeenAnimal += int.parse(item.animalSeen);
+    }
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.white),
@@ -37,7 +38,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-                return MarkerMediaScreen(markerData: widget.tripModel.markers);
+                return MarkerMediaScreen(tripModel: widget.tripModel);
               }));
             },
             child: const Padding(
@@ -49,9 +50,9 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
             ),
           )
         ],
-        title: const Text(
-          'Trip 1',
-          style: TextStyle(
+        title: Text(
+          '${widget.tripModel.name}',
+          style: const TextStyle(
               color: Colors.white, fontWeight: FontWeight.w700, fontSize: 20),
         ),
         centerTitle: true,
@@ -143,8 +144,10 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildHighlightCard('Coyote Killed', '31'),
-                    _buildHighlightCard('Coyote Seen', '120'),
+                    _buildHighlightCard(
+                        'Coyote Killed', totalKilledAnimal.toString()),
+                    _buildHighlightCard(
+                        'Coyote Seen', totalSeenAnimal.toString()),
                   ],
                 ),
                 SizedBox(height: 16),
@@ -191,8 +194,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                 ],
                               ),
                               SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 20),
+                              const Padding(
+                                padding: EdgeInsets.only(left: 20),
                                 child: Text(
                                   "6 hr 20 min",
                                   style: TextStyle(
@@ -218,7 +221,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Padding(
+                              const Padding(
                                 padding: EdgeInsets.only(left: 20),
                                 child: Text(
                                   "Weather",
@@ -236,7 +239,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                   Text(
                                     widget.tripModel.weatherMarkers.first
                                         .weather.weatherDescription,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: Colors.black,
                                       fontWeight: FontWeight.w400,
                                       fontSize: 14,
@@ -294,7 +297,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                     strokeWidth: 6,
                                   ),
                                 ),
-                                const Column(
+                                Column(
                                   children: [
                                     Text(
                                       "KM",
@@ -305,7 +308,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '80%',
+                                      '${widget.tripModel.totalDistance.toStringAsFixed(2)}',
                                       style: TextStyle(
                                         color: Colors.black,
                                         fontWeight: FontWeight.bold,

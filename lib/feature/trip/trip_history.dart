@@ -24,15 +24,11 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
           appBar: AppBar(
             backgroundColor: Colors.black,
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
+            iconTheme: IconThemeData(color: Colors.white),
             title: const Text(
-              'Trips History',
-              style: TextStyle(color: Colors.white),
+              'Your Trips',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
             ),
             centerTitle: true,
           ),
@@ -65,6 +61,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                       final trip = trips[index];
                       return GestureDetector(
                         onTap: () {
+                          mapProvider.selectedTripModel = trip;
                           Navigator.of(context)
                               .push(MaterialPageRoute(builder: (context) {
                             return TripDetailsScreen(

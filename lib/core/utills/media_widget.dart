@@ -66,8 +66,8 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: SizedBox(
-          width: 120,
-          height: 120,
+          width: 200, // Changed from 120
+          height: 200, // Changed from 120
           child: Image.network(
             widget.url,
             fit: BoxFit.cover,
@@ -77,14 +77,17 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
     }
 
     if (_controller == null || !_controller!.value.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+          child: CircularProgressIndicator.adaptive(
+        backgroundColor: Colors.white,
+      ));
     }
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        width: 120,
-        height: 120,
+        width: 200, // Changed from 120
+        height: 200, // Changed from 120
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -98,7 +101,7 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
               child: GestureDetector(
                 onTap: _togglePlayPause,
                 child: Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.black54,
                     shape: BoxShape.circle,
                   ),

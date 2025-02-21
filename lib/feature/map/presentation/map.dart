@@ -305,7 +305,7 @@ class _MapScreenState extends State<MapScreen> {
                                             Navigator.of(context).push(
                                                 MaterialPageRoute(
                                                     builder: (context) {
-                                              return const AddPhotoScreen();
+                                              return AddPhotoScreen();
                                             }));
                                           },
                                           borderRadius: 20,
@@ -641,7 +641,8 @@ class _MapScreenState extends State<MapScreen> {
                                         tripModel.routePoints);
                                   },
                                   child: Card(
-                                    color: const Color.fromRGBO(255, 255, 255, 1),
+                                    color:
+                                        const Color.fromRGBO(255, 255, 255, 1),
                                     child: SizedBox(
                                       height: MediaQuery.of(context)
                                               .size

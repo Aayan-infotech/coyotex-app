@@ -1,6 +1,7 @@
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,8 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 class AddPhotoScreen extends StatefulWidget {
-  const AddPhotoScreen({Key? key}) : super(key: key);
+  MarkerData? markerData;
+  AddPhotoScreen({this.markerData, Key? key}) : super(key: key);
 
   @override
   State<AddPhotoScreen> createState() => _AddPhotoScreenState();
@@ -321,7 +323,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       String tripId = provider.selectedTripModel.id;
       String markerId = selectedMarkerId!;
 
-      final uri = Uri.parse('http://44.196.64.110:5647/api/trips/upload-media');
+      final uri = Uri.parse('http://54.236.98.193:5647/api/trips/upload-media');
       final request = http.MultipartRequest('POST', uri);
       request.headers['Authorization'] = 'Bearer $accessToken';
 
@@ -337,8 +339,11 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
+        final mapProvider = Provider.of<MapProvider>(context, listen: false);
+        await mapProvider.getTrips();
         setState(() => _isUploading = false);
-        AppDialog.showSuccessDialog(context, "Media uploaded successfully", () {
+        AppDialog.showSuccessDialog(context, "Media uploaded successfully",
+            () async {
           Navigator.popUntil(context, (route) => route.isFirst);
         });
         setState(() => _isUploading = false);
@@ -359,6 +364,14 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     }
   }
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    if (widget.markerData != null) {
+      selectedMarkerId = widget.markerData!.id;
+    }
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +382,10 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(""),
+        title: Text(
+          "Add Media",
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+        ),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context)),
@@ -379,14 +395,15 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           : [
               Row(
                 children: [
-                  Expanded(
-                    child: BrandedPrimaryButton(
-                        isEnabled: true,
-                        isUnfocus: true,
-                        name: "Finish",
-                        onPressed: () =>
-                            _showFinishWarningDialog(provider, context)),
-                  ),
+                  if (widget.markerData == null)
+                    Expanded(
+                      child: BrandedPrimaryButton(
+                          isEnabled: true,
+                          isUnfocus: true,
+                          name: "Finish",
+                          onPressed: () =>
+                              _showFinishWarningDialog(provider, context)),
+                    ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: BrandedPrimaryButton(

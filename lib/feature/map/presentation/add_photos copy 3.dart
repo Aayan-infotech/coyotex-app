@@ -1,6 +1,7 @@
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,8 @@ import 'package:path/path.dart';
 import 'package:video_player/video_player.dart';
 
 class AddPhotoScreen extends StatefulWidget {
-  const AddPhotoScreen({Key? key}) : super(key: key);
+  MarkerData? markerData;
+  AddPhotoScreen({this.markerData, Key? key}) : super(key: key);
 
   @override
   State<AddPhotoScreen> createState() => _AddPhotoScreenState();
@@ -29,6 +31,9 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   @override
   void initState() {
     // TODO: implement initState
+    if (widget.markerData != null) {
+      selectedMarkerId = widget.markerData!.id;
+    }
 
     super.initState();
   }
