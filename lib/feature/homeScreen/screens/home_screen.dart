@@ -1,7 +1,7 @@
 import 'package:coyotex/feature/homeScreen/screens/pages/home_page.dart';
 import 'package:coyotex/feature/map/presentation/map.dart';
 import 'package:coyotex/feature/map/presentation/notofication.dart';
-import 'package:coyotex/feature/map/presentation/trip_history.dart';
+import 'package:coyotex/feature/trip/trip_history.dart';
 import 'package:coyotex/feature/profile/presentation/profile_screen.dart';
 import 'package:flutter/material.dart';
 

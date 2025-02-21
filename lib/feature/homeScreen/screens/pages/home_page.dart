@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
-import 'package:coyotex/feature/map/presentation/trip_history.dart';
+import 'package:coyotex/feature/trip/trip_history.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> {
     final mapProvider = Provider.of<MapProvider>(context, listen: false);
     mapProvider.getCurrentLocation();
     mapProvider.getTrips();
+    NotificationService.getDeviceToken();
   }
 
   @override

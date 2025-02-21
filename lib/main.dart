@@ -23,21 +23,23 @@ Future<void> _firebaseMessginBackgroundHandler(RemoteMessage event) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   final RemoteMessage? message =
-  await FirebaseMessaging.instance.getInitialMessage();
+      await FirebaseMessaging.instance.getInitialMessage();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessginBackgroundHandler);
 
-  runApp( MyApp(message: message,));
+  runApp(MyApp(
+    message: message,
+  ));
 }
 
 class MyApp extends StatefulWidget {
   RemoteMessage? message;
 
-   MyApp({super.key,this.message});
+  MyApp({super.key, this.message});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -47,8 +49,7 @@ class _MyAppState extends State<MyApp> {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   @override
   void initState() {
-    // TODO: implement initState
-     NotificationService().messageInit(navigatorKey);
+    NotificationService().messageInit(navigatorKey);
     super.initState();
   }
 

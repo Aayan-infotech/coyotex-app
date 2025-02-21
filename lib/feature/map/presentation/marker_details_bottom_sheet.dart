@@ -20,6 +20,8 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
   final TextEditingController _minuteController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   String? _selectedWindDirection;
+  bool _isFormValid = false;
+
   final List<String> _windDirections = [
     "North",
     "South",
@@ -31,16 +33,30 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
     "Southwest"
   ];
 
-  // Focus nodes for each text field
   final FocusNode _nameFocusNode = FocusNode();
   final FocusNode _minuteFocusNode = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    _minuteController.addListener(_validateForm);
+  }
+
+  @override
   void dispose() {
-    // Dispose the focus nodes
     _nameFocusNode.dispose();
     _minuteFocusNode.dispose();
+    _minuteController.removeListener(_validateForm);
+    _minuteController.dispose();
+    _nameController.dispose();
     super.dispose();
+  }
+
+  void _validateForm() {
+    setState(() {
+      _isFormValid =
+          _minuteController.text.isNotEmpty && _selectedWindDirection != null;
+    });
   }
 
   @override
@@ -49,26 +65,23 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
 
     return GestureDetector(
       onTap: () {
-        // Unfocus any active text field when tapping anywhere outside
         FocusScope.of(context).unfocus();
       },
       child: DraggableScrollableSheet(
-        initialChildSize: 0.65,
-        minChildSize: 0.6,
+        initialChildSize: 0.8,
+        minChildSize: 0.7,
         maxChildSize: 0.85,
         expand: false,
         builder: (context, scrollController) {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
             ),
             child: Column(
               children: [
-                // Drag Handle
                 Container(
                   width: 60,
                   height: 6,
@@ -79,8 +92,6 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                   ),
                 ),
                 const SizedBox(height: 10),
-
-                // Title
                 const Text(
                   "Add Marker",
                   style: TextStyle(
@@ -90,7 +101,6 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 Expanded(
                   child: SingleChildScrollView(
                     controller: scrollController,
@@ -98,27 +108,22 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                         ScrollViewKeyboardDismissBehavior.onDrag,
                     child: Column(
                       children: [
-                        // Name Input
                         BrandedTextField(
                           controller: _nameController,
                           focusNode: _nameFocusNode,
                           labelText: "Enter marker name (Optional)",
                           onTap: () {
-                            // Scroll up when this field is tapped
                             scrollController.jumpTo(
                                 scrollController.position.maxScrollExtent);
                           },
                         ),
                         const SizedBox(height: 16),
-
-                        // Time Input
                         BrandedTextField(
                           controller: _minuteController,
                           focusNode: _minuteFocusNode,
                           labelText: "Enter time in minutes",
                           keyboardType: TextInputType.number,
                           onTap: () {
-                            // Scroll up when this field is tapped
                             scrollController.jumpTo(
                                 scrollController.position.maxScrollExtent);
                           },
@@ -131,10 +136,9 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
-                        // Wind Direction Chips
                         Wrap(
-                          spacing: 10.0, // Spacing between chips
-                          runSpacing: 5.0, // Spacing between lines of chips
+                          spacing: 10.0,
+                          runSpacing: 5.0,
                           children: _windDirections.map((direction) {
                             return ChoiceChip(
                               label: Text(direction),
@@ -143,6 +147,7 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                                 setState(() {
                                   _selectedWindDirection =
                                       selected ? direction : null;
+                                  _validateForm();
                                 });
                               },
                               selectedColor: Pallete.accentColor,
@@ -159,8 +164,6 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                     ),
                   ),
                 ),
-
-                // Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -170,40 +173,13 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                             isUnfocus: true,
                             name: "Cancel",
                             onPressed: () {})),
-                    const SizedBox(
-                      width: 10,
-                    ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: BrandedPrimaryButton(
-                          isEnabled: true,
+                          isEnabled: _isFormValid,
                           name: "Set",
-                          onPressed: () async {
-                            if (_minuteController.text.isNotEmpty &&
-                                _selectedWindDirection != null) {
-                              try {
-                                int minutes = int.parse(_minuteController.text);
-                                await mapProvider.setTimeDuration(
-                                    minutes, _nameController.text);
-                                Navigator.of(context).pop(true);
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text("Please enter a valid number"),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("All fields are required"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }),
-                    )
+                          onPressed: _setMarker),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 50),
@@ -213,5 +189,24 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
         },
       ),
     );
+  }
+
+  Future<void> _setMarker() async {
+    try {
+      if (_minuteController.text.isNotEmpty && _selectedWindDirection != null) {
+        int minutes = int.parse(_minuteController.text);
+        MapProvider mapProvider =
+            Provider.of<MapProvider>(context, listen: false);
+        await mapProvider.setTimeDuration(minutes, _nameController.text);
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter a valid number"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

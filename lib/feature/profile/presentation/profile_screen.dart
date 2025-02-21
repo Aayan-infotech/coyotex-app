@@ -35,7 +35,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Consumer<UserViewModel>(
       builder: (context, userViewModel, child) {
         return userViewModel.isLoading
-            ? Center(child: CircularProgressIndicator())
+            ? Center(
+                child: CircularProgressIndicator.adaptive(
+                backgroundColor: Colors.white,
+              ))
             : Scaffold(
                 appBar: AppBar(
                   backgroundColor: Colors.black,

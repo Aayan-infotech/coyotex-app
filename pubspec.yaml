@@ -30,12 +30,14 @@ dependencies:
   
   google_maps_flutter: ^2.10.0
 
-  geolocator: ^10.1.0
+  geolocator: ^13.0.2
   geocoding: ^3.0.0
   http: 
   shared_preferences: ^2.2.3
   flutter_local_notifications: 
   firebase_messaging:
+  video_player:
+  carousel_slider:
 
 
 
@@ -43,7 +45,7 @@ dependencies:
   exponential_back_off: ^0.1.0+2
 
   image_picker:
-  intl: ^0.18.0
+  intl: ^0.20.2
   drop_down_search_field: ^1.0.4
   firebase_core: ^3.10.1
   cached_network_image:
@@ -61,7 +63,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^3.0.0
+  flutter_lints: ^4.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

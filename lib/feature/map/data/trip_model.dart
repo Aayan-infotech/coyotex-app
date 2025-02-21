@@ -83,16 +83,11 @@ class TripModel {
     };
   }
 }
-// "animalKilled": "4",
-//   "animalSeen": "6",
-//   "wind_speed": "25",
-//   "wind_degree": "68",
-//   "wind_direction": "South",
 
 class MarkerData {
   final String id;
   final LatLng position;
-   String title;
+  String title;
   final String snippet;
   final String icon;
   final String markerType;
@@ -101,6 +96,7 @@ class MarkerData {
   String animalSeen;
   int wind_degree;
   String wind_direction;
+  List<dynamic>? media;
 
   MarkerData(
       {required this.id,
@@ -113,22 +109,23 @@ class MarkerData {
       required this.animalKilled,
       required this.animalSeen,
       required this.wind_degree,
-      required this.wind_direction});
+      required this.wind_direction,
+      this.media});
 
   factory MarkerData.fromJson(Map<String, dynamic> json) {
     return MarkerData(
-      animalKilled: json["animalKilled"] ?? '0',
-      animalSeen: json["animalSeen"] ?? '0',
-      wind_degree: 0, //json["wind_degree"] ?? '',
-      wind_direction: json["wind_direction"] ?? "",
-      id: json['_id'] ?? "",
-      position: LatLng(json['latitude'] ?? 0, json['longitude'] ?? 0),
-      title: json['title'] ?? '',
-      snippet: json['snippet'] ?? "",
-      icon: json['icon'] ?? '',
-      markerType: json['markerType'] ?? "inbetween",
-      duration: json['timeDurations'] ?? 0,
-    );
+        animalKilled: json["animalKilled"] ?? '0',
+        animalSeen: json["animalSeen"] ?? '0',
+        wind_degree: 0, //json["wind_degree"] ?? '',
+        wind_direction: json["wind_direction"] ?? "",
+        id: json['_id'] ?? "",
+        position: LatLng(json['latitude'] ?? 0, json['longitude'] ?? 0),
+        title: json['title'] ?? '',
+        snippet: json['snippet'] ?? "",
+        icon: json['icon'] ?? '',
+        markerType: json['markerType'] ?? "inbetween",
+        duration: json['timeDurations'] ?? 0,
+        media: json["mediaFiles"] ?? []);
   }
 
   Map<String, dynamic> toJson() {
@@ -147,85 +144,6 @@ class MarkerData {
     };
   }
 }
-
-// class WeatherMarker {
-//   final String id;
-//   final LatLng position;
-//   final String locationName;
-//   final String country;
-//   final int timezone;
-//   final WeatherData weather;
-
-//   WeatherMarker({
-//     required this.id,
-//     required this.position,
-//     required this.locationName,
-//     required this.country,
-//     required this.timezone,
-//     required this.weather,
-//   });
-
-//   factory WeatherMarker.fromJson(Map<String, dynamic> json) {
-//     return WeatherMarker(
-//       id: json['_id'] ?? '',
-//       position: LatLng(json['location']['latitude'] ?? 0, json['location']['longitude'] ?? 0),
-//       locationName: json['location']['name'] ?? '',
-//       country: json['location']['country'] ?? '',
-//       timezone: json['location']['timezone'] ?? 0,
-//       weather: WeatherData.fromJson(json['weather'] ?? {}),
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() {
-//     return {
-//       '_id': id,
-//       'location': {
-//         'latitude': position.latitude,
-//         'longitude': position.longitude,
-//         'name': locationName,
-//         'country': country,
-//         'timezone': timezone,
-//       },
-//       'weather': weather.toJson(),
-//     };
-//   }
-// }
-
-// class WeatherData {
-//   final double temperature;
-//   final double feelsLike;
-//   final String weatherMain;
-//   final String weatherDescription;
-//   final String weatherIcon;
-
-//   WeatherData({
-//     required this.temperature,
-//     required this.feelsLike,
-//     required this.weatherMain,
-//     required this.weatherDescription,
-//     required this.weatherIcon,
-//   });
-
-//   factory WeatherData.fromJson(Map<String, dynamic> json) {
-//     return WeatherData(
-//       temperature: (json['temperature'] ?? 0).toDouble(),
-//       feelsLike: (json['feels_like'] ?? 0).toDouble(),
-//       weatherMain: json['weather_main'] ?? '',
-//       weatherDescription: json['weather_description'] ?? '',
-//       weatherIcon: json['weather_icon'] ?? '',
-//     );
-//   }
-
-//   Map<String, dynamic> toJson() {
-//     return {
-//       'temperature': temperature,
-//       'feels_like': feelsLike,
-//       'weather_main': weatherMain,
-//       'weather_description': weatherDescription,
-//       'weather_icon': weatherIcon,
-//     };
-//   }
-// }
 
 class WeatherMarker {
   final Weatherlocation location;

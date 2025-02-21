@@ -183,7 +183,10 @@ class _SignupScreenState extends State<SignupScreen> {
       body: Consumer<UserViewModel>(
         builder: (context, authProvider, child) {
           return authProvider.isLoading
-              ? Center(child: CircularProgressIndicator.adaptive())
+              ? Center(
+                  child: CircularProgressIndicator.adaptive(
+                  backgroundColor: Colors.white,
+                ))
               : Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),

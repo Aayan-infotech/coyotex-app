@@ -21,7 +21,7 @@ class ApiResponseWithData<T> {
 }
 
 class CallHelper {
-  static const String baseUrl = "http://44.196.64.110:5647/";
+  static const String baseUrl = "http://54.236.98.193:5647/";
   static const int timeoutInSeconds = 20;
   static const String internalServerErrorMessage = "Internal server error.";
   static bool _isRefreshing = false;
@@ -161,7 +161,8 @@ class CallHelper {
   Future<bool> _refreshToken() async {
     if (_isRefreshing) {
       await _refreshCompleter?.future;
-      return SharedPrefUtil.getValue(accessTokenPref, "") != null;
+      return (SharedPrefUtil.getValue(accessTokenPref, "") as String)
+          .isNotEmpty;
     }
 
     _isRefreshing = true;
@@ -171,7 +172,7 @@ class CallHelper {
       String refreshToken =
           SharedPrefUtil.getValue(refreshTokenPref, "") as String;
       final response = await http.post(
-        Uri.parse("${baseUrl}auth/refresh"),
+        Uri.parse("${baseUrl}api/auth/refresh-token"),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({"refreshToken": refreshToken}),
       );
