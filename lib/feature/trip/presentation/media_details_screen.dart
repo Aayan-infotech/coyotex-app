@@ -1,6 +1,6 @@
+import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
-import 'package:coyotex/feature/map/view_model/map_provider%20copy.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -91,6 +91,9 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String tripStatus = widget.tripModel.createdAt.isAfter(DateTime.now())
+        ? "Get ready for a great journey!"
+        : "Hope you had a wonderful experience!";
     final userProvider = Provider.of<UserViewModel>(context, listen: false);
     if (userProvider.user.userUnit == "KM") {
       totalDistance = totalDistance / 1000; // Convert meters to kilometers
@@ -187,7 +190,7 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
                           ),
                           Text(
                             "${totalDistance.toStringAsFixed(2)} ${userProvider.user.userUnit}",
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors
                                   .white70, // Adjust text color for contrast
                               fontSize: 12,
@@ -242,7 +245,7 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Trip 1",
+                        widget.tripModel.name,
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -267,12 +270,10 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
                   SizedBox(height: 8),
                   // Description
                   Text(
-                    "Borem ipsum dolor sit amet, consectetur adipiscing elit. "
-                    "Nunc vulputate libero et velit interdum, ac aliquet odio mattis.",
+                    "${widget.tripModel.startLocation} to ${widget.tripModel.destination} - $tripStatus",
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white70, // Adjust text color
-                      decoration: TextDecoration.underline,
                       decorationColor: Colors.white54, // Adjust underline color
                     ),
                   ),
@@ -280,6 +281,7 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
               ),
             ),
           ),
+          //BrandedPrimaryButton(name: "", onPressed: onPressed)
         ],
       ),
     );

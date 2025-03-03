@@ -1,8 +1,8 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:coyotex/core/utills/media_widget.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
-import 'package:coyotex/feature/trip/add_photos.dart';
-import 'package:coyotex/feature/trip/media_details_screen.dart';
+import 'package:coyotex/feature/trip/presentation/add_photos.dart';
+import 'package:coyotex/feature/trip/presentation/media_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';

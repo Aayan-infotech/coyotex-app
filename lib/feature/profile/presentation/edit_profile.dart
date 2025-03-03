@@ -1,9 +1,18 @@
+import 'dart:io';
+
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
+import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
+
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class EditProfile extends StatefulWidget {
@@ -18,14 +27,60 @@ class _EditProfileState extends State<EditProfile> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileNumberController = TextEditingController();
   bool isEnabled = false;
+  File? _selectedImage;
+  bool _isUploading = false;
 
-  @override
-  void initState() {
-    super.initState();
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+        _isUploading = true; // Start showing the loader
+      });
+
+      await _uploadProfilePicture();
+
+      setState(() {
+        _isUploading = false; // Hide loader after upload
+      });
+    }
+  }
+
+  Future<void> _uploadProfilePicture() async {
+    if (_selectedImage == null) return;
+
     final userProvider = Provider.of<UserViewModel>(context, listen: false);
-    _usernameController.text = userProvider.user.name;
-    _mobileNumberController.text = userProvider.user.number;
-    _emailController.text = userProvider.user.email;
+    final String userId = userProvider.user.userId;
+
+    try {
+      String accessToken =
+          SharedPrefUtil.getValue(accessTokenPref, "") as String;
+
+      var uri = Uri.parse(
+          "http://54.236.98.193:5647/api/users/update-profile-picture");
+      var request = http.MultipartRequest("POST", uri)
+        ..headers["Authorization"] = "Bearer $accessToken"
+        ..files.add(
+          await http.MultipartFile.fromPath(
+            "profilePicture",
+            _selectedImage!.path,
+          ),
+        );
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        AppDialog.showSuccessDialog(
+            context, "Profile picture updated!", () => Navigator.pop(context));
+      } else {
+        AppDialog.showErrorDialog(context, "Failed to update profile picture",
+            () => Navigator.pop(context));
+      }
+    } catch (e) {
+      AppDialog.showErrorDialog(
+          context, "Error: $e", () => Navigator.pop(context));
+    }
   }
 
   @override
@@ -45,9 +100,21 @@ class _EditProfileState extends State<EditProfile> {
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircleAvatar(
-                      radius: 50,
-                      child: Icon(Icons.person),
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundImage: _selectedImage != null
+                            ? FileImage(_selectedImage!)
+                            : NetworkImage(provider.user.imageUrl)
+                                as ImageProvider,
+                        child: _isUploading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : (_selectedImage == null
+                                ? const Icon(Icons.person, size: 50)
+                                : null),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(

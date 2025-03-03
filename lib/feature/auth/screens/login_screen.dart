@@ -88,7 +88,7 @@ class LoginScreen extends StatelessWidget {
                           children: [
                             GestureDetector(
                               onTap: () {
-                                NotificationService.getDeviceToken();
+                                NotificationService.requestPermission();
                               },
                               child: Image.asset(
                                 "assets/images/logo.png",

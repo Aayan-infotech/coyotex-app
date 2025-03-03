@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../trip/add_photos.dart';
+import '../../trip/presentation/add_photos.dart';
 import '../../../core/utills/app_colors.dart';
 import '../../../core/utills/branded_primary_button.dart';
 import '../../../core/utills/branded_text_filed.dart';
@@ -84,13 +84,13 @@ class _MapScreenState extends State<MapScreen> {
           provider.mapMarkers.add(Marker(
             markerId: MarkerId(item.id),
             position: item.position,
-            //icon: _icons[item.icon] ?? _icons["markerIcon"]!,
+            //  icon: _icons[item.icon] ?? _icons["markerIcon"]!,
             infoWindow: InfoWindow(title: item.title, snippet: item.snippet),
           ));
         }
         provider.context = context;
         return provider.isLoading
-            ? Center(
+            ? const Center(
                 child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
               ))
@@ -109,8 +109,7 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                             myLocationEnabled: true,
                             mapType: MapType.normal,
-                            onCameraMoveStarted: () {},
-                            onCameraMove: (value) {},
+
                             compassEnabled: true,
                             myLocationButtonEnabled: true,
                             buildingsEnabled: true,
@@ -598,6 +597,7 @@ class _MapScreenState extends State<MapScreen> {
                           padding: const EdgeInsets.only(top: 40),
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
+                            reverse: true,
                             child: Row(
                               children:
                                   List.generate(provider.trips.length, (index) {
@@ -638,7 +638,8 @@ class _MapScreenState extends State<MapScreen> {
                                     provider.providerLetsHuntButton = true;
                                     provider.path = tripModel.routePoints;
                                     await provider.fetchRouteWithWaypoints(
-                                        tripModel.routePoints);
+                                      tripModel.routePoints,
+                                    );
                                   },
                                   child: Card(
                                     color:
@@ -738,8 +739,8 @@ class _MapScreenState extends State<MapScreen> {
                     //   add_stop_card(
                     //       provider, context, provider.selectedTripModel),
                     if (provider.isHurryUp) hurry_up_card(provider, context),
-                    if (provider.isKeyDataPoint)
-                      keyDataPoint(provider, context),
+                    // if (provider.isKeyDataPoint)
+                    //   keyDataPoint(provider, context),
                   ],
                 ),
               );
@@ -1032,113 +1033,113 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Positioned keyDataPoint(MapProvider provider, BuildContext context) {
-    return Positioned(
-      bottom: 20,
-      left: 10,
-      right: 10,
-      child: Card(
-        elevation: 4,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Image.asset("assets/images/distance_icons.png"),
-                  const SizedBox(width: 10),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Distance",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text("${30} KM"
-                          //"${provider.distance.toStringAsFixed(2)} KM",
-                          ),
-                    ],
-                  ),
-                  const Spacer(),
-                ],
-              ),
-              Row(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Text(
-                            "22\u00B0",
-                            style: TextStyle(fontSize: 22),
-                          ),
-                          SizedBox(width: 5),
-                          Text("(Great Weather)"),
-                        ],
-                      ),
-                      Text(
-                        DateFormat('MMM d yyyy').format(DateTime.now()),
-                        style: const TextStyle(fontSize: 15),
-                      ),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 13,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            "Birds Hunting A",
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.23,
-                          ),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text("Humidity: 75%"),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              // SizedBox(
-              //   height: 35,
-              //   child: BrandedPrimaryButton(
-              //     isEnabled: true,
-              //     name: "Stop: 15 Min",
-              //     onPressed: () {},
-              //   ),
-              // ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 35,
-                child: BrandedPrimaryButton(
-                  isEnabled: true,
-                  isUnfocus: true,
-                  name: "Key in  Data Point",
-                  onPressed: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (context) {
-                      return AddPhotoScreen();
-                    }));
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Positioned keyDataPoint(MapProvider provider, BuildContext context) {
+  //   return Positioned(
+  //     bottom: 20,
+  //     left: 10,
+  //     right: 10,
+  //     child: Card(
+  //       elevation: 4,
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(8.0),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             Row(
+  //               children: [
+  //                 Image.asset("assets/images/distance_icons.png"),
+  //                 const SizedBox(width: 10),
+  //                 const Column(
+  //                   crossAxisAlignment: CrossAxisAlignment.start,
+  //                   children: [
+  //                     Text(
+  //                       "Distance",
+  //                       style: TextStyle(fontWeight: FontWeight.bold),
+  //                     ),
+  //                     Text("${30} KM"
+  //                         //"${provider.distance.toStringAsFixed(2)} KM",
+  //                         ),
+  //                   ],
+  //                 ),
+  //                 const Spacer(),
+  //               ],
+  //             ),
+  //             Row(
+  //               children: [
+  //                 Column(
+  //                   crossAxisAlignment: CrossAxisAlignment.start,
+  //                   children: [
+  //                     const Row(
+  //                       children: [
+  //                         Text(
+  //                           "22\u00B0",
+  //                           style: TextStyle(fontSize: 22),
+  //                         ),
+  //                         SizedBox(width: 5),
+  //                         Text("(Great Weather)"),
+  //                       ],
+  //                     ),
+  //                     Text(
+  //                       DateFormat('MMM d yyyy').format(DateTime.now()),
+  //                       style: const TextStyle(fontSize: 15),
+  //                     ),
+  //                     Row(
+  //                       children: [
+  //                         const Icon(
+  //                           Icons.location_on_outlined,
+  //                           size: 13,
+  //                         ),
+  //                         const SizedBox(width: 8),
+  //                         const Text(
+  //                           "Birds Hunting A",
+  //                           style: TextStyle(fontSize: 12),
+  //                         ),
+  //                         SizedBox(
+  //                           width: MediaQuery.of(context).size.width * 0.23,
+  //                         ),
+  //                         const Column(
+  //                           crossAxisAlignment: CrossAxisAlignment.end,
+  //                           children: [
+  //                             Text("Humidity: 75%"),
+  //                           ],
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ],
+  //             ),
+  //             const SizedBox(height: 10),
+  //             // SizedBox(
+  //             //   height: 35,
+  //             //   child: BrandedPrimaryButton(
+  //             //     isEnabled: true,
+  //             //     name: "Stop: 15 Min",
+  //             //     onPressed: () {},
+  //             //   ),
+  //             // ),
+  //             const SizedBox(height: 10),
+  //             SizedBox(
+  //               height: 35,
+  //               child: BrandedPrimaryButton(
+  //                 isEnabled: true,
+  //                 isUnfocus: true,
+  //                 name: "Key in  Data Point",
+  //                 onPressed: () {
+  //                   Navigator.of(context)
+  //                       .push(MaterialPageRoute(builder: (context) {
+  //                     return AddPhotoScreen();
+  //                   }));
+  //                 },
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildTextField(
     TextEditingController controller,
