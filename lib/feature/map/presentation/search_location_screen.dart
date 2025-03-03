@@ -26,7 +26,13 @@ class _SearchLocationScreenState extends State<SearchLocationScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Search Location'),
+            title: const Text(
+              'Search Location',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold),
+            ),
           ),
           body: Column(
             children: [

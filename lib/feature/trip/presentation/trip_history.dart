@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
-import 'package:coyotex/feature/trip/trip_details.dart';
+import 'package:coyotex/feature/trip/presentation/trip_details.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -162,8 +162,10 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
-              placeholder: (context, url) =>
-                  const Center(child: CircularProgressIndicator()),
+              placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator.adaptive(
+                backgroundColor: Colors.white,
+              )),
               errorWidget: (context, url, error) =>
                   const Icon(Icons.image_not_supported, color: Colors.white),
             ),

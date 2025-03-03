@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
-import 'package:coyotex/feature/trip/trip_history.dart';
+import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -39,7 +39,7 @@ class _HomePageState extends State<HomePage> {
       return Scaffold(
         backgroundColor: Colors.black,
         body: mapProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CircularProgressIndicator.adaptive())
             : SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 13.0),
@@ -108,7 +108,7 @@ class _HomePageState extends State<HomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${mapProvider.weather.main.temp}° (Great Weather)',
+                              '${mapProvider.weather.main.temp}°F (${mapProvider.weather.weather.first.description})',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -140,9 +140,9 @@ class _HomePageState extends State<HomePage> {
                                     Text(
                                         'Humidity: ${mapProvider.weather.main.humidity}%'),
                                     Text(
-                                        'Wind: ${mapProvider.weather.wind.speed}km/h'),
+                                        'Wind: ${mapProvider.weather.wind.speed}mph'),
                                     Text(
-                                        'Barometric pressure: ${mapProvider.weather.main.pressure} mb'),
+                                        'Barometric pressure: ${mapProvider.weather.main.pressure} inHg'),
                                   ],
                                 ),
                               ],
@@ -218,8 +218,8 @@ class _HomePageState extends State<HomePage> {
                                                       10), // Apply same radius
                                             ),
                                             child: Center(
-                                                child:
-                                                    CircularProgressIndicator()),
+                                                child: CircularProgressIndicator
+                                                    .adaptive()),
                                           ),
                                           errorWidget: (context, url, error) =>
                                               Container(
@@ -309,9 +309,11 @@ class _HomePageState extends State<HomePage> {
                             title: Text(trip.name,
                                 style: TextStyle(color: Colors.white)),
                             subtitle: Text(trip.startLocation,
-                                style: TextStyle(color: Colors.white70)),
+                                style: const TextStyle(color: Colors.white70)),
                             trailing: Text(
-                                trip.totalDistance.toStringAsFixed(2),
+                                mapProvider.formatDistance(
+                                    trip.totalDistance, context),
+                                // trip.totalDistance.toStringAsFixed(2),
                                 style: TextStyle(color: Colors.white)),
                           );
                         },

@@ -1,4 +1,5 @@
 import 'package:coyotex/core/services/call_halper.dart';
+import 'package:coyotex/core/services/model/notification_model.dart';
 import 'package:coyotex/core/services/server_calls/auth_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/notification.dart';
@@ -18,6 +19,7 @@ class UserViewModel extends ChangeNotifier {
   Map<String, dynamic>? userData;
   List<Plan> lstPlan = [];
   UserModel user = UserModel(
+      imageUrl: '',
       userId: '',
       name: '',
       number: '',
@@ -32,6 +34,7 @@ class UserViewModel extends ChangeNotifier {
       insDate: DateTime.now());
 
   // Login
+  List<NotificationModel> lstNotification = [];
   Future<ApiResponseWithData> login(
       String email, String password, BuildContext context) async {
     _setLoading(true);
@@ -45,11 +48,6 @@ class UserViewModel extends ChangeNotifier {
         NotificationService.getDeviceToken();
         await getUser();
 
-        // Navigator.of(context).push(
-        //   MaterialPageRoute(builder: (context) {
-        //     return HomeScreen();
-        //   }),
-        // );
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -85,6 +83,52 @@ class UserViewModel extends ChangeNotifier {
     } catch (e) {
       errorMessage = e.toString();
       return ApiResponseWithData(errorMessage, false);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<ApiResponseWithData> getNotifications() async {
+    _setLoading(true);
+    try {
+      final response = await _loginAPIs.getNotifications();
+      if (response.success) {
+        lstNotification = (response.data["data"] as List)
+            .map((item) => NotificationModel.fromJson(item))
+            .toList();
+        return response;
+      } else {
+        errorMessage = response.message;
+        return response;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      return ApiResponseWithData(errorMessage, false);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<ApiResponse> sendNotifications(
+    String title,
+    String body,
+    NotificationType type,
+    String tripId,
+  ) async {
+    _setLoading(true);
+    try {
+      final response =
+          await _loginAPIs.sendUserNotification(title, body, type, tripId);
+      if (response.success) {
+        getNotifications();
+        return response;
+      } else {
+        errorMessage = response.message;
+        return response;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      return ApiResponse(errorMessage, false);
     } finally {
       _setLoading(false);
     }

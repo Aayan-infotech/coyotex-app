@@ -30,6 +30,12 @@ class TripAPIs extends ApiBase {
         .postWithData('api/trips/${id}/add-marker', data, {});
   }
 
+  Future<ApiResponse> deleteTrip(String id) async {
+    return await CallHelper().delete(
+      'api/trips/${id}',
+    );
+  }
+
   Future<ApiResponseWithData<Map<String, dynamic>>> addWayPoints(
       String id, List<String> lstWayPoints) async {
     Map<String, dynamic> data = {"waypoints": lstWayPoints};
@@ -71,7 +77,7 @@ class TripAPIs extends ApiBase {
 
   Future<Map<String, dynamic>> getWeather(double lat, double lon) async {
     final String finalUrl =
-        '$endPoint?lat=$lat&lon=$lon&appid=$apiKey&units=metric';
+        '$endPoint?lat=$lat&lon=$lon&appid=$apiKey&units=imperial';
 
     try {
       final response = await http.get(Uri.parse(finalUrl));
@@ -86,6 +92,27 @@ class TripAPIs extends ApiBase {
       throw Exception('Failed to load weather data');
     }
   }
+
+//   final String endPoint = 'https://api.openweathermap.org/data/3.0/onecall';
+// // final String apiKey = 'YOUR_API_KEY_HERE';
+
+//   Future<Map<String, dynamic>> getWeather(double lat, double lon) async {
+//     final String finalUrl =
+//         '$endPoint?lat=$lat&lon=$lon&exclude=minutely,hourly,alerts&appid=$apiKey&units=imperial';
+
+//     try {
+//       final response = await http.get(Uri.parse(finalUrl));
+
+//       if (response.statusCode == 200) {
+//         return json.decode(response.body);
+//       } else {
+//         throw Exception('Failed to load weather data: ${response.statusCode}');
+//       }
+//     } catch (e) {
+//       print('Error: $e');
+//       throw Exception('Failed to load weather data');
+//     }
+//   }
 
   Future<ApiResponse> updateProfile(String name, String number, String userUnit,
       String userWeatherPref) async {
