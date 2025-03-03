@@ -311,7 +311,9 @@ class _HomePageState extends State<HomePage> {
                             subtitle: Text(trip.startLocation,
                                 style: const TextStyle(color: Colors.white70)),
                             trailing: Text(
-                                trip.totalDistance.toStringAsFixed(2),
+                                mapProvider.formatDistance(
+                                    trip.totalDistance, context),
+                                // trip.totalDistance.toStringAsFixed(2),
                                 style: TextStyle(color: Colors.white)),
                           );
                         },

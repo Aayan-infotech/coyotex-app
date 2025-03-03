@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:convert';
+// import 'dart:ffi';
 import 'dart:math';
 import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
@@ -82,17 +84,8 @@ class MapProvider with ChangeNotifier {
   void updateCameraPosition(LatLng newPosition) {
     if (mapController == null) return;
 
-    // mapController!.animateCamera(
-    //   CameraUpdate.newLatLngZoom(newPosition, 10),
-    // );
-    final CameraPosition newCameraPosition = CameraPosition(
-      bearing: 90, // 90 degree rotation (east direction)
-      target: newPosition,
-      zoom: 10,
-      tilt: 0, // Optional: Set to 30-45 if you want 3D tilt
-    );
     mapController!.animateCamera(
-      CameraUpdate.newCameraPosition(newCameraPosition),
+      CameraUpdate.newLatLngZoom(newPosition, 10),
     );
 
     mapController!.animateCamera(CameraUpdate.scrollBy(24, 80));
@@ -168,7 +161,7 @@ class MapProvider with ChangeNotifier {
 
   String convertMinutesToHours({bool isTotal = true, bool}) {
     double minutes = isTotal
-        ? (totalTime + ((distance / 1000) / speed) * 60)
+        ? (totalTime + ((distance) / speed) * 60)
         : ((distance) / speed) * 60;
 
     int hours = minutes ~/ 60;
@@ -436,12 +429,8 @@ class MapProvider with ChangeNotifier {
         animalSeen: 0,
         animalKilled: 0,
         name: 'Trip ${trips.length + 1}',
-        startLocation: startController.text.isNotEmpty
-            ? startController.text
-            : "Location 1",
-        destination: destinationController.text.isEmpty
-            ? "Location"
-            : destinationController.text,
+        startLocation: startController.text,
+        destination: destinationController.text,
         waypoints: destinationControllers.map((c) => c.text).toList(),
         totalDistance: distance,
         createdAt: DateTime.now(),
@@ -524,6 +513,15 @@ class MapProvider with ChangeNotifier {
           duration: timeDurations,
           markerType: "inbetween",
         ));
+        // markers.add(Marker(
+        //   markerId: MarkerId(uniqueId),
+        //   // // icon: _markerIcon,
+        //   position: latAndLng,
+        //   infoWindow: InfoWindow(
+        //     title: 'Point ${points.length}',
+        //     snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
+        //   ),
+        // ));
 
         if (points.isNotEmpty) {
           initialPosition = LatLng(points[0].latitude, points[0].longitude);
@@ -563,7 +561,7 @@ class MapProvider with ChangeNotifier {
     }
 
     if (points.length >= 2) {
-      // distance = calculateTotalDistance();
+      distance = calculateTotalDistance();
       isSave = true;
       isHurryUp = false;
       isKeyDataPoint = false;
@@ -605,14 +603,16 @@ class MapProvider with ChangeNotifier {
     destinationController.clear();
     destinationControllers.clear();
     mapMarkers.clear();
-    markers.clear();
     points.clear();
     path.clear();
+    markers.clear();
+
     isSavedTrip = false;
     onTapOnMap = false;
     isTripStart = false;
     providerLetsHuntButton = false;
     polylines.clear();
+    markers.clear();
     onTapOnMap = false;
     isSave = false;
     distance = 0.0;
@@ -799,8 +799,7 @@ class MapProvider with ChangeNotifier {
           final dis = route['legs'][0]['distance']['value']; // meters
           final duration = route['legs'][0]['duration']['value'];
 
-          distance = double.parse(
-              (dis).toString()); //calculateTotalDistanceForMap(polylinePoints);
+          double distance = calculateTotalDistanceForMap(polylinePoints);
           routeList.add({
             "polyPoints": polylinePoints,
             'distance': dis,
@@ -861,7 +860,6 @@ class MapProvider with ChangeNotifier {
           mapController
               ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
         }
-        // ignore: use_build_context_synchronously
         if (isPathShow) showRoutesBottomSheet(context);
         debugPrint("Successfully fetched ${data['routes'].length} routes.");
       } else {
@@ -920,8 +918,12 @@ class MapProvider with ChangeNotifier {
                     onTap: () {
                       selectRoute(index);
 
-                      // distance = route['distance'] / 1000;
+                      // print(dis);
+                      // String dis = _formatDistance(route['distance']);
+                      // distance = double.parse(dis.split(" ")[0]);
 
+                      //  double.parse(
+                      //     dis);
                       Navigator.pop(context);
                     },
                     child: Card(
@@ -967,9 +969,7 @@ class MapProvider with ChangeNotifier {
                             const SizedBox(height: 4),
                             _buildInfoRow(
                               Icons.directions_car,
-                              formatDistance(
-                                  double.parse(route['distance'].toString()),
-                                  context),
+                              _formatDistance(route['distance']),
                             ),
                             const SizedBox(height: 4),
                             _buildInfoRow(
@@ -1003,18 +1003,10 @@ class MapProvider with ChangeNotifier {
     );
   }
 
-  String formatDistance(double meters, BuildContext context) {
-    final userProvider = Provider.of<UserViewModel>(context, listen: false);
-
-    if (userProvider.user.userUnit == "Miles") {
-      double miles = meters / 1609.34; // Convert meters to miles
-      return miles > 0.1
-          ? '${miles.toStringAsFixed(1)} mi'
-          : '${(miles * 5280).toStringAsFixed(0)} ft';
-    } else {
-      double km = meters / 1000; // Convert meters to kilometers
-      return km > 1 ? '${km.toStringAsFixed(1)} km' : '$meters m';
-    }
+  String _formatDistance(int meters) {
+    return meters > 1000
+        ? '${(meters / 1000).toStringAsFixed(1)} km'
+        : '$meters m';
   }
 
   String _formatDuration(int seconds) {
@@ -1100,14 +1092,14 @@ class MapProvider with ChangeNotifier {
     final userProvider = Provider.of<UserViewModel>(context, listen: false);
     double totalDistance = 0.0;
 
-    // for (int i = 0; i < points.length - 1; i++) {
-    //   totalDistance += _coordinateDistance(
-    //     points[i].latitude,
-    //     points[i].longitude,
-    //     points[i + 1].latitude,
-    //     points[i + 1].longitude,
-    //   );
-    // }
+    for (int i = 0; i < points.length - 1; i++) {
+      totalDistance += _coordinateDistance(
+        points[i].latitude,
+        points[i].longitude,
+        points[i + 1].latitude,
+        points[i + 1].longitude,
+      );
+    }
 
     if (userProvider.user.userUnit == "KM") {
       totalDistance = totalDistance / 1000; // Convert meters to kilometers
@@ -1115,7 +1107,7 @@ class MapProvider with ChangeNotifier {
       totalDistance = totalDistance / 1609.34; // Convert meters to miles
     }
     if (isRefresh) {
-      //  distance = totalDistance;
+      distance = totalDistance;
       notifyListeners();
     }
     return totalDistance;

@@ -599,28 +599,67 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   }
 
   void _showFinishWarningDialog(MapProvider provider, BuildContext context) {
-    final userProvider=Provider.of<UserViewModel>(context,listen: false);
-    final mapProvider=Provider.of<MapProvider>(context,listen: false);
+    final userProvider = Provider.of<UserViewModel>(context, listen: false);
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Finish Trip"),
-        content: const Text("Are you sure you want to finish the trip?"),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel")),
-          TextButton(
-              onPressed: () async{
-                NotificationModel notification=NotificationModel(id: '', userId: '', title: "Trip Update", body: "Your trip has been completed ", type: NotificationType.tripUpdate, data: {}, isRead: false, createdAt: DateTime.now().toString(), v: 1);
-              await  userProvider.sendNotifications( "Trip Update","Your Trip has been Completed" ,NotificationType.tripUpdate,mapProvider.selectedTripModel.id);
-                provider.resetFields();
-                Navigator.pop(context);
-                Navigator.pop(context);
-              },
-              child: const Text("Finish")),
-        ],
-      ),
+      builder: (context) {
+        bool isLoading = false; // Declare isLoading outside StatefulBuilder
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Finish Trip"),
+              content: isLoading
+                  ? const SizedBox(
+                      height: 50,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : const Text("Are you sure you want to finish the trip?"),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setState(() => isLoading = true);
+
+                          NotificationModel notification = NotificationModel(
+                            id: '',
+                            userId: '',
+                            title: "Trip Update",
+                            body: "Your trip has been completed",
+                            type: NotificationType.tripUpdate,
+                            data: {},
+                            isRead: false,
+                            createdAt: DateTime.now().toString(),
+                            v: 1,
+                          );
+
+                          await userProvider.sendNotifications(
+                            "Trip Update",
+                            "Your Trip has been Completed",
+                            NotificationType.tripUpdate,
+                            mapProvider.selectedTripModel.id,
+                          );
+
+                          provider.resetFields();
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          }
+                        },
+                  child: const Text("Finish"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -105,26 +105,17 @@ class _MapScreenState extends State<MapScreen> {
                               target: provider.mapMarkers.isNotEmpty
                                   ? provider.mapMarkers.last.position
                                   : provider.initialPosition,
-                              zoom: 15,
+                              zoom: 12,
                             ),
                             myLocationEnabled: true,
-                            mapType: MapType.normal,
-
+                            mapType: MapType.satellite,
                             compassEnabled: true,
                             myLocationButtonEnabled: true,
                             buildingsEnabled: true,
                             mapToolbarEnabled: true,
                             fortyFiveDegreeImageryEnabled: false,
                             polylines: provider.polylines,
-                            markers: provider.mapMarkers.map((marker) {
-                              return marker.copyWith(
-                                infoWindowParam: InfoWindow(
-                                  title: marker.infoWindow.title,
-                                  snippet: marker.infoWindow.snippet,
-                                ),
-                              );
-                            }).toSet(),
-                            //  markers: provider.mapMarkers,
+                            markers: provider.mapMarkers,
                             onTap: provider.isSavedTrip
                                 ? null
                                 : (latlanng) async {
@@ -280,11 +271,13 @@ class _MapScreenState extends State<MapScreen> {
                                         ],
                                       ),
                                       Padding(
-                                        padding:
-                                            const EdgeInsets.only(left: 40),
-                                        child: Text(
-                                            "${provider.distance.toStringAsFixed(2)} ${userProvider.user.userUnit}"),
-                                      )
+                                          padding:
+                                              const EdgeInsets.only(left: 40),
+                                          child: Text(
+                                            "${provider.formatDistance(provider.distance, context)}",
+                                          )
+                                          // "${provider.distance.toStringAsFixed(2)} ${userProvider.user.userUnit}"),
+                                          )
                                     ],
                                   ),
                                 ),
@@ -360,7 +353,6 @@ class _MapScreenState extends State<MapScreen> {
                                             isStart: true,
                                           );
                                         })).then((value) async {
-                                          print(value);
                                           Map<String, dynamic> data =
                                               jsonDecode(value);
 
@@ -573,7 +565,7 @@ class _MapScreenState extends State<MapScreen> {
                                                     width: 2),
                                               ),
                                               child: const Icon(
-                                                Icons.drag_handle,
+                                                Icons.close,
                                                 color: Colors.red,
                                               ),
                                             ),
@@ -738,70 +730,13 @@ class _MapScreenState extends State<MapScreen> {
                     // if (provider.isTripStart)
                     //   add_stop_card(
                     //       provider, context, provider.selectedTripModel),
-                    if (provider.isHurryUp) hurry_up_card(provider, context),
+
                     // if (provider.isKeyDataPoint)
                     //   keyDataPoint(provider, context),
                   ],
                 ),
               );
       },
-    );
-  }
-
-  Positioned hurry_up_card(MapProvider provider, BuildContext context) {
-    return Positioned(
-      bottom: 20,
-      left: 10,
-      right: 10,
-      child: Card(
-        elevation: 4,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(
-                height: 5,
-              ),
-              Row(
-                children: [
-                  Image.asset("assets/images/break_time.png"),
-                  const SizedBox(width: 10),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Late 5 min",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
-                      Text(
-                        "15 Min",
-                        style: TextStyle(fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 5,
-              ),
-              SizedBox(
-                height: 35,
-                child: BrandedPrimaryButton(
-                  isEnabled: true,
-                  isUnfocus: false,
-                  name: "Hurry Up",
-                  onPressed: () {
-                    provider.hurryUp();
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -922,8 +857,9 @@ class _MapScreenState extends State<MapScreen> {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        "${provider.distance.toStringAsFixed(2)} ${Provider.of<UserViewModel>(context, listen: false).user.userUnit}",
-                      ),
+                          "${provider.formatDistance(provider.distance, context)}"
+                          //"${provider.distance.toStringAsFixed(2)} ${Provider.of<UserViewModel>(context, listen: false).user.userUnit}",
+                          ),
                     ],
                   ),
                   const Spacer(),
@@ -955,6 +891,9 @@ class _MapScreenState extends State<MapScreen> {
                                     "(${provider.weather.weather.first.description})"),
                               ],
                             ),
+                          ),
+                          SizedBox(
+                            width: 18,
                           ),
                           GestureDetector(
                             onTap: () {
