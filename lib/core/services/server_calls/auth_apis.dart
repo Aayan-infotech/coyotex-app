@@ -121,9 +121,17 @@ class LoginAPIs extends ApiBase {
       "userId": id,
       "title": title,
       "body": body,
-      "type": type,
+      "type": type.toJson(),
       "data": {"tripId": tripId}
     };
+//     {
+//   "userId": "678e0135dfecdd53c910a47e",
+//   "title": "Trip Update",
+//   "body": "You have reached your next stop again!",
+//   "type": "trip_update",
+//   "data": { "tripId": "67c9aa76c6722545f5604965" }
+// }
+    print(data);
 
     return await CallHelper().post('api/notifications/send', data);
   }
@@ -192,5 +200,41 @@ class LoginAPIs extends ApiBase {
     Map<String, String> data = {};
 
     return await CallHelper().getWithData('api/userById', data);
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> createPaymentIntent(
+      String amount, String currency) async {
+    Map<String, String> data = {
+      "amount": amount,
+      "currency": currency,
+    };
+
+    return await CallHelper().postWithData(
+      'api/stripe/create-payment-intent',
+      data,
+      {},
+    );
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> paymentStatus(
+    String paymentId,
+  ) async {
+    Map<String, String> data = {"paymentId": paymentId};
+
+    return await CallHelper().postWithData(
+      'api/stripe/payment-success',
+      data,
+      {},
+    );
+  }
+
+  // New API call for animal stats
+  Future<ApiResponseWithData<Map<String, dynamic>>> getAnimalStats() async {
+    Map<String, String> data = {};
+
+    return await CallHelper().getWithData(
+      'api/trips/trip/animal-stats',
+      data,
+    );
   }
 }

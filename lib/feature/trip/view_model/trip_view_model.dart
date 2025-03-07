@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
@@ -7,13 +9,27 @@ import 'package:coyotex/core/services/api_base.dart'; // Ensure required imports
 import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 class TripViewModel extends ChangeNotifier {
   final TripAPIs _tripAPIs = TripAPIs();
+  List<MarkerData> lstMarker = [];
 
   Future<ApiResponseWithData<Map<String, dynamic>>> addTrip(
       TripModel tripModel) async {
     return await _tripAPIs.addTrip(tripModel);
+  }
+
+  Future<ApiResponseWithData> getAllMarker() async {
+    var response = await _tripAPIs.getAllMarker();
+    if (response.success) {
+      lstMarker = (response.data["markers"] as List)
+          .map((item) => MarkerData.fromJson(item))
+          .toList();
+    } else {
+      lstMarker = [];
+    }
+    return response;
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> addStop(
@@ -55,6 +71,25 @@ class TripViewModel extends ChangeNotifier {
 
   Future<ApiResponseWithData<Map<String, dynamic>>> getUserTrip() async {
     return await _tripAPIs.getUserTrip();
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> getTripById(
+      String id) async {
+    return await _tripAPIs.getTripId(id);
+  }
+
+  Future<http.Response?> generateTripPDF(String tripId) async {
+    return await _tripAPIs.generateTripPDF(tripId);
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> updateUserTrip(
+      String id) async {
+    return await _tripAPIs.updateTrip(id);
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> searchTrip(
+      String query, int page, int limit) async {
+    return await _tripAPIs.searchTrips(query, page, limit);
   }
 
   Future<Map<String, dynamic>> getWeather(double lat, double lon) async {

@@ -8,10 +8,12 @@ import 'package:provider/provider.dart';
 class DurationPickerBottomSheet extends StatefulWidget {
   final bool isStop;
 
+
   const DurationPickerBottomSheet({Key? key, this.isStop = false})
       : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _DurationPickerBottomSheetState createState() =>
       _DurationPickerBottomSheetState();
 }
@@ -147,6 +149,8 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                                 setState(() {
                                   _selectedWindDirection =
                                       selected ? direction : null;
+                                  mapProvider.selectedWindDirection =
+                                      (selected ? direction : null)!;
                                   _validateForm();
                                 });
                               },
@@ -172,7 +176,9 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                             isEnabled: true,
                             isUnfocus: true,
                             name: "Cancel",
-                            onPressed: () {})),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            })),
                     const SizedBox(width: 10),
                     Expanded(
                       child: BrandedPrimaryButton(

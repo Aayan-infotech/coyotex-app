@@ -1,5 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
+import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
+import 'package:coyotex/feature/trip/presentation/trip_details.dart';
 import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +18,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  TextEditingController _searchController = TextEditingController();
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -60,55 +62,60 @@ class _HomePageState extends State<HomePage> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: Image.asset(
                                   'assets/images/logo.png',
-                                  width: 50, // Set a width for the logo
-                                  height: 50, // Set a height for the logo
+                                  width: 50,
+                                  height: 50,
                                 ),
                               ),
-                              Expanded(
-                                child: BrandedTextField(
-                                  height: 40,
-                                  controller: _searchController,
-                                  labelText: '',
-                                  prefix: const Icon(Icons.search),
+                              const Text(
+                                'Welcome!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
+                              Spacer(),
+                              GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) {
+                                      return const NotificationScreen();
+                                    }));
+                                  },
+                                  child: const Padding(
+                                    padding: EdgeInsets.only(right: 10),
+                                    child: Icon(
+                                      Icons.notifications,
+                                      color: Colors.red,
+                                      size: 25,
+                                    ),
+                                  )),
                             ],
                           ),
                         ),
                       ),
-                      SizedBox(height: 16),
 
-                      // Welcome Text
-                      Text(
-                        'Welcome!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                       SizedBox(height: 8),
-                      Text(
-                        'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+                      const Text(
+                        "Stay on top of your hunting adventures with our all-in-one tracking app!",
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                      // Weather Information
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        padding: EdgeInsets.all(4),
+                        padding: EdgeInsets.all(10),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${mapProvider.weather.main.temp}°F (${mapProvider.weather.weather.first.description})',
+                              '${mapProvider.weather.main.temp}°F (${capitalizeFirstLetter(mapProvider.weather.weather.first.description)})',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -118,12 +125,12 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               DateFormat('MMM dd, yyyy').format(
                                   DateTime.now()), // Example: Dec 16, 2024
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 14,
                               ),
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -142,7 +149,7 @@ class _HomePageState extends State<HomePage> {
                                     Text(
                                         'Wind: ${mapProvider.weather.wind.speed}mph'),
                                     Text(
-                                        'Barometric pressure: ${mapProvider.weather.main.pressure} inHg'),
+                                        'Barometric pressure: ${(mapProvider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg')
                                   ],
                                 ),
                               ],
@@ -156,7 +163,7 @@ class _HomePageState extends State<HomePage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             'Trips',
                             style: TextStyle(
                               color: Colors.white,
@@ -185,9 +192,15 @@ class _HomePageState extends State<HomePage> {
                             final trip = mapProvider.trips[index];
                             return GestureDetector(
                               onTap: () {
+                                final mapProvider = Provider.of<MapProvider>(
+                                    context,
+                                    listen: false);
+                                mapProvider.selectedTripModel = trip;
                                 Navigator.of(context)
                                     .push(MaterialPageRoute(builder: (context) {
-                                  return TripsHistoryScreen();
+                                  return TripDetailsScreen(
+                                    tripModel: trip,
+                                  );
                                 }));
                               },
                               child: Padding(
@@ -201,8 +214,19 @@ class _HomePageState extends State<HomePage> {
                                         borderRadius: BorderRadius.circular(
                                             10), // Adjust the radius as needed
                                         child: CachedNetworkImage(
-                                          imageUrl: trip.images.isNotEmpty
-                                              ? trip.images.first
+                                          imageUrl: (trip.markers.isNotEmpty &&
+                                                  trip.markers.first.media !=
+                                                      null &&
+                                                  trip.markers.first.media!
+                                                      .isNotEmpty)
+                                              ? trip.markers.first.media!
+                                                  .firstWhere(
+                                                  (media) =>
+                                                      media.isNotEmpty &&
+                                                      !checkIfVideo(media),
+                                                  orElse: () =>
+                                                      '', // Return an empty string if no valid image is found
+                                                )
                                               : '',
                                           width: 200,
                                           height: 200,
@@ -214,12 +238,12 @@ class _HomePageState extends State<HomePage> {
                                             decoration: BoxDecoration(
                                               color: Colors.grey[300],
                                               borderRadius:
-                                                  BorderRadius.circular(
-                                                      10), // Apply same radius
+                                                  BorderRadius.circular(10),
                                             ),
-                                            child: Center(
-                                                child: CircularProgressIndicator
-                                                    .adaptive()),
+                                            child: const Center(
+                                              child: CircularProgressIndicator
+                                                  .adaptive(),
+                                            ),
                                           ),
                                           errorWidget: (context, url, error) =>
                                               Container(
@@ -229,10 +253,9 @@ class _HomePageState extends State<HomePage> {
                                               color: const Color.fromARGB(
                                                   255, 58, 55, 55),
                                               borderRadius:
-                                                  BorderRadius.circular(
-                                                      10), // Apply same radius
+                                                  BorderRadius.circular(10),
                                             ),
-                                            child: Icon(Icons.error,
+                                            child: const Icon(Icons.image,
                                                 color: Colors.red),
                                           ),
                                         ),
@@ -274,13 +297,13 @@ class _HomePageState extends State<HomePage> {
                           },
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
                       // Recent Trips Section
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             'Recent Trips',
                             style: TextStyle(
                               color: Colors.white,
@@ -289,8 +312,13 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () {},
-                            child: Text('See All',
+                            onPressed: () {
+                              Navigator.of(context)
+                                  .push(MaterialPageRoute(builder: (context) {
+                                return TripsHistoryScreen();
+                              }));
+                            },
+                            child: const Text('See All',
                                 style: TextStyle(color: Colors.orange)),
                           ),
                         ],
@@ -298,12 +326,24 @@ class _HomePageState extends State<HomePage> {
 
                       ListView.builder(
                         shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: min(
                             mapProvider.trips.length, 6), // Show up to 6 items
                         itemBuilder: (context, index) {
                           final trip = mapProvider.trips[index];
                           return ListTile(
+                            onTap: () {
+                              final mapProvider = Provider.of<MapProvider>(
+                                  context,
+                                  listen: false);
+                              mapProvider.selectedTripModel = trip;
+                              Navigator.of(context)
+                                  .push(MaterialPageRoute(builder: (context) {
+                                return TripDetailsScreen(
+                                  tripModel: trip,
+                                );
+                              }));
+                            },
                             leading:
                                 Icon(Icons.location_pin, color: Colors.orange),
                             title: Text(trip.name,
@@ -313,7 +353,6 @@ class _HomePageState extends State<HomePage> {
                             trailing: Text(
                                 mapProvider.formatDistance(
                                     trip.totalDistance, context),
-                                // trip.totalDistance.toStringAsFixed(2),
                                 style: TextStyle(color: Colors.white)),
                           );
                         },

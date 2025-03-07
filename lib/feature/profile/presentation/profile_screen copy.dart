@@ -42,6 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
     super.didChangeDependencies();
   }
 
@@ -50,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Consumer<UserViewModel>(
       builder: (context, userViewModel, child) {
         return userViewModel.isLoading
-            ? const Center(
+            ? Center(
                 child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
               ))
@@ -58,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 appBar: AppBar(
                   backgroundColor: Colors.black,
                   elevation: 0,
+                  centerTitle: true,
                   title: const Text(
                     'Profile',
                     style: TextStyle(
@@ -100,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     placeholder: (context, url) => Container(
                                       width: 100,
                                       height: 100,
-                                      decoration: const BoxDecoration(
+                                      decoration: BoxDecoration(
                                         color: Colors.grey,
                                         shape: BoxShape.circle,
                                       ),

@@ -1,9 +1,12 @@
 import 'package:coyotex/feature/homeScreen/screens/pages/home_page.dart';
+import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/map.dart';
 import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
+import 'package:coyotex/feature/map/view_model/map_provider%20copy.dart';
 import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:coyotex/feature/profile/presentation/profile_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -13,13 +16,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // Track the index of the selected tab
   int _selectedIndex = 0;
+  List<TripModel> trips = [];
+  @override
+  void initState() {
+    super.initState();
+  }
 
-  // List of pages for each tab
   final List<Widget> _pages = [
     HomePage(),
-    const MapScreen(),
+    MapScreen(),
     TripsHistoryScreen(),
-    const NotificationScreen(),
     ProfileScreen(),
   ];
 
@@ -63,10 +69,10 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.search),
               label: 'Search',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications),
-              label: 'Notification',
-            ),
+            // BottomNavigationBarItem(
+            //   icon: Icon(Icons.notifications),
+            //   label: 'Notification',
+            // ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person),
               label: 'Profile',

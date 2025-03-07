@@ -32,6 +32,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
               color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          GestureDetector(
+              onTap: () {
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) {
+                  return const NotificationScreen();
+                }));
+              },
+              child: Icon(Icons.notifications))
+        ],
       ),
       body: Consumer<UserViewModel>(
         builder: (context, provider, child) {

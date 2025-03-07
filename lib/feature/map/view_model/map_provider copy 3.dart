@@ -1,7 +1,9 @@
+// import 'dart:async';
 // import 'dart:convert';
 // import 'dart:convert';
-// // import 'dart:ffi';
 // import 'dart:math';
+// import 'dart:typed_data';
+// import 'package:coyotex/core/services/model/notification_model.dart';
 // import 'package:coyotex/core/services/model/weather_model.dart';
 // import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 // import 'package:coyotex/core/utills/constant.dart';
@@ -11,6 +13,7 @@
 // import 'package:coyotex/feature/map/presentation/start_trip_bootom_sheat.dart';
 // import 'package:coyotex/utils/app_dialogue_box.dart';
 // import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
 // import 'package:google_maps_flutter/google_maps_flutter.dart';
 // import 'package:provider/provider.dart';
 // import 'package:uuid/uuid.dart';
@@ -19,8 +22,59 @@
 // import 'package:intl/intl.dart';
 // import '../data/trip_model.dart';
 // import 'package:flutter/widgets.dart';
+// import 'dart:ui' as ui;
 
 // import 'package:geocoding/geocoding.dart';
+
+// class RouteSegment {
+//   final List<LatLng> points;
+//   final double distance;
+//   final int duration;
+//   final String summary;
+
+//   RouteSegment({
+//     required this.points,
+//     required this.distance,
+//     required this.duration,
+//     required this.summary,
+//   });
+// }
+
+// List<Map<String, dynamic>> _combineRouteSegments(
+//     List<List<RouteSegment>> allSegments) {
+//   List<Map<String, dynamic>> combinedRoutes = [];
+//   if (allSegments.isEmpty) return combinedRoutes;
+
+//   // Initialize with the first segment's routes
+//   for (var segment in allSegments.first) {
+//     combinedRoutes.add({
+//       'polyPoints': List<LatLng>.from(segment.points),
+//       'distance': segment.distance,
+//       'duration': segment.duration,
+//       'summary': segment.summary,
+//     });
+//   }
+
+//   // Iterate through remaining segments and combine
+//   for (int i = 1; i < allSegments.length; i++) {
+//     List<Map<String, dynamic>> temp = [];
+//     for (var route in combinedRoutes) {
+//       for (var segment in allSegments[i]) {
+//         List<LatLng> combinedPoints = List.from(route['polyPoints'])
+//           ..addAll(segment.points);
+//         temp.add({
+//           'polyPoints': combinedPoints,
+//           'distance': route['distance'] + segment.distance,
+//           'duration': route['duration'] + segment.duration,
+//           'summary': '${route['summary']} → ${segment.summary}',
+//         });
+//       }
+//     }
+//     combinedRoutes = temp;
+//   }
+
+//   return combinedRoutes;
+// }
 
 // class MapProvider with ChangeNotifier {
 //   final TextEditingController startController = TextEditingController();
@@ -38,7 +92,6 @@
 //   bool providerLetsHuntButton = false;
 //   String selectedWindDirection = 'North';
 //   List<Map<String, dynamic>> routeDetails = [];
-
 //   final String sessionToken = const Uuid().v4();
 //   var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
 //   String markerId = '';
@@ -60,14 +113,15 @@
 //   bool isKeyDataPoint = false;
 //   bool isStartSuggestions = false;
 //   double speed = 45;
-
-//   late BitmapDescriptor _markerIcon;
 //   TripAPIs _tripAPIs = TripAPIs();
 //   late WeatherResponse weather = defaultWeatherResponse;
 //   final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
 //   int totalTime = 0;
 //   String totalTravelTime = "";
 //   String totalStopTime = "";
+//   Marker currentLocationMarker = const Marker(
+//     markerId: MarkerId("currentLocation"),
+//   );
 //   getTrips() async {
 //     isLoading = true;
 //     notifyListeners();
@@ -80,12 +134,19 @@
 //     notifyListeners();
 //     isLoading = false;
 //   }
+  
 
 //   void updateCameraPosition(LatLng newPosition) {
 //     if (mapController == null) return;
 
+//     final CameraPosition newCameraPosition = CameraPosition(
+//       bearing: 90, // 90 degree rotation (east direction)
+//       target: newPosition,
+//       zoom: 10,
+//       tilt: 0, // Optional: Set to 30-45 if you want 3D tilt
+//     );
 //     mapController!.animateCamera(
-//       CameraUpdate.newLatLngZoom(newPosition, 10),
+//       CameraUpdate.newCameraPosition(newCameraPosition),
 //     );
 
 //     mapController!.animateCamera(CameraUpdate.scrollBy(24, 80));
@@ -116,13 +177,11 @@
 //   Future<void> getCurrentLocation() async {
 //     isLoading = true;
 //     try {
-//       // Check if location services are enabled
 //       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
 //       if (!serviceEnabled) {
 //         throw Exception('Location services are disabled.');
 //       }
 
-//       // Check and request location permission
 //       LocationPermission permission = await Geolocator.checkPermission();
 //       if (permission == LocationPermission.denied) {
 //         permission = await Geolocator.requestPermission();
@@ -135,12 +194,10 @@
 //         throw Exception('Location permissions are permanently denied.');
 //       }
 
-//       // Get the current position
 //       Position position = await Geolocator.getCurrentPosition(
 //         desiredAccuracy: LocationAccuracy.high,
 //       );
 
-//       // Update initial position with the retrieved coordinates
 //       initialPosition = LatLng(position.latitude, position.longitude);
 //       await getWeather(initialPosition);
 //       isLoading = false;
@@ -151,17 +208,35 @@
 //     }
 //   }
 
-//   /// Load custom live location icon
-//   void loadCustomLiveLocationIcon() async {
-//     _markerIcon = await BitmapDescriptor.fromAssetImage(
-//       const ImageConfiguration(size: Size(100, 100)),
-//       'assets/images/marker_icon.png',
-//     );
+//   // final Map<String, BitmapDescriptor> liveLocationIcon = {};
+
+//   // /// Load custom live location icon
+//   // Future<BitmapDescriptor> _getIcon(String path, int width) async {
+//   //   ByteData data = await rootBundle.load(path);
+//   //   ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+//   //       targetWidth: width);
+//   //   ui.FrameInfo fi = await codec.getNextFrame();
+//   //   return BitmapDescriptor.fromBytes(
+//   //       (await fi.image.toByteData(format: ui.ImageByteFormat.png))!
+//   //           .buffer
+//   //           .asUint8List());
+//   // }
+
+//   // void loadCustomLiveLocationIcon() async {
+
+//   // }
+//    LatLng currentCameraTarget = LatLng(28.00, 28.00);
+//   double currentZoom = 12;
+
+//   void onCameraMove(CameraPosition position) {
+//     currentCameraTarget = position.target;
+//     currentZoom = position.zoom;
+//     notifyListeners();
 //   }
 
 //   String convertMinutesToHours({bool isTotal = true, bool}) {
 //     double minutes = isTotal
-//         ? (totalTime + ((distance) / speed) * 60)
+//         ? (totalTime + ((distance / 1000) / speed) * 60)
 //         : ((distance) / speed) * 60;
 
 //     int hours = minutes ~/ 60;
@@ -186,17 +261,270 @@
 //     notifyListeners();
 //   }
 
+//   bool isNotificationSend = true;
+//   // void letsHunt() async {
+//   //   isTripStart = true;
+//   //   isSave = false;
+//   //   isLoading = true;
+//   //   onTapOnMap = false;
+
+//   //   notifyListeners();
+
+//   //   try {
+//   //     // final user = Provider.of<UserViewModel>(context, listen: false);
+//   //     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+//   //     if (!serviceEnabled) {
+//   //       throw Exception('Location services are disabled.');
+//   //     }
+
+//   //     LocationPermission permission = await Geolocator.checkPermission();
+//   //     if (permission == LocationPermission.denied) {
+//   //       permission = await Geolocator.requestPermission();
+//   //       if (permission == LocationPermission.denied) {
+//   //         throw Exception('Location permissions are denied.');
+//   //       }
+//   //     }
+
+//   //     if (permission == LocationPermission.deniedForever) {
+//   //       throw Exception('Location permissions are permanently denied.');
+//   //     }
+
+//   //     Position initialPosition = await Geolocator.getCurrentPosition(
+//   //       desiredAccuracy: LocationAccuracy.high,
+//   //     );
+
+//   //     LatLng initialLatLng =
+//   //         LatLng(initialPosition.latitude, initialPosition.longitude);
+
+//   //     // Add only if the new position is not within 1 km of any existing position
+//   //     if (!_isWithinRadius(initialLatLng, path, 1000)) {
+//   //       path.add(initialLatLng);
+//   //     }
+
+//   //     await fetchRouteWithWaypoints(path, isPathShow: true);
+
+//   //     isLoading = false;
+//   //     notifyListeners();
+
+//   //     Geolocator.getPositionStream(
+//   //       locationSettings: const LocationSettings(
+//   //         accuracy: LocationAccuracy.high,
+//   //         distanceFilter: 5,
+//   //       ),
+//   //     ).listen((Position position) {
+//   //       LatLng currentLatLng = LatLng(position.latitude, position.longitude);
+
+//   //       if (!_isWithinRadius(currentLatLng, path, 1000)) {
+//   //         path.add(currentLatLng);
+//   //       }
+//   //       double distanceTravelled = Geolocator.distanceBetween(
+//   //         initialPosition.latitude,
+//   //         initialPosition.longitude,
+//   //         position.latitude,
+//   //         position.longitude,
+//   //       );
+//   //       distance -= distanceTravelled / 1000;
+
+//   //       if (distance < 1000 && isNotificationSend) {
+//   //         final userProvider =
+//   //             Provider.of<UserViewModel>(context, listen: false);
+//   //         userProvider.sendNotifications(
+//   //           "Trip Update",
+//   //           "Stop is 5 min away",
+//   //           NotificationType.tripUpdate,
+//   //           selectedTripModel.id,
+//   //         );
+//   //         isNotificationSend = false;
+//   //       }
+//   //       // if (user.user.userUnit == "KM") {
+//   //       //   // distance -= distanceTravelled / 1000;
+//   //       //    distance -= distanceTravelled;
+
+//   //       // } else {
+//   //       //   // distance -= distanceTravelled / 1609.34;
+//   //       //    distance -= distanceTravelled;
+
+//   //       // }
+//   //       selectedTripModel.markers.first.position.latitude
+//   //       selectedTripModel.markers.first.duration
+
+//   //       convertMinutesToHours();
+
+//   //       if (mapController != null) {
+//   //         mapController!.animateCamera(
+//   //           CameraUpdate.newLatLng(currentLatLng),
+//   //         );
+//   //       }
+
+//   //       notifyListeners();
+//   //     });
+//   //   } catch (e) {
+//   //     isLoading = false;
+//   //     notifyListeners();
+//   //   }
+//   // }
+// //   void letsHunt(BuildContext context) async {
+// //   isTripStart = true;
+// //   isSave = false;
+// //   isLoading = true;
+// //   onTapOnMap = false;
+
+// //   notifyListeners();
+
+// //   int currentMarkerIndex = 0;
+// //   List<bool> arrivalNotificationsSent = [];
+// //   List<bool> arrivalTriggered = [];
+
+// //   try {
+// //     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+// //     if (!serviceEnabled) {
+// //       throw Exception('Location services are disabled.');
+// //     }
+
+// //     LocationPermission permission = await Geolocator.checkPermission();
+// //     if (permission == LocationPermission.denied) {
+// //       permission = await Geolocator.requestPermission();
+// //       if (permission == LocationPermission.denied) {
+// //         throw Exception('Location permissions are denied.');
+// //       }
+// //     }
+
+// //     if (permission == LocationPermission.deniedForever) {
+// //       throw Exception('Location permissions are permanently denied.');
+// //     }
+
+// //     Position initialPosition = await Geolocator.getCurrentPosition(
+// //       desiredAccuracy: LocationAccuracy.high,
+// //     );
+
+// //     LatLng initialLatLng =
+// //         LatLng(initialPosition.latitude, initialPosition.longitude);
+
+// //     if (!_isWithinRadius(initialLatLng, path, 1000)) {
+// //       path.add(initialLatLng);
+// //     }
+
+// //     await fetchRouteWithWaypoints(path, isPathShow: true);
+
+// //     // Initialize marker tracking lists
+// //     arrivalNotificationsSent =
+// //         List.filled(selectedTripModel.markers.length, false);
+// //     arrivalTriggered = List.filled(selectedTripModel.markers.length, false);
+// //     currentMarkerIndex = 0;
+
+// //     isLoading = false;
+// //     notifyListeners();
+
+// //     Geolocator.getPositionStream(
+// //       locationSettings: const LocationSettings(
+// //         accuracy: LocationAccuracy.high,
+// //         distanceFilter: 5,
+// //       ),
+// //     ).listen((Position position) async {
+// //       LatLng currentLatLng = LatLng(position.latitude, position.longitude);
+
+// //       if (!_isWithinRadius(currentLatLng, path, 1000)) {
+// //         path.add(currentLatLng);
+// //       }
+
+// //       // Process markers
+// //       if (currentMarkerIndex < selectedTripModel.markers.length) {
+// //         final currentMarker = selectedTripModel.markers[currentMarkerIndex];
+// //         final markerPosition = currentMarker.position;
+
+// //         double distanceToMarker = await Geolocator.distanceBetween(
+// //           currentLatLng.latitude,
+// //           currentLatLng.longitude,
+// //           markerPosition.latitude,
+// //           markerPosition.longitude,
+// //         );
+
+// //         double speed = position.speed; // in m/s
+// //         double timeRemainingMinutes = (speed > 0)
+// //             ? (distanceToMarker / (speed * 60))
+// //             : double.infinity;
+
+// //         // 5-minute arrival notification
+// //         if (timeRemainingMinutes <= 5 &&
+// //             !arrivalNotificationsSent[currentMarkerIndex]) {
+// //           final userProvider =
+// //               Provider.of<UserViewModel>(context, listen: false);
+// //           userProvider.sendNotifications(
+// //             "Approaching Stop",
+// //             "You will arrive in approximately 5 minutes",
+// //             NotificationType.tripUpdate,
+// //             selectedTripModel.id,
+// //           );
+// //           arrivalNotificationsSent[currentMarkerIndex] = true;
+// //         }
+
+// //         // Arrival detection (50 meters threshold)
+// //         if (distanceToMarker <= 50 && !arrivalTriggered[currentMarkerIndex]) {
+// //           arrivalTriggered[currentMarkerIndex] = true;
+// //           final userProvider =
+// //               Provider.of<UserViewModel>(context, listen: false);
+
+// //           // Arrival notification
+// //           userProvider.sendNotifications(
+// //             "Arrived at Stop",
+// //             "You have reached your destination",
+// //             NotificationType.tripUpdate,
+// //             selectedTripModel.id,
+// //           );
+
+// //           // Schedule 2-minute reminder before duration ends
+// //           int duration = currentMarker.duration;
+// //           if (duration > 2) {
+// //             Timer(
+// //               Duration(minutes: duration - 2),
+// //               () {
+// //                 userProvider.sendNotifications(
+// //                   "Stop Ending Soon",
+// //                   "Your stop ends in 2 minutes",
+// //                   NotificationType.tripUpdate,
+// //                   selectedTripModel.id,
+// //                 );
+// //               },
+// //             );
+// //           }
+
+// //           currentMarkerIndex++; // Move to next marker
+// //         }
+// //       }
+
+// //       // Existing camera and UI updates
+// //       if (mapController != null) {
+// //         mapController!.animateCamera(
+// //           CameraUpdate.newLatLng(currentLatLng),
+// //         );
+// //       }
+// //       notifyListeners();
+// //     });
+// //   } catch (e) {
+// //     isLoading = false;
+// //     notifyListeners();
+// //   }
+// // }
+//   int currentMarkerIndex = 0;
+//   bool hasSentArrivalNotification = false;
+//   bool isAtStop = false;
+//   Timer? stayTimer;
+//   static const double arrivalThreshold = 50; // meters
+//   StreamSubscription<Position>? positionStream;
 //   void letsHunt() async {
 //     isTripStart = true;
 //     isSave = false;
 //     isLoading = true;
 //     onTapOnMap = false;
+//     currentMarkerIndex = 0;
+//     hasSentArrivalNotification = false;
+//     isAtStop = false;
+//     stayTimer?.cancel();
+//     stayTimer = null;
 
 //     notifyListeners();
 
 //     try {
-//       // Request location permissions
-//       final user = Provider.of<UserViewModel>(context, listen: false);
 //       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
 //       if (!serviceEnabled) {
 //         throw Exception('Location services are disabled.');
@@ -214,48 +542,121 @@
 //         throw Exception('Location permissions are permanently denied.');
 //       }
 
-//       // Get the initial location and fetch the route
 //       Position initialPosition = await Geolocator.getCurrentPosition(
 //         desiredAccuracy: LocationAccuracy.high,
 //       );
 
-//       path.add(LatLng(initialPosition.latitude, initialPosition.longitude));
+//       LatLng initialLatLng =
+//           LatLng(initialPosition.latitude, initialPosition.longitude);
 
-//       // Fetch the route only once
+//       if (!_isWithinRadius(initialLatLng, path, 1000)) {
+//         path.add(initialLatLng);
+//       }
+
 //       await fetchRouteWithWaypoints(path, isPathShow: true);
-//       // updateCameraPosition(LatLng(initialPosition.latitude, initialPosition.longitude));
 
 //       isLoading = false;
 //       notifyListeners();
 
-//       // Start listening to location updates for the user pointer
-//       Geolocator.getPositionStream(
+//       positionStream = Geolocator.getPositionStream(
 //         locationSettings: const LocationSettings(
 //           accuracy: LocationAccuracy.high,
-//           distanceFilter: 5, // Update only if user moves 5 meters
+//           distanceFilter: 5,
 //         ),
 //       ).listen((Position position) {
+//         LatLng currentLatLng = LatLng(position.latitude, position.longitude);
+
+//         // if (!_isWithinRadius(currentLatLng, path, 1000)) {
+//         //   path.add(currentLatLng);
+//         // }
+
+//         // Check if there are markers to process
+//         if (!isAtStop &&
+//             currentMarkerIndex < selectedTripModel.markers.length) {
+//           final currentMarker = selectedTripModel.markers[currentMarkerIndex];
+//           double distanceToMarker = Geolocator.distanceBetween(
+//             currentLatLng.latitude,
+//             currentLatLng.longitude,
+//             currentMarker.position.latitude,
+//             currentMarker.position.longitude,
+//           );
+
+//           // Check if arrived at the current marker
+//           if (distanceToMarker <= arrivalThreshold) {
+//             isAtStop = true;
+//             hasSentArrivalNotification = false;
+
+//             // Send arrival notification
+//             final userProvider =
+//                 Provider.of<UserViewModel>(context, listen: false);
+//             userProvider.sendNotifications(
+//               "Trip Update",
+//               "Arrived at stop ${currentMarkerIndex + 1}",
+//               NotificationType.tripUpdate,
+//               selectedTripModel.id,
+//             );
+
+//             // Schedule 2-minute remaining notification
+//             int stayDuration = currentMarker.duration;
+//             if (stayDuration > 2) {
+//               stayTimer = Timer(
+//                 Duration(minutes: stayDuration - 2),
+//                 () {
+//                   userProvider.sendNotifications(
+//                     "Trip Update",
+//                     "2 minutes left at stop ${currentMarkerIndex + 1}",
+//                     NotificationType.tripUpdate,
+//                     selectedTripModel.id,
+//                   );
+//                 },
+//               );
+//             }
+
+//             // Schedule moving to next marker after full duration
+//             Timer(
+//               Duration(minutes: stayDuration),
+//               () {
+//                 stayTimer?.cancel();
+//                 currentMarkerIndex++;
+//                 isAtStop = false;
+//                 notifyListeners();
+//               },
+//             );
+//           } else {
+//             // Calculate ETA if possible
+//             double speed = position.speed ?? 0;
+//             if (speed > 1) {
+//               double etaSeconds = distanceToMarker / speed;
+//               if (etaSeconds <= 5 * 60 && !hasSentArrivalNotification) {
+//                 final userProvider =
+//                     Provider.of<UserViewModel>(context, listen: false);
+//                 userProvider.sendNotifications(
+//                   "Trip Update",
+//                   "5 minutes until arrival at stop ${currentMarkerIndex + 1}",
+//                   NotificationType.tripUpdate,
+//                   selectedTripModel.id,
+//                 );
+//                 hasSentArrivalNotification = true;
+//               }
+//             }
+//           }
+//         }
+
+//         // Existing distance calculation and map update logic
 //         double distanceTravelled = Geolocator.distanceBetween(
 //           initialPosition.latitude,
 //           initialPosition.longitude,
 //           position.latitude,
 //           position.longitude,
 //         );
-//         // print(distanceTravelled);
-//         if (user.user.userUnit == "KM") {
-//           distance = distance - distanceTravelled / 1000;
-//         } else {
-//           distance = distance - distanceTravelled / 1609.34;
-//         }
-
-//         convertMinutesToHours();
+//         distance -= distanceTravelled;
 
 //         if (mapController != null) {
 //           mapController!.animateCamera(
-//             CameraUpdate.newLatLng(
-//                 LatLng(position.latitude, position.longitude)),
+//             CameraUpdate.newLatLng(currentLatLng),
 //           );
 //         }
+//         convertMinutesToHours();
 
 //         // notifyListeners();
 //       });
@@ -263,6 +664,23 @@
 //       isLoading = false;
 //       notifyListeners();
 //     }
+//   }
+
+//   /// Helper function to check if a LatLng is within a given radius (meters) of any point in a list
+//   bool _isWithinRadius(
+//       LatLng newPoint, List<LatLng> existingPoints, double radius) {
+//     for (LatLng point in existingPoints) {
+//       double distance = Geolocator.distanceBetween(
+//         newPoint.latitude,
+//         newPoint.longitude,
+//         point.latitude,
+//         point.longitude,
+//       );
+//       if (distance <= radius) {
+//         return true; // Found a point within the radius, so return true
+//       }
+//     }
+//     return false; // No points found within the radius
 //   }
 
 //   void addStop() async {
@@ -429,8 +847,12 @@
 //         animalSeen: 0,
 //         animalKilled: 0,
 //         name: 'Trip ${trips.length + 1}',
-//         startLocation: startController.text,
-//         destination: destinationController.text,
+//         startLocation: startController.text.isNotEmpty
+//             ? startController.text
+//             : "Location 1",
+//         destination: destinationController.text.isEmpty
+//             ? "Location"
+//             : destinationController.text,
 //         waypoints: destinationControllers.map((c) => c.text).toList(),
 //         totalDistance: distance,
 //         createdAt: DateTime.now(),
@@ -513,15 +935,6 @@
 //           duration: timeDurations,
 //           markerType: "inbetween",
 //         ));
-//         // markers.add(Marker(
-//         //   markerId: MarkerId(uniqueId),
-//         //   // // icon: _markerIcon,
-//         //   position: latAndLng,
-//         //   infoWindow: InfoWindow(
-//         //     title: 'Point ${points.length}',
-//         //     snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
-//         //   ),
-//         // ));
 
 //         if (points.isNotEmpty) {
 //           initialPosition = LatLng(points[0].latitude, points[0].longitude);
@@ -561,7 +974,7 @@
 //     }
 
 //     if (points.length >= 2) {
-//       distance = calculateTotalDistance();
+//       // distance = calculateTotalDistance();
 //       isSave = true;
 //       isHurryUp = false;
 //       isKeyDataPoint = false;
@@ -603,22 +1016,23 @@
 //     destinationController.clear();
 //     destinationControllers.clear();
 //     mapMarkers.clear();
+//     markers.clear();
 //     points.clear();
 //     path.clear();
-//     markers.clear();
-
 //     isSavedTrip = false;
 //     onTapOnMap = false;
 //     isTripStart = false;
 //     providerLetsHuntButton = false;
 //     polylines.clear();
-//     markers.clear();
 //     onTapOnMap = false;
 //     isSave = false;
 //     distance = 0.0;
 //     totalTime = 0;
 //     destinationCount = 1;
 //     timeDurations = 0;
+//     if (positionStream != null) {
+//       positionStream!.cancel();
+//     }
 //     notifyListeners();
 //   }
 
@@ -676,24 +1090,29 @@
 //     notifyListeners();
 //   }
 
-//   void toggleRouteDisplay() {
+//   void toggleRouteDisplay() async {
+//     // isLoading = true;
+//     // notifyListeners();
 //     showAllRoutes = !showAllRoutes;
-//     _updatePolylines();
+//     await _updatePolylines();
+//     //s isLoading = false;
 //     notifyListeners();
 //   }
 
-//   void _updatePolylines() {
+//   bool isPolylines = false;
+
+//   Future<void> _updatePolylines() async {
 //     polylines.clear();
 
 //     if (showAllRoutes) {
 //       // Draw all routes with appropriate styling
 //       for (int i = 0; i < routeList.length; i++) {
-//         _addRoutePolyline(routeList[i]['polyPoints'], i == selectedRouteIndex,
-//             i == shortestRouteIndex);
+//         await _addRoutePolyline(routeList[i]['polyPoints'],
+//             i == selectedRouteIndex, i == shortestRouteIndex);
 //       }
 //     } else {
 //       // Draw only selected route
-//       _addRoutePolyline(
+//       await _addRoutePolyline(
 //           routeList[selectedRouteIndex]['polyPoints'], true, false);
 //     }
 
@@ -705,8 +1124,8 @@
 //     }
 //   }
 
-//   void _addRoutePolyline(
-//       List<LatLng> points, bool isSelected, bool isShortest) {
+//   Future<void> _addRoutePolyline(
+//       List<LatLng> points, bool isSelected, bool isShortest) async {
 //     if (isSelected) {
 //       polylines.add(Polyline(
 //         polylineId: PolylineId('route_selected_border'),
@@ -759,113 +1178,74 @@
 //       return;
 //     }
 
-//     if (locations.length == 1) {
-//       locations.add(locations.first);
-//     }
-
 //     isLoading = true;
 //     notifyListeners();
 //     routeList = [];
 
 //     try {
 //       List<String> placeNames = await Future.wait(locations.map(getPlaceName));
+//       List<List<RouteSegment>> allSegments = [];
 
-//       String origin = placeNames.first;
-//       String destination = placeNames.last;
-//       //  List<String> waypointsList = placeNames.sublist(1, placeNames.length - 1);
-//       // String waypointsParam = '';
-//       // if (waypointsList.isNotEmpty) {
-//       //   waypointsParam = 'waypoints=optimize:true|${waypointsList.join('|')}&';
-//       // }
+//       // Fetch routes for each segment
+//       for (int i = 0; i < locations.length - 1; i++) {
+//         String origin = placeNames[i];
+//         String destination = placeNames[i + 1];
+//         final url = 'https://maps.googleapis.com/maps/api/directions/json?'
+//             'origin=$origin&destination=$destination&mode=driving&'
+//             'alternatives=true&key=$apiKey';
 
-//       // Construct the URL with conditional waypoints
-//       final url =
-//           'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&mode=driving&alternatives=true&key=$apiKey';
+//         final response = await http.get(Uri.parse(url));
+//         final data = jsonDecode(response.body);
 
-//       final response = await http.get(Uri.parse(url));
-//       final data = jsonDecode(response.body);
+//         if (data['status'] == 'OK') {
+//           List<RouteSegment> segmentRoutes = [];
+//           for (var route in data['routes']) {
+//             final encodedPolyline = route['overview_polyline']['points'];
+//             final polylinePoints = _decodePolyline(encodedPolyline);
+//             double distance = route['legs'][0]['distance']['value'].toDouble();
+//             int duration = route['legs'][0]['duration']['value'];
+//             segmentRoutes.add(RouteSegment(
+//               points: polylinePoints,
+//               distance: distance,
+//               duration: duration,
+//               summary: route['summary'],
+//             ));
+//           }
+//           allSegments.add(segmentRoutes);
+//         } else {
+//           debugPrint("Error in segment $i: ${data['status']}");
+//           return;
+//         }
+//       }
 
-//       if (data['status'] == 'OK') {
-//         polylines.clear();
+//       // Generate all possible route combinations
+//       routeList = _combineRouteSegments(allSegments);
+//       if (routeList.length > 5) {
+//         routeList = routeList.sublist(0, 5);
+//       }
 
-//         // Calculate the shortest route
-//         int shortestRouteIndex = 0;
-//         double shortestDistance = double.infinity;
-
-//         for (int i = 0; i < data['routes'].length; i++) {
-//           final route = data['routes'][i];
-//           final encodedPolyline = route['overview_polyline']['points'];
-//           final polylinePoints = _decodePolyline(encodedPolyline);
-//           final dis = route['legs'][0]['distance']['value']; // meters
-//           final duration = route['legs'][0]['duration']['value'];
-
-//           double distance = calculateTotalDistanceForMap(polylinePoints);
-//           routeList.add({
-//             "polyPoints": polylinePoints,
-//             'distance': dis,
-//             'duration': duration,
-//             'summery': route["summary"]
-//           });
-
-//           if (distance < shortestDistance) {
-//             shortestDistance = distance;
-//             shortestRouteIndex = i;
+//       // Select the shortest route
+//       if (routeList.isNotEmpty) {
+//         selectedRouteIndex = 0;
+//         double shortestDistance = routeList.first['distance'];
+//         for (int i = 1; i < routeList.length; i++) {
+//           if (routeList[i]['distance'] < shortestDistance) {
+//             shortestDistance = routeList[i]['distance'];
+//             distance = shortestDistance;
+//             selectedRouteIndex = i;
+//           } else {
+//             distance = shortestDistance;
 //           }
 //         }
-
-//         // Assign colors based on the route
-//         // for (int i = 0; i < data['routes'].length; i++) {
-//         //   final route = data['routes'][i];
-//         //   final encodedPolyline = route['overview_polyline']['points'];
-//         //   final polylinePoints = _decodePolyline(encodedPolyline);
-
-//         //   if (i == shortestRouteIndex) {
-//         //     // Shortest route: dark blue with border
-//         //     polylines.add(Polyline(
-//         //       polylineId: PolylineId('route_${i}_border'),
-//         //       points: polylinePoints,
-//         //       color: Colors.blue[900]!, // Dark blue border
-//         //       width: 10, // Thicker for clear effect
-//         //     ));
-//         //     polylines.add(Polyline(
-//         //       polylineId: PolylineId('route_${i}_inner'),
-//         //       points: polylinePoints,
-//         //       color: Colors.blue, // Inner blue for consistency
-//         //       width: 6, // Slightly thinner
-//         //     ));
-//         //   } else {
-//         //     // Other routes: light blue with opacity
-//         //     polylines.add(Polyline(
-//         //       polylineId: PolylineId('route_${i}_border'),
-//         //       points: polylinePoints,
-//         //       color: Colors.blue.withOpacity(0.5), // Light blue border
-//         //       width: 10,
-//         //     ));
-//         //     polylines.add(Polyline(
-//         //       polylineId: PolylineId('route_${i}_inner'),
-//         //       points: polylinePoints,
-//         //       color: Colors.white, // White inner
-//         //       width: 5,
-//         //     ));
-//         //   }
-
-//         //   debugPrint("Route $i: ${route['summary']}"); // Logs route names
-//         // }
-//         selectedRouteIndex = shortestRouteIndex;
-
 //         _updatePolylines();
-
 //         if (polylines.isNotEmpty && mapController != null) {
 //           LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
 //           mapController
 //               ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
 //         }
-//         if (isPathShow) showRoutesBottomSheet(context);
-//         debugPrint("Successfully fetched ${data['routes'].length} routes.");
-//       } else {
-//         debugPrint(
-//             "Error: ${data['status']} - ${data['error_message'] ?? 'No details provided'}");
 //       }
+
+//       if (isPathShow) showRoutesBottomSheet(context);
 //     } catch (e) {
 //       debugPrint("Error fetching routes: $e");
 //     } finally {
@@ -880,116 +1260,130 @@
 //     showModalBottomSheet(
 //       context: context,
 //       isScrollControlled: true,
-//       builder: (context) => Container(
-//         padding: const EdgeInsets.all(16),
-//         height: MediaQuery.of(context).size.height * 0.4,
-//         child: Column(
-//           children: [
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 Text(
-//                   'Available Routes',
-//                   style: TextStyle(
-//                     fontSize: 20,
-//                     fontWeight: FontWeight.bold,
-//                     color: Colors.blue[800],
+//       builder: (context) {
+//         return StatefulBuilder(
+//           builder: (context, setState) {
+//             return Container(
+//               padding: const EdgeInsets.all(16),
+//               height: MediaQuery.of(context).size.height * 0.4,
+//               child: Column(
+//                 children: [
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                     children: [
+//                       Text(
+//                         'Available Routes',
+//                         style: TextStyle(
+//                           fontSize: 20,
+//                           fontWeight: FontWeight.bold,
+//                           color: Colors.blue[800],
+//                         ),
+//                       ),
+//                       IconButton(
+//                         icon: Icon(showAllRoutes
+//                             ? Icons.visibility_off
+//                             : Icons.visibility),
+//                         onPressed: () {
+//                           toggleRouteDisplay();
+
+//                           setState(() {
+//                             //showAllRoutes = !showAllRoutes;
+//                           });
+//                         },
+//                         tooltip: showAllRoutes
+//                             ? 'Hide other routes'
+//                             : 'Show all routes',
+//                       ),
+//                     ],
 //                   ),
-//                 ),
-//                 IconButton(
-//                   icon: Icon(
-//                       showAllRoutes ? Icons.visibility_off : Icons.visibility),
-//                   onPressed: toggleRouteDisplay,
-//                   tooltip:
-//                       showAllRoutes ? 'Hide other routes' : 'Show all routes',
-//                 ),
-//               ],
-//             ),
-//             const SizedBox(height: 10),
-//             Expanded(
-//               child: ListView.builder(
-//                 itemCount: routeList.length,
-//                 itemBuilder: (context, index) {
-//                   final route = routeList[index];
-//                   final isSelected = index == selectedRouteIndex;
-//                   final isShortest = index == shortestRouteIndex;
+//                   const SizedBox(height: 10),
+//                   Expanded(
+//                     child: ListView.builder(
+//                       itemCount: routeList.length,
+//                       itemBuilder: (context, index) {
+//                         final route = routeList[index];
+//                         final isSelected = index == selectedRouteIndex;
+//                         final isShortest = index == shortestRouteIndex;
 
-//                   return GestureDetector(
-//                     onTap: () {
-//                       selectRoute(index);
-
-//                       // print(dis);
-//                       // String dis = _formatDistance(route['distance']);
-//                       // distance = double.parse(dis.split(" ")[0]);
-
-//                       //  double.parse(
-//                       //     dis);
-//                       Navigator.pop(context);
-//                     },
-//                     child: Card(
-//                       color: isSelected
-//                           ? Colors.blue[50]
-//                           : isShortest
-//                               ? Colors.green[50]
-//                               : Colors.white,
-//                       elevation: 2,
-//                       shape: RoundedRectangleBorder(
-//                         side: BorderSide(
-//                           color: isSelected
-//                               ? Colors.blue
-//                               : isShortest
-//                                   ? Colors.green
-//                                   : Colors.grey[300]!,
-//                           width: 2,
-//                         ),
-//                         borderRadius: BorderRadius.circular(10),
-//                       ),
-//                       child: ListTile(
-//                         contentPadding: const EdgeInsets.symmetric(
-//                           vertical: 8,
-//                           horizontal: 16,
-//                         ),
-//                         leading: isShortest
-//                             ? const Icon(Icons.star, color: Colors.green)
-//                             : null,
-//                         title: Text(
-//                           route['summery'] ?? 'Route ${index + 1}',
-//                           style: TextStyle(
-//                             fontWeight: FontWeight.w600,
+//                         return GestureDetector(
+//                           onTap: () {
+//                             selectRoute(index);
+//                             // setState(() {
+//                             //   selectedRouteIndex = index;
+//                             //   distance = route['distance'];
+//                             // });
+//                             Navigator.pop(context);
+//                           },
+//                           child: Card(
 //                             color: isSelected
-//                                 ? Colors.blue[900]
+//                                 ? Colors.blue[50]
 //                                 : isShortest
-//                                     ? Colors.green[900]
-//                                     : Colors.black,
-//                           ),
-//                         ),
-//                         subtitle: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             const SizedBox(height: 4),
-//                             _buildInfoRow(
-//                               Icons.directions_car,
-//                               _formatDistance(route['distance']),
+//                                     ? Colors.green[50]
+//                                     : Colors.white,
+//                             elevation: 2,
+//                             shape: RoundedRectangleBorder(
+//                               side: BorderSide(
+//                                 color: isSelected
+//                                     ? Colors.blue
+//                                     : isShortest
+//                                         ? Colors.green
+//                                         : Colors.grey[300]!,
+//                                 width: 2,
+//                               ),
+//                               borderRadius: BorderRadius.circular(10),
 //                             ),
-//                             const SizedBox(height: 4),
-//                             _buildInfoRow(
-//                               Icons.access_time,
-//                               _formatDuration(route['duration']),
-//                             )
-//                           ],
-//                         ),
-//                         trailing: isSelected
-//                             ? Icon(Icons.check_circle, color: Colors.blue)
-//                             : null,
-//                       ),
+//                             child: ListTile(
+//                               contentPadding: const EdgeInsets.symmetric(
+//                                 vertical: 8,
+//                                 horizontal: 16,
+//                               ),
+//                               leading: isShortest
+//                                   ? const Icon(Icons.star, color: Colors.green)
+//                                   : null,
+//                               title: Text(
+//                                 route['summary'] ?? 'Route ${index + 1}',
+//                                 style: TextStyle(
+//                                   fontWeight: FontWeight.w600,
+//                                   color: isSelected
+//                                       ? Colors.blue[900]
+//                                       : isShortest
+//                                           ? Colors.green[900]
+//                                           : Colors.black,
+//                                 ),
+//                               ),
+//                               subtitle: Column(
+//                                 crossAxisAlignment: CrossAxisAlignment.start,
+//                                 children: [
+//                                   const SizedBox(height: 4),
+//                                   _buildInfoRow(
+//                                     Icons.directions_car,
+//                                     formatDistance(
+//                                         double.parse(
+//                                             route['distance'].toString()),
+//                                         context),
+//                                   ),
+//                                   const SizedBox(height: 4),
+//                                   _buildInfoRow(
+//                                     Icons.access_time,
+//                                     _formatDuration(route['duration']),
+//                                   )
+//                                 ],
+//                               ),
+//                               trailing: isSelected
+//                                   ? Icon(Icons.check_circle, color: Colors.blue)
+//                                   : null,
+//                             ),
+//                           ),
+//                         );
+//                       },
 //                     ),
-//                   );
-//                 },
+//                   ),
+//                 ],
 //               ),
-//             ),
-//           ],
-//         ),
-//       ),
+//             );
+//           },
+//         );
+//       },
 //     );
 //   }
 
@@ -1003,10 +1397,21 @@
 //     );
 //   }
 
-//   String _formatDistance(int meters) {
-//     return meters > 1000
-//         ? '${(meters / 1000).toStringAsFixed(1)} km'
-//         : '$meters m';
+//   String formatDistance(double meters, BuildContext context) {
+//     final userProvider = Provider.of<UserViewModel>(context, listen: false);
+
+//     if (userProvider.user.userUnit == "Miles") {
+//       double miles = meters / 1609.34; // Convert meters to miles
+//       return miles > 0.1
+//           ? '${miles.toStringAsFixed(1)} mi'
+//           : '${(miles * 5280).toStringAsFixed(0)} ft';
+//     } else {
+//       double km = meters / 1000; 
+//       // Convert meters to kilometers
+//       notifyListeners();
+
+//       return km > 1 ? '${km.toStringAsFixed(1)} km' : '$meters m';
+//     }
 //   }
 
 //   String _formatDuration(int seconds) {
@@ -1092,14 +1497,14 @@
 //     final userProvider = Provider.of<UserViewModel>(context, listen: false);
 //     double totalDistance = 0.0;
 
-//     for (int i = 0; i < points.length - 1; i++) {
-//       totalDistance += _coordinateDistance(
-//         points[i].latitude,
-//         points[i].longitude,
-//         points[i + 1].latitude,
-//         points[i + 1].longitude,
-//       );
-//     }
+//     // for (int i = 0; i < points.length - 1; i++) {
+//     //   totalDistance += _coordinateDistance(
+//     //     points[i].latitude,
+//     //     points[i].longitude,
+//     //     points[i + 1].latitude,
+//     //     points[i + 1].longitude,
+//     //   );
+//     // }
 
 //     if (userProvider.user.userUnit == "KM") {
 //       totalDistance = totalDistance / 1000; // Convert meters to kilometers
@@ -1107,7 +1512,7 @@
 //       totalDistance = totalDistance / 1609.34; // Convert meters to miles
 //     }
 //     if (isRefresh) {
-//       distance = totalDistance;
+//       //  distance = totalDistance;
 //       notifyListeners();
 //     }
 //     return totalDistance;

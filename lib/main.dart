@@ -1,13 +1,16 @@
 import 'package:coyotex/core/navigation/routes.dart';
+import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/notification.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
+import 'package:coyotex/feature/auth/screens/splash_screen.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:coyotex/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -27,6 +30,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  Stripe.publishableKey = publishableKey;
 
   final RemoteMessage? message =
       await FirebaseMessaging.instance.getInitialMessage();
@@ -69,9 +73,11 @@ class _MyAppState extends State<MyApp> {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
           textTheme: GoogleFonts.montserratTextTheme(),
+          fontFamily: 'Montserrat',
         ),
-        initialRoute: AppRoutes.splash,
-        onGenerateRoute: AppRoutes.generateRoute,
+        home: SplashScreen(),
+        // initialRoute: AppRoutes.splash,
+        //onGenerateRoute: AppRoutes.generateRoute,
       ),
     );
   }

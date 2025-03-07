@@ -24,12 +24,21 @@ enum NotificationType {
         throw ArgumentError('Invalid notification type: $value');
     }
   }
-
   String toJson() {
-    return name
-        .replaceAllMapped(
-            RegExp(r'([A-Z])'), (match) => '_${match.group(0)!.toLowerCase()}')
-        .substring(1);
+    switch (this) {
+      case NotificationType.tripUpdate:
+        return 'trip_update';
+      case NotificationType.huntAlert:
+        return 'hunt_alert';
+      case NotificationType.weatherAlert:
+        return 'weather_alert';
+      case NotificationType.photoReminder:
+        return 'photo_reminder';
+      case NotificationType.safetyNotification:
+        return 'safety_notification';
+      case NotificationType.tripSummary:
+        return 'trip_summary';
+    }
   }
 }
 

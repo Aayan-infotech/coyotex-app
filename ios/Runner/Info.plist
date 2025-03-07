@@ -46,6 +46,8 @@
 	<string>We need access to your photo library to select photos/videos.</string>
 	<key>NSPushNotificationsUsageDescription</key>
 	<string>We need permission to send you notifications about important updates.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>We need access to motion sensors to provide compass functionality.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

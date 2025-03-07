@@ -15,8 +15,10 @@ class TripModel {
   final List<String> images;
   int animalKilled;
   int animalSeen;
+  String tripStatus;
 
   TripModel({
+    required this.tripStatus,
     required this.id,
     required this.userId,
     required this.name,
@@ -35,6 +37,7 @@ class TripModel {
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
     return TripModel(
+      tripStatus: json["tripStatus"] ?? 'created',
       id: json['_id'] ?? '',
       userId: json['userId'] ?? '',
       name: json['name'] ?? '',
@@ -127,6 +130,7 @@ class MarkerData {
         duration: json['timeDurations'] ?? 0,
         media: json["mediaFiles"] ?? []);
   }
+  
 
   Map<String, dynamic> toJson() {
     return {
@@ -138,8 +142,8 @@ class MarkerData {
       'icon': icon,
       'animalKilled': animalKilled,
       'animalSeen': animalSeen,
-      ''
-          'timeDurations': duration,
+      'wind_direction': wind_direction,
+      'timeDurations': duration,
       'markerType': markerType,
     };
   }
