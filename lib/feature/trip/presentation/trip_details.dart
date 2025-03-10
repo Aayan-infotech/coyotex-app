@@ -173,62 +173,65 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
               ),
               centerTitle: true,
             ),
-            persistentFooterButtons: (widget.tripModel.tripStatus == "created")
-                ? null
-                : [
-                    BrandedPrimaryButton(
-                        isEnabled: true,
-                        name: "Restart Trip",
-                        onPressed: () async {
-                          setState(() {
-                            isLoading = true;
-                          });
-                          final mapProvider =
-                              Provider.of<MapProvider>(context, listen: false);
-                          TripModel tripModel = TripModel(
-                            tripStatus: widget.tripModel.tripStatus,
-                            id: widget.tripModel.id,
-                            userId: widget.tripModel.userId,
-                            name: widget.tripModel.name,
-                            startLocation: widget.tripModel.startLocation,
-                            destination: widget.tripModel.destination,
-                            waypoints:
-                                List.from(widget.tripModel.waypoints), // Copy
-                            totalDistance: widget.tripModel.totalDistance,
-                            createdAt: widget.tripModel.createdAt,
-                            routePoints:
-                                List.from(widget.tripModel.routePoints), // Copy
-                            markers:
-                                List.from(widget.tripModel.markers), // Copy
-                            weatherMarkers: List.from(
-                                widget.tripModel.weatherMarkers), // Copy
-                            animalKilled: widget.tripModel.animalKilled,
-                            animalSeen: widget.tripModel.animalSeen,
-                            images: List.from(widget.tripModel.images), // Copy
-                          );
-                          mapProvider.isSavedTrip = true;
-                          mapProvider.isSave = true;
-                          mapProvider.markers = tripModel.markers;
-                          mapProvider.distance = tripModel.totalDistance;
-                          mapProvider.selectedTripModel = tripModel;
-                          mapProvider.points = tripModel.routePoints;
-                          mapProvider.providerLetsHuntButton = true;
-                          mapProvider.path = tripModel.routePoints;
-                          mapProvider.isRestart = true;
-                          await mapProvider.fetchRouteWithWaypoints(
-                            tripModel.routePoints,
-                          );
-                          setState(() {
-                            isLoading = false;
-                          });
-                          Navigator.of(context)
-                              .push(MaterialPageRoute(builder: (context) {
-                            return MapScreen(
-                              isRestart: true,
-                            );
-                          }));
-                        })
-                  ],
+            persistentFooterButtons: [
+              BrandedPrimaryButton(
+                  isEnabled: true,
+                  name: (widget.tripModel.tripStatus == "created")
+                      ? "Start Trip"
+                      : "Restart Trip",
+                  onPressed: () async {
+                    setState(() {
+                      isLoading = true;
+                    });
+                    final mapProvider =
+                        Provider.of<MapProvider>(context, listen: false);
+                    TripModel tripModel = TripModel(
+                      tripStatus: widget.tripModel.tripStatus,
+                      id: widget.tripModel.id,
+                      userId: widget.tripModel.userId,
+                      name: widget.tripModel.name,
+                      startLocation: widget.tripModel.startLocation,
+                      destination: widget.tripModel.destination,
+                      waypoints: List.from(widget.tripModel.waypoints), // Copy
+                      totalDistance: widget.tripModel.totalDistance,
+                      createdAt: widget.tripModel.createdAt,
+                      routePoints:
+                          List.from(widget.tripModel.routePoints), // Copy
+                      markers: List.from(widget.tripModel.markers), // Copy
+                      weatherMarkers:
+                          List.from(widget.tripModel.weatherMarkers), // Copy
+                      animalKilled: widget.tripModel.animalKilled,
+                      animalSeen: widget.tripModel.animalSeen,
+                      images: List.from(widget.tripModel.images), // Copy
+                    );
+                    mapProvider.isSavedTrip = true;
+                    mapProvider.isSave = true;
+                    mapProvider.liveTripMarker = tripModel.markers;
+                    mapProvider.isStartavigation = true;
+                    mapProvider.markers = tripModel.markers;
+                    mapProvider.distance = tripModel.totalDistance;
+                    mapProvider.selectedTripModel = tripModel;
+                    mapProvider.points = tripModel.routePoints;
+                    mapProvider.providerLetsHuntButton = true;
+                    mapProvider.path = tripModel.routePoints;
+                    mapProvider.isRestart =
+                        (widget.tripModel.tripStatus == "created")
+                            ? false
+                            : true;
+                    await mapProvider.fetchRouteWithWaypoints(
+                      tripModel.routePoints,
+                    );
+                    setState(() {
+                      isLoading = false;
+                    });
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (context) {
+                      return MapScreen(
+                        isRestart: true,
+                      );
+                    }));
+                  })
+            ],
             body: Container(
               color: Colors.black,
               child: SingleChildScrollView(
@@ -408,19 +411,28 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                           width: 20,
                                         ),
                                         Text(
-                                          widget.tripModel.weatherMarkers.first
-                                              .weather.weatherDescription,
+                                          widget.tripModel.weatherMarkers
+                                                  .isEmpty
+                                              ? "Clear Sky"
+                                              : widget
+                                                  .tripModel
+                                                  .weatherMarkers
+                                                  .first
+                                                  .weather
+                                                  .weatherDescription,
                                           style: const TextStyle(
                                             color: Colors.black,
                                             fontWeight: FontWeight.w400,
                                             fontSize: 14,
                                           ),
                                         ),
-                                        Image.network(
-                                          'https://openweathermap.org/img/wn/${widget.tripModel.weatherMarkers.first.weather.weatherIcon}@2x.png',
-                                          width: 40,
-                                          height: 40,
-                                        ),
+                                        if (widget.tripModel.weatherMarkers
+                                            .isNotEmpty)
+                                          Image.network(
+                                            'https://openweathermap.org/img/wn/${widget.tripModel.weatherMarkers.first.weather.weatherIcon}@2x.png',
+                                            width: 40,
+                                            height: 40,
+                                          ),
                                       ],
                                     )
                                   ],

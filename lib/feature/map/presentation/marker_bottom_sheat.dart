@@ -65,7 +65,7 @@ class _MarkersBottomSheetState extends State<MarkersBottomSheet> {
                             title: Text(
                               (_marker.snippet != null &&
                                       _marker.snippet!.length > 1)
-                                  ? _marker.snippet!.substring(1)
+                                  ? _marker.snippet!.substring(0)
                                   : "Unnamed Marker",
                               style: const TextStyle(
                                 fontSize: 18,

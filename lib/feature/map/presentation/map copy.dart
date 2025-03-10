@@ -8,7 +8,6 @@ import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
 import 'package:coyotex/feature/map/presentation/show_duration_and_animal_details_sheet.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
-import 'package:coyotex/utils/distance_dialogue.dart';
 import 'package:coyotex/utils/filter_dialoguebox.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -74,10 +73,6 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  String _formatTime(int seconds) {
-    return '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
-  }
-
   Future<BitmapDescriptor> _getIcon(String path, int width) async {
     final ui.Image image = await _loadImage(path, width);
     return BitmapDescriptor.fromBytes(
@@ -123,42 +118,17 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void distanceDialogue(BuildContext context, MapProvider provider,
-      {bool isLocation = false}) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: Colors.white,
-      builder: (context) {
-        return DistanceDialogue(
-          isLocation: isLocation,
-          mapProvider: provider,
-        );
-      },
-    );
-  }
-
   @override
   void initState() {
     _loadMarkers();
-    final provider = Provider.of<MapProvider>(context, listen: false);
-    final tripProvider = Provider.of<TripViewModel>(context, listen: false);
-
-    // provider.updateMapMarkers(tripProvider.lstMarker);
-
-    if (provider.isStartavigation) {
-      provider.updateMapMarkers(provider.liveTripMarker);
-    } else {
-      provider.updateMapMarkers(tripProvider.lstMarker);
-    }
     // _initCompass();
     super.initState();
   }
 
   @override
   void dispose() {
+    // TODO: implement dispose
+    // _compassSubscription?.cancel();s
     super.dispose();
   }
 
@@ -177,6 +147,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tripProvider = Provider.of<TripViewModel>(context, listen: false);
     return Consumer<MapProvider>(
       builder: (context, provider, child) {
         // for (var item in tripProvider.lstMarker) {
@@ -274,45 +245,6 @@ class _MapScreenState extends State<MapScreen> {
                             ],
                           ),
                         ),
-                        if (provider.remainingStopTime > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 16, horizontal: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.access_time_filled_rounded,
-                                  color: provider.isRedText
-                                      ? Colors.red
-                                      : Colors.blueAccent,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Departing in: ${_formatTime(provider.remainingStopTime)}',
-                                  style: TextStyle(
-                                    color: provider.isRedText
-                                        ? Colors.red
-                                        : Colors.black87,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         if (provider.isTripStart)
                           SizedBox(
                             height: widget.isRestart! ? 260 : 220,
@@ -409,7 +341,7 @@ class _MapScreenState extends State<MapScreen> {
                                 // Route Info
                                 const SizedBox(height: 10),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(
+                                  padding: EdgeInsets.symmetric(
                                     horizontal: 16.0,
                                   ),
                                   child: Column(
@@ -449,6 +381,7 @@ class _MapScreenState extends State<MapScreen> {
                                                     context);
                                               },
                                               icon: Icon(Icons.route)),
+                                          // Corrected part: Remove Expanded from GestureDetector
                                           GestureDetector(
                                             onTap: () {
                                               showCustomDialog(
@@ -457,18 +390,6 @@ class _MapScreenState extends State<MapScreen> {
                                             },
                                             child: Image.asset(
                                               "assets/images/location.png",
-                                              height: 30,
-                                              width: 30,
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              distanceDialogue(
-                                                  context, provider,
-                                                  isLocation: true);
-                                            },
-                                            child: Image.asset(
-                                              "assets/images/distance.png",
                                               height: 30,
                                               width: 30,
                                             ),
@@ -610,7 +531,7 @@ class _MapScreenState extends State<MapScreen> {
                                                   marker.wind_direction
                                                       .contains(dir));
                                             }).toList();
-                                            // provider.liveTripMarker = filtered;
+
                                             mapProvider.updateMapMarkers(
                                                 filtered); // Update map with filtered markers
                                           },
@@ -637,7 +558,7 @@ class _MapScreenState extends State<MapScreen> {
                               height: 10,
                             ),
                             if (provider.onTapOnMap &&
-                                provider.markers.isNotEmpty)
+                                provider.mapMarkers.isNotEmpty)
                               GestureDetector(
                                 onTap: () {
                                   showMarkersBottomSheet(context, provider);
@@ -783,6 +704,110 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     ),
+                    // if (provider.trips.isNotEmpty &&
+                    //     !provider.isTripStart &&
+                    //     !widget.isRestart!)
+                    //   Positioned(
+                    //     top: MediaQuery.of(context).size.height * 0.5,
+                    //     left: 15,
+                    //     right: 10,
+                    //     bottom: 10,
+                    //     child: SingleChildScrollView(
+                    //       scrollDirection: Axis.horizontal,
+                    //       reverse: true,
+                    //       child: Row(
+                    //         children:
+                    //             List.generate(provider.trips.length, (index) {
+                    //           TripModel tripModel = TripModel(
+                    //             tripStatus: provider.trips[index].tripStatus,
+                    //             id: provider.trips[index].id,
+                    //             userId: provider.trips[index].userId,
+                    //             name: provider.trips[index].name,
+                    //             startLocation:
+                    //                 provider.trips[index].startLocation,
+                    //             destination: provider.trips[index].destination,
+                    //             waypoints: List.from(
+                    //                 provider.trips[index].waypoints), // Copy
+                    //             totalDistance:
+                    //                 provider.trips[index].totalDistance,
+                    //             createdAt: provider.trips[index].createdAt,
+                    //             routePoints: List.from(
+                    //                 provider.trips[index].routePoints), // Copy
+                    //             markers: List.from(
+                    //                 provider.trips[index].markers), // Copy
+                    //             weatherMarkers: List.from(provider
+                    //                 .trips[index].weatherMarkers), // Copy
+                    //             animalKilled:
+                    //                 provider.trips[index].animalKilled,
+                    //             animalSeen: provider.trips[index].animalSeen,
+                    //             images: List.from(
+                    //                 provider.trips[index].images), // Copy
+                    //           );
+
+                    //           return GestureDetector(
+                    //             onTap: () async {
+                    //               provider.isSavedTrip = true;
+                    //               provider.isSave = true;
+                    //               provider.markers = tripModel.markers;
+                    //               provider.distance = tripModel.totalDistance;
+                    //               provider.selectedTripModel = tripModel;
+                    //               provider.points = tripModel.routePoints;
+                    //               provider.providerLetsHuntButton = true;
+                    //               provider.path = tripModel.routePoints;
+                    //               await provider.fetchRouteWithWaypoints(
+                    //                 tripModel.routePoints,
+                    //               );
+                    //             },
+                    //             child: Card(
+                    //               color: const Color.fromRGBO(255, 255, 255, 1),
+                    //               child: SizedBox(
+                    //                 height: MediaQuery.of(context).size.height *
+                    //                     0.13, // Explicit height of the card
+                    //                 width: MediaQuery.of(context).size.width *
+                    //                     0.8, // Set the width for each card
+                    //                 child: Row(
+                    //                   children: [
+                    //                     const SizedBox(width: 10),
+                    //                     Expanded(
+                    //                       child: Padding(
+                    //                         padding: const EdgeInsets.all(12.0),
+                    //                         child: Column(
+                    //                           crossAxisAlignment:
+                    //                               CrossAxisAlignment.start,
+                    //                           children: [
+                    //                             Text(
+                    //                               tripModel.name,
+                    //                               style: const TextStyle(
+                    //                                   fontSize: 14,
+                    //                                   fontWeight:
+                    //                                       FontWeight.bold,
+                    //                                   color: Color.fromRGBO(
+                    //                                       44, 51, 62, 1)),
+                    //                               overflow:
+                    //                                   TextOverflow.ellipsis,
+                    //                             ),
+                    //                             Text(
+                    //                               tripModel.startLocation,
+                    //                               maxLines: 4,
+                    //                               overflow:
+                    //                                   TextOverflow.ellipsis,
+                    //                               style: const TextStyle(
+                    //                                   color: Colors.grey,
+                    //                                   fontSize: 12),
+                    //                             )
+                    //                           ],
+                    //                         ),
+                    //                       ),
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //               ),
+                    //             ),
+                    //           );
+                    //         }),
+                    //       ),
+                    //     ),
+                    //   ),
                     if (provider.isSave) tripCard(provider, context),
                   ],
                 ),
@@ -862,21 +887,7 @@ class _MapScreenState extends State<MapScreen> {
                               'Break Time',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              distanceDialogue(context, provider,
-                                  isLocation: true);
-                            },
-                            child: Image.asset(
-                              "assets/images/distance.png",
-                              height: 30,
-                              width: 30,
-                            ),
-                          ),
+                          )
                         ],
                       ),
                       Text(

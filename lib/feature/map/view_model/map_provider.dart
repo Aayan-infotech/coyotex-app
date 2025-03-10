@@ -121,10 +121,14 @@ class MapProvider with ChangeNotifier {
   int totalTime = 0;
   String totalTravelTime = "";
   String totalStopTime = "";
+  List<MarkerData> liveTripMarker = [];
   Marker currentLocationMarker = const Marker(
     markerId: MarkerId("currentLocation"),
   );
+
   MarkerData? selectedOldMarker;
+  bool isStartavigation = false;
+  List<MarkerData> lstTripMarkerData = [];
   getTrips() async {
     isLoading = true;
     notifyListeners();
@@ -166,34 +170,61 @@ class MapProvider with ChangeNotifier {
         infoWindow: InfoWindow(title: item.title, snippet: item.snippet),
       ));
     }
-    notifyListeners();
+
+    // notifyListeners();
   }
 
   Future<bool> showDurationPicker(BuildContext context,
-      {bool isStop = false, MarkerData? markerData}) async {
+      {bool isStop = false, Marker? marker}) async {
     bool? result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => DurationPickerBottomSheet(isStop: isStop),
+      builder: (context) => DurationPickerBottomSheet(
+        isStop: isStop,
+        mapMarker: marker,
+      ),
     );
     return result ?? false;
   }
 
+  // void setMarkersWithOnTap(BuildContext context) {
+  //   mapMarkers = mapMarkers.map((marker) {
+  //     return marker.copyWith(
+  //       onTapParam: () {
+  //         showDurationPicker(context, marker: marker);
+  //       },
+  //     );
+  //   }).toSet();
+  //   notifyListeners();
+  // }
   void setMarkersWithOnTap(BuildContext context) {
-    final provider = Provider.of<TripViewModel>(context, listen: false);
-
-    mapMarkers = mapMarkers.map((marker) {
-    
-
-      return marker.copyWith(
+    mapMarkers = mapMarkers.map((item) {
+      return item.copyWith(
         onTapParam: () {
-          showDurationPicker(context);
+          showDurationPicker(context, marker: item);
+          //_showMarkerDialog(context, marker);
         },
       );
     }).toSet();
     notifyListeners();
+  }
+
+  void _showMarkerDialog(BuildContext context, Marker marker) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Marker Tapped'),
+        content: Text('Marker ID: ${marker.markerId.value}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> getWeather(LatLng latAndLng) async {
@@ -419,6 +450,11 @@ class MapProvider with ChangeNotifier {
     return WeatherResponse.fromJson(response);
   }
 
+  int remainingStopTime = 0;
+  Timer? countdownTimer;
+
+  bool isRedText = false;
+  bool hasSent2MinNotification = false;
   void letsHunt() async {
     isTripStart = true;
     isSave = false;
@@ -504,22 +540,66 @@ class MapProvider with ChangeNotifier {
               NotificationType.tripUpdate,
               selectedTripModel.id,
             );
-
-            // Schedule 2-minute remaining notification
             int stayDuration = currentMarker.duration;
-            if (stayDuration > 2) {
-              stayTimer = Timer(
-                Duration(minutes: stayDuration - 2),
-                () {
+            remainingStopTime = stayDuration * 60; // Convert minutes to seconds
+            hasSent2MinNotification = false;
+            isRedText = false;
+
+            // Cancel existing timers
+            countdownTimer?.cancel();
+            stayTimer?.cancel();
+
+            // if (stayDuration > 2) {
+            //   stayTimer = Timer(
+            //     Duration(minutes: stayDuration - 2),
+            //     () {
+            //       userProvider.sendNotifications(
+            //         "Trip Update",
+            //         "2 minutes left at stop ${currentMarkerIndex + 1}",
+            //         NotificationType.tripUpdate,
+            //         selectedTripModel.id,
+            //       );
+            //       remainingStopTime = 120; // 2 minutes in seconds
+            //       countdownTimer?.cancel(); // Cancel existing timer
+            //       countdownTimer =
+            //           Timer.periodic(Duration(seconds: 1), (timer) {
+            //         if (remainingStopTime > 0) {
+            //           remainingStopTime--;
+            //           notifyListeners();
+            //         } else {
+            //           timer.cancel();
+            //         }
+            //       });
+            //     },
+            //   );
+            // }
+            countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+              if (remainingStopTime > 0) {
+                remainingStopTime--;
+
+                // Check if 2 minutes left and send notification once
+                if (remainingStopTime <= 120 && !hasSent2MinNotification) {
                   userProvider.sendNotifications(
                     "Trip Update",
                     "2 minutes left at stop ${currentMarkerIndex + 1}",
                     NotificationType.tripUpdate,
                     selectedTripModel.id,
                   );
-                },
-              );
-            }
+                  hasSent2MinNotification = true;
+                  isRedText = true;
+                }
+
+                notifyListeners();
+              } else {
+                // Time's up, move to next marker
+                timer.cancel();
+                currentMarkerIndex++;
+                isAtStop = false;
+                isRedText = false;
+                remainingStopTime = 0;
+                notifyListeners();
+              }
+            });
 
             // Schedule moving to next marker after full duration
             Timer(
@@ -528,6 +608,9 @@ class MapProvider with ChangeNotifier {
                 stayTimer?.cancel();
                 currentMarkerIndex++;
                 isAtStop = false;
+                countdownTimer?.cancel();
+                remainingStopTime = 0;
+                currentMarkerIndex++;
                 notifyListeners();
               },
             );
@@ -969,6 +1052,10 @@ class MapProvider with ChangeNotifier {
 
   // Reset input fields and points
   void resetFields() {
+    final provider = Provider.of<TripViewModel>(context, listen: false);
+
+    liveTripMarker = provider.lstMarker;
+    isStartavigation = false;
     startController.clear();
     destinationController.clear();
     destinationControllers.clear();
@@ -995,6 +1082,8 @@ class MapProvider with ChangeNotifier {
 
   Future<void> setTimeDuration(int duration, String name,
       {bool isStop = false}) async {
+    final provider = Provider.of<TripViewModel>(context, listen: false);
+
     timeDurations = duration;
     totalTime += duration;
     if (!isStop) {
@@ -1004,6 +1093,9 @@ class MapProvider with ChangeNotifier {
           markers.last.title = name;
         }
         markers.last.wind_direction = selectedWindDirection;
+        final provider = Provider.of<TripViewModel>(context, listen: false);
+        provider.lstMarker.add(markers.last);
+        updateMapMarkers(provider.lstMarker);
       }
     }
 
@@ -1073,7 +1165,7 @@ class MapProvider with ChangeNotifier {
       List<LatLng> points, bool isSelected, bool isShortest) async {
     if (isSelected) {
       polylines.add(Polyline(
-        polylineId: PolylineId('route_selected_border'),
+        polylineId: const PolylineId('route_selected_border'),
         points: points,
         color: Colors.blue[900]!,
         width: 10,
@@ -1086,13 +1178,13 @@ class MapProvider with ChangeNotifier {
       ));
     } else if (isShortest) {
       polylines.add(Polyline(
-        polylineId: PolylineId('route_shortest_border'),
+        polylineId: const PolylineId('route_shortest_border'),
         points: points,
         color: Colors.blue.withOpacity(0.3),
         width: 10,
       ));
       polylines.add(Polyline(
-        polylineId: PolylineId('route_shortest_inner'),
+        polylineId: const PolylineId('route_shortest_inner'),
         points: points,
         color: Colors.white,
         width: 6,
@@ -1113,6 +1205,8 @@ class MapProvider with ChangeNotifier {
     }
   }
 
+  List<Map<String, String>> distanceOfSegments = [];
+
   Future<void> fetchRouteWithWaypoints(
     List<LatLng> locations, {
     bool isRemove = false,
@@ -1132,9 +1226,11 @@ class MapProvider with ChangeNotifier {
     try {
       List<String> placeNames = await Future.wait(locations.map(getPlaceName));
       List<List<RouteSegment>> allSegments = [];
+      print(markers);
 
       // Fetch routes for each segment
       for (int i = 0; i < locations.length - 1; i++) {
+        // String markerName = markers[i].title;
         String origin = placeNames[i];
         String destination = placeNames[i + 1];
         final url = 'https://maps.googleapis.com/maps/api/directions/json?'
@@ -1146,11 +1242,16 @@ class MapProvider with ChangeNotifier {
 
         if (data['status'] == 'OK') {
           List<RouteSegment> segmentRoutes = [];
+          bool isSegmentDistanceAdded = true;
           for (var route in data['routes']) {
             final encodedPolyline = route['overview_polyline']['points'];
             final polylinePoints = _decodePolyline(encodedPolyline);
             double distance = route['legs'][0]['distance']['value'].toDouble();
             int duration = route['legs'][0]['duration']['value'];
+            if (isSegmentDistanceAdded) {
+              distanceOfSegments.add({markers[i].title: distance.toString()});
+            }
+            isSegmentDistanceAdded = false;
             segmentRoutes.add(RouteSegment(
               points: polylinePoints,
               distance: distance,

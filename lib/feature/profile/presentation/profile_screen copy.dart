@@ -7,7 +7,6 @@ import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:coyotex/feature/auth/screens/weather_prefrences.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
-import 'package:coyotex/feature/map/view_model/map_provider%20copy.dart';
 import 'package:coyotex/feature/profile/presentation/FAQ_screen.dart';
 import 'package:coyotex/feature/profile/presentation/change_password.dart';
 import 'package:coyotex/feature/profile/presentation/edit_profile.dart';

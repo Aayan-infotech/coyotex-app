@@ -2,7 +2,6 @@ import 'package:coyotex/feature/homeScreen/screens/pages/home_page.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/map.dart';
 import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
-import 'package:coyotex/feature/map/view_model/map_provider%20copy.dart';
 import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:coyotex/feature/profile/presentation/profile_screen.dart';
 import 'package:flutter/material.dart';
@@ -14,22 +13,29 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Track the index of the selected tab
   int _selectedIndex = 0;
-  List<TripModel> trips = [];
+  late Key _mapKey; // Key to force rebuild MapScreen
+
   @override
   void initState() {
     super.initState();
+    _mapKey = UniqueKey(); // Initialize key
   }
 
-  final List<Widget> _pages = [
-    HomePage(),
-    MapScreen(),
-    TripsHistoryScreen(),
-    ProfileScreen(),
-  ];
+  List<Widget> get _pages => [
+        HomePage(),
+        MapScreen(key: _mapKey), // Use the key here
+        TripsHistoryScreen(),
+        ProfileScreen(),
+      ];
 
   void _onItemTapped(int index) {
+    if (index == 1) {
+      // Check if Map tab is selected
+      setState(() {
+        _mapKey = UniqueKey(); // Generate new key to rebuild MapScreen
+      });
+    }
     setState(() {
       _selectedIndex = index;
     });
@@ -69,10 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.search),
               label: 'Search',
             ),
-            // BottomNavigationBarItem(
-            //   icon: Icon(Icons.notifications),
-            //   label: 'Notification',
-            // ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person),
               label: 'Profile',

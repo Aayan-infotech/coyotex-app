@@ -18,6 +18,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final ScrollController _scrollController = ScrollController();
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -32,6 +33,11 @@ class _HomePageState extends State<HomePage> {
     mapProvider.getCurrentLocation();
     mapProvider.getTrips();
     NotificationService.getDeviceToken();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _scrollController.jumpTo(_scrollController.position.minScrollExtent);
+      }
+    });
   }
 
   @override
@@ -186,10 +192,13 @@ class _HomePageState extends State<HomePage> {
                       SizedBox(
                         height: 200,
                         child: ListView.builder(
+                          reverse: false,
+                          controller: _scrollController,
                           scrollDirection: Axis.horizontal,
                           itemCount: mapProvider.trips.length,
                           itemBuilder: (context, index) {
-                            final trip = mapProvider.trips[index];
+                            final trip = mapProvider
+                                .trips[mapProvider.trips.length - 1 - index];
                             return GestureDetector(
                               onTap: () {
                                 final mapProvider = Provider.of<MapProvider>(
