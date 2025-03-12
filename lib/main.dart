@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 Future<void> _firebaseMessginBackgroundHandler(RemoteMessage event) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,23 @@ Future<void> _firebaseMessginBackgroundHandler(RemoteMessage event) async {
   debugPrint("background-------");
 }
 
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+
+//   await Firebase.initializeApp(
+//     options: DefaultFirebaseOptions.currentPlatform,
+//   );
+//   Stripe.publishableKey = publishableKey;
+
+//   final RemoteMessage? message =
+//       await FirebaseMessaging.instance.getInitialMessage();
+//   FirebaseMessaging.onBackgroundMessage(_firebaseMessginBackgroundHandler);
+
+//   runApp(MyApp(
+//     message: message,
+//   ));
+// }
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -31,6 +49,12 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   Stripe.publishableKey = publishableKey;
+
+  // Disable landscape mode
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   final RemoteMessage? message =
       await FirebaseMessaging.instance.getInitialMessage();

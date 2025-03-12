@@ -100,6 +100,7 @@ class MarkerData {
   int wind_degree;
   String wind_direction;
   List<dynamic>? media;
+  double temperature;
 
   MarkerData(
       {required this.id,
@@ -113,10 +114,12 @@ class MarkerData {
       required this.animalSeen,
       required this.wind_degree,
       required this.wind_direction,
+      this.temperature=0.0,
       this.media});
 
   factory MarkerData.fromJson(Map<String, dynamic> json) {
     return MarkerData(
+      temperature: json["tem"]??0.0,
         animalKilled: json["animalKilled"] ?? '0',
         animalSeen: json["animalSeen"] ?? '0',
         wind_degree: 0, //json["wind_degree"] ?? '',

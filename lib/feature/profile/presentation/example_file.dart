@@ -395,7 +395,7 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<List<RouteModel>> _fetchRoutes(
       LatLng origin, LatLng destination) async {
-    const apiKey = 'AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s';
+    const apiKey = 'AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc';
     final url = Uri.parse(
       'https://maps.googleapis.com/maps/api/directions/json?'
       'origin=${origin.latitude},${origin.longitude}&'

@@ -190,6 +190,8 @@ class NotificationService {
 
       // Fetch the FCM token
       String? token = await messaging.getToken();
+      print("token");
+      print(token);
       if (token != null) {
         var response = await LoginAPIs().updateUserFCM(token);
         print(response);

@@ -413,7 +413,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           context,
           "Media uploaded successfully",
           () {
-            setState(() => _isUploading = false);
+            // setState(() => _isUploading = false);
             Navigator.of(context).pop(true);
             Navigator.of(context).pop(true);
           },
@@ -440,7 +440,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+   //s _controller?.dispose();
     super.dispose();
   }
 

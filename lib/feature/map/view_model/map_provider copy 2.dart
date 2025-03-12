@@ -93,7 +93,7 @@ class MapProvider with ChangeNotifier {
   String selectedWindDirection = 'North';
   List<Map<String, dynamic>> routeDetails = [];
   final String sessionToken = const Uuid().v4();
-  var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
+  var kGoogleApiKey = "AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
   String markerId = '';
   List<dynamic> startSuggestions = [];
   List<dynamic> destinationSuggestions = [];
@@ -116,7 +116,7 @@ class MapProvider with ChangeNotifier {
   bool isRestart = false;
   TripAPIs _tripAPIs = TripAPIs();
   late WeatherResponse weather = defaultWeatherResponse;
-  final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
+  final String apiKey = "AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
   int totalTime = 0;
   String totalTravelTime = "";
   String totalStopTime = "";

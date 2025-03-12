@@ -25,7 +25,9 @@ import 'package:permission_handler/permission_handler.dart';
 
 class MapScreen extends StatefulWidget {
   bool? isRestart;
-  MapScreen({this.isRestart = false, Key? key}) : super(key: key);
+  GoogleMapController? googleMapController;
+  MapScreen({this.googleMapController, this.isRestart = false, Key? key})
+      : super(key: key);
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -133,8 +135,8 @@ class _MapScreenState extends State<MapScreen> {
       backgroundColor: Colors.white,
       builder: (context) {
         return DistanceDialogue(
-          isLocation: isLocation,
-          mapProvider: provider,
+          // isLocation: isLocation,
+          markers: provider.markers,
         );
       },
     );
@@ -222,7 +224,8 @@ class _MapScreenState extends State<MapScreen> {
                                 compassEnabled: true,
                                 onCameraMove: (position) =>
                                     provider.onCameraMove(position),
-                                myLocationButtonEnabled: false,
+                                myLocationButtonEnabled:
+                                    provider.isTripStart ? true : false,
                                 buildingsEnabled: true,
                                 mapToolbarEnabled: false,
                                 fortyFiveDegreeImageryEnabled: false,
@@ -236,41 +239,45 @@ class _MapScreenState extends State<MapScreen> {
                                 zoomGesturesEnabled: true,
                                 onMapCreated: (controller) {
                                   provider.mapController = controller;
+                                  // if (widget.isRestart == true) {
+                                  //   provider.mapController =
+                                  //       widget.googleMapController;
+                                  // } else {
+
+                                  // }
                                   provider.setMarkersWithOnTap(context);
                                 },
                               ),
-                              if (provider.isTripStart)
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 30, right: 10),
-                                  child: Align(
-                                    alignment: Alignment.topRight,
-                                    child: FloatingActionButton(
-                                      backgroundColor: Colors.white,
-                                      onPressed: () async {
-                                        final position =
-                                            await Provider.of<MapProvider>(
-                                                    context,
-                                                    listen: false)
-                                                .getCurrentLocation();
-                                        if (position != null) {
-                                          provider.mapController?.animateCamera(
-                                            CameraUpdate.newCameraPosition(
-                                              CameraPosition(
-                                                target: LatLng(
-                                                    position.latitude,
-                                                    position.longitude),
-                                                zoom: 14,
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: const Icon(Icons.my_location,
-                                          color: Colors.blue),
-                                    ),
-                                  ),
-                                ),
+                              //  if (provider.isTripStart)
+                              // Padding(
+                              //   padding:
+                              //       const EdgeInsets.only(top: 80, right: 10),
+                              //   child: Align(
+                              //     alignment: Alignment.topRight,
+                              //     child: FloatingActionButton(
+                              //       backgroundColor: Colors.white,
+                              //       onPressed: () async {
+                              //         final position =
+                              //             await Provider.of<MapProvider>(
+                              //                     context,
+                              //                     listen: false)
+                              //                 .getCurrentLocation(
+                              //                     isCurrentLocation: true);
+                              //         provider.mapController?.animateCamera(
+                              //           CameraUpdate.newCameraPosition(
+                              //             CameraPosition(
+                              //               target: LatLng(position.latitude,
+                              //                   position.longitude),
+                              //               zoom: 14,
+                              //             ),
+                              //           ),
+                              //         );
+                              //       },
+                              //       child: const Icon(Icons.my_location,
+                              //           color: Colors.blue),
+                              //     ),
+                              //   ),
+                              // ),
                             ],
                           ),
                         ),
@@ -840,19 +847,19 @@ class _MapScreenState extends State<MapScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          Row(
+                            children: [
+                              Text(
+                                "${provider.weather.main.temp}\u00B0",
+                                style: TextStyle(fontSize: 22),
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                  "(${provider.weather.weather.first.description})"),
+                            ],
+                          ),
                           SizedBox(
-                            width: 200,
-                            child: Row(
-                              children: [
-                                Text(
-                                  "${provider.weather.main.temp}\u00B0",
-                                  style: TextStyle(fontSize: 22),
-                                ),
-                                SizedBox(width: 5),
-                                Text(
-                                    "(${provider.weather.weather.first.description})"),
-                              ],
-                            ),
+                            width: 60,
                           ),
                           GestureDetector(
                             onTap: () {

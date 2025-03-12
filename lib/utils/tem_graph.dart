@@ -2,52 +2,65 @@ import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:flutter/material.dart';
 import 'package:high_chart/high_chart.dart';
 
-final List<String> _windDirections = [
-  "North",
-  "South",
-  "East",
-  "West",
-  "Northeast",
-  "Northwest",
-  "Southeast",
-  "Southwest"
-];
-
-class WindDirectionChart extends StatelessWidget {
+class TemperatureChart extends StatelessWidget {
   final List<MarkerData> markers;
 
-  const WindDirectionChart({super.key, required this.markers});
+  TemperatureChart({super.key, required this.markers});
+
+  // Define fixed temperature ranges
+  final List<String> temperatureRanges = [
+    "-20 to -10",
+    "-10 to 0",
+    "0 to 10",
+    "10 to 20",
+    "20 to 30",
+    "30 to 40",
+    "40+"
+  ];
+
+  // Function to get the range a temperature falls into
+  String getTemperatureRange(double temperature) {
+    if (temperature < -10) return "-20 to -10";
+    if (temperature < 0) return "-10 to 0";
+    if (temperature < 10) return "0 to 10";
+    if (temperature < 20) return "10 to 20";
+    if (temperature < 30) return "20 to 30";
+    if (temperature < 40) return "30 to 40";
+    return "40+";
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Initialize maps with all wind directions
-    final killedByWind = Map<String, double>.fromIterable(
-      _windDirections,
-      key: (dir) => dir,
+    // Initialize maps with all temperature ranges
+    final killedByTemp = Map<String, double>.fromIterable(
+      temperatureRanges,
+      key: (range) => range,
       value: (_) => 0.0,
     );
-    final seenByWind = Map<String, double>.fromIterable(
-      _windDirections,
-      key: (dir) => dir,
+    final seenByTemp = Map<String, double>.fromIterable(
+      temperatureRanges,
+      key: (range) => range,
       value: (_) => 0.0,
     );
 
-    // Aggregate data
+    // Aggregate data based on temperature ranges
     for (final marker in markers) {
-      final dir = marker.wind_direction;
-      if (killedByWind.containsKey(dir)) {
-        killedByWind[dir] =
-            killedByWind[dir]! + double.parse(marker.animalKilled);
+      String range = getTemperatureRange(marker.temperature);
+
+      if (killedByTemp.containsKey(range)) {
+        killedByTemp[range] =
+            killedByTemp[range]! + double.parse(marker.animalKilled);
       }
-      if (seenByWind.containsKey(dir)) {
-        seenByWind[dir] = seenByWind[dir]! + double.parse(marker.animalSeen);
+      if (seenByTemp.containsKey(range)) {
+        seenByTemp[range] =
+            seenByTemp[range]! + double.parse(marker.animalSeen);
       }
     }
 
     // Convert to JavaScript-compatible format
-    final jsCategories = _windDirections.map((d) => "'$d'").join(',');
-    final killedData = _windDirections.map((d) => killedByWind[d]).join(',');
-    final seenData = _windDirections.map((d) => seenByWind[d]).join(',');
+    final jsCategories = temperatureRanges.map((t) => "'$t'").join(',');
+    final killedData = temperatureRanges.map((t) => killedByTemp[t]).join(',');
+    final seenData = temperatureRanges.map((t) => seenByTemp[t]).join(',');
 
     final chartData = '''
     {
@@ -56,7 +69,7 @@ class WindDirectionChart extends StatelessWidget {
         backgroundColor: 'transparent'
       },
       title: {
-        text: 'Animal Activity by Wind Direction',
+        text: 'Animal Activity by Temperature Range',
         style: {
           color: '#ffffff'
         }
@@ -64,7 +77,7 @@ class WindDirectionChart extends StatelessWidget {
       xAxis: {
         categories: [$jsCategories],
         title: {
-          text: 'Wind Direction',
+          text: 'Temperature Range (°C)',
           style: {
             color: '#ffffff'
           }
@@ -107,11 +120,11 @@ class WindDirectionChart extends StatelessWidget {
       series: [{
         name: 'Killed',
         data: [$killedData],
-        color: '#FF0000' // Explicit red for killed
+        color: '#FF0000' // Explicitly setting red for killed
       }, {
         name: 'Seen',
         data: [$seenData],
-        color: '#00FF00' // Explicit green for seen
+        color: '#00FF00' // Explicitly setting green for seen
       }]
     }
     ''';

@@ -8,6 +8,7 @@ import 'package:coyotex/feature/trip/presentation/trip_media_screen.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:coyotex/utils/graph.dart';
 import 'package:coyotex/utils/pdf_view.dart';
+import 'package:coyotex/utils/tem_graph.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -221,6 +222,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                     await mapProvider.fetchRouteWithWaypoints(
                       tripModel.routePoints,
                     );
+
                     setState(() {
                       isLoading = false;
                     });
@@ -228,6 +230,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                         .push(MaterialPageRoute(builder: (context) {
                       return MapScreen(
                         isRestart: true,
+                        googleMapController: mapProvider.mapController,
                       );
                     }));
                   })
@@ -493,11 +496,10 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                           fontSize: 18,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      // In your TripDetailsScreen build method, replace:
-
-// With:
+                      const SizedBox(height: 30),
                       WindDirectionChart(markers: widget.tripModel.markers),
+                      const SizedBox(height: 30),
+                      TemperatureChart(markers: widget.tripModel.markers),
                     ],
                   ),
                 ),

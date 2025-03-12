@@ -26,6 +26,7 @@ class TripViewModel extends ChangeNotifier {
       lstMarker = (response.data["markers"] as List)
           .map((item) => MarkerData.fromJson(item))
           .toList();
+    
     } else {
       lstMarker = [];
     }
