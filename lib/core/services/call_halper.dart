@@ -53,6 +53,7 @@ class CallHelper {
     return _performRequest(() async {
       Uri uri =
           Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
+          print(uri);
       final response = await http
           .get(uri, headers: await getHeaders())
           .timeout(Duration(seconds: timeoutInSeconds));

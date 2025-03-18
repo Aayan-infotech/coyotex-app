@@ -1,7 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
+import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
 import 'package:coyotex/feature/trip/presentation/trip_details.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
+import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -13,12 +16,27 @@ class TripsHistoryScreen extends StatefulWidget {
 
 class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
   int selectedTab = 0;
+  TextEditingController searchController = TextEditingController();
+  String searchQuery = "";
+  List<TripModel> trips = [];
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MapProvider>(
-      builder: (context, mapProvider, child) {
-        List<TripModel> trips = _filterTripsByDate(mapProvider.trips);
+    return Consumer2<MapProvider, TripViewModel>(
+      // Listen to both MapProvider and TripViewModel
+      builder: (context, mapProvider, tripViewModel, child) {
+        // Call the search method when the search query changes
+        if (searchQuery.isNotEmpty) {
+          _searchTrips(tripViewModel, searchQuery);
+        } else {
+          trips = _filterTripsByDate(mapProvider.trips);
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -31,6 +49,67 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                   TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
             ),
             centerTitle: true,
+            actions: [
+              GestureDetector(
+                  onTap: () {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (context) {
+                      return const NotificationScreen();
+                    }));
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.only(right: 10),
+                    child: Icon(
+                      Icons.notifications,
+                      color: Colors.red,
+                      size: 25,
+                    ),
+                  )),
+            ],
+            bottom: PreferredSize(
+              preferredSize: Size.fromHeight(60),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search trips...',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                    prefixIcon: Icon(Icons.search, color: Colors.white70),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.clear, color: Colors.white70),
+                      onPressed: () {
+                        setState(() {
+                          searchController.clear();
+                          searchQuery = "";
+                        });
+                      },
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[850],
+                  ),
+                  style: TextStyle(color: Colors.white),
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+            ),
           ),
           body: Container(
             color: Colors.black,
@@ -39,7 +118,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               children: [
                 SizedBox(height: 8),
                 const Text(
-                  'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
+                  'Stay on top of your hunting adventures with our all-in-one tracking app!',
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
@@ -64,9 +143,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                           mapProvider.selectedTripModel = trip;
                           Navigator.of(context)
                               .push(MaterialPageRoute(builder: (context) {
-                            return TripDetailsScreen(
-                              tripModel: trip,
-                            );
+                            return TripDetailsScreen(tripModel: trip);
                           }));
                         },
                         child: _buildTripCard(trip),
@@ -80,6 +157,24 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
         );
       },
     );
+  }
+
+  // This method will fetch the trips from the server based on the search query.
+  Future<void> _searchTrips(TripViewModel tripViewModel, String query) async {
+    var response = await tripViewModel.searchTrip(
+        query, 1, 20); // Example with page 1 and limit 20
+    if (response.success && response.data != null) {
+      setState(() {
+        trips = response.data!.values
+            .toList()
+            .map((e) => TripModel.fromJson(e))
+            .toList();
+      });
+    } else {
+      setState(() {
+        trips = [];
+      });
+    }
   }
 
   Widget _buildTabBar() {
@@ -145,8 +240,6 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
     }).toList();
   }
 
-// import 'package:cached_network_image/cached_network_image.dart';
-
   Widget _buildTripCard(TripModel trip) {
     return Container(
       decoration: BoxDecoration(
@@ -158,7 +251,16 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: CachedNetworkImage(
-              imageUrl: trip.images.isNotEmpty ? trip.images.first : '',
+              //imageUrl: trip.images.isNotEmpty ? trip.images.first : '',
+              imageUrl: (trip.markers.isNotEmpty &&
+                      trip.markers.first.media != null &&
+                      trip.markers.first.media!.isNotEmpty)
+                  ? trip.markers.first.media!.firstWhere(
+                      (media) => media.isNotEmpty && !checkIfVideo(media),
+                      orElse: () =>
+                          '', // Return an empty string if no valid image is found
+                    )
+                  : '',
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:convert';
-// import 'dart:ffi';
 import 'dart:math';
+import 'dart:typed_data';
+import 'package:coyotex/core/services/model/notification_model.dart';
 import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
@@ -9,8 +11,10 @@ import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/presentation/marker_details_bottom_sheet.dart';
 import 'package:coyotex/feature/map/presentation/start_trip_bootom_sheat.dart';
+import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -19,8 +23,59 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import '../data/trip_model.dart';
 import 'package:flutter/widgets.dart';
+import 'dart:ui' as ui;
 
 import 'package:geocoding/geocoding.dart';
+
+class RouteSegment {
+  final List<LatLng> points;
+  final double distance;
+  final int duration;
+  final String summary;
+
+  RouteSegment({
+    required this.points,
+    required this.distance,
+    required this.duration,
+    required this.summary,
+  });
+}
+
+List<Map<String, dynamic>> _combineRouteSegments(
+    List<List<RouteSegment>> allSegments) {
+  List<Map<String, dynamic>> combinedRoutes = [];
+  if (allSegments.isEmpty) return combinedRoutes;
+
+  // Initialize with the first segment's routes
+  for (var segment in allSegments.first) {
+    combinedRoutes.add({
+      'polyPoints': List<LatLng>.from(segment.points),
+      'distance': segment.distance,
+      'duration': segment.duration,
+      'summary': segment.summary,
+    });
+  }
+
+  // Iterate through remaining segments and combine
+  for (int i = 1; i < allSegments.length; i++) {
+    List<Map<String, dynamic>> temp = [];
+    for (var route in combinedRoutes) {
+      for (var segment in allSegments[i]) {
+        List<LatLng> combinedPoints = List.from(route['polyPoints'])
+          ..addAll(segment.points);
+        temp.add({
+          'polyPoints': combinedPoints,
+          'distance': route['distance'] + segment.distance,
+          'duration': route['duration'] + segment.duration,
+          'summary': '${route['summary']} → ${segment.summary}',
+        });
+      }
+    }
+    combinedRoutes = temp;
+  }
+
+  return combinedRoutes;
+}
 
 class MapProvider with ChangeNotifier {
   final TextEditingController startController = TextEditingController();
@@ -38,9 +93,8 @@ class MapProvider with ChangeNotifier {
   bool providerLetsHuntButton = false;
   String selectedWindDirection = 'North';
   List<Map<String, dynamic>> routeDetails = [];
-
   final String sessionToken = const Uuid().v4();
-  var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
+  var kGoogleApiKey = "AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
   String markerId = '';
   List<dynamic> startSuggestions = [];
   List<dynamic> destinationSuggestions = [];
@@ -60,14 +114,17 @@ class MapProvider with ChangeNotifier {
   bool isKeyDataPoint = false;
   bool isStartSuggestions = false;
   double speed = 45;
-
-  late BitmapDescriptor _markerIcon;
+  bool isRestart = false;
   TripAPIs _tripAPIs = TripAPIs();
   late WeatherResponse weather = defaultWeatherResponse;
-  final String apiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
+  final String apiKey = "AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
   int totalTime = 0;
   String totalTravelTime = "";
   String totalStopTime = "";
+  Marker currentLocationMarker = const Marker(
+    markerId: MarkerId("currentLocation"),
+  );
+  MarkerData? selectedOldMarker;
   getTrips() async {
     isLoading = true;
     notifyListeners();
@@ -76,6 +133,7 @@ class MapProvider with ChangeNotifier {
       trips = (response.data["data"] as List).map((item) {
         return TripModel.fromJson(item);
       }).toList();
+      print(trips);
     }
     notifyListeners();
     isLoading = false;
@@ -84,8 +142,14 @@ class MapProvider with ChangeNotifier {
   void updateCameraPosition(LatLng newPosition) {
     if (mapController == null) return;
 
+    final CameraPosition newCameraPosition = CameraPosition(
+      bearing: 90, // 90 degree rotation (east direction)
+      target: newPosition,
+      zoom: 10,
+      tilt: 0, // Optional: Set to 30-45 if you want 3D tilt
+    );
     mapController!.animateCamera(
-      CameraUpdate.newLatLngZoom(newPosition, 10),
+      CameraUpdate.newCameraPosition(newCameraPosition),
     );
 
     mapController!.animateCamera(CameraUpdate.scrollBy(24, 80));
@@ -93,8 +157,20 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void updateMapMarkers(List<MarkerData> markers) {
+    mapMarkers.clear();
+    for (var item in markers) {
+      mapMarkers.add(Marker(
+        markerId: MarkerId(item.id),
+        position: item.position,
+        infoWindow: InfoWindow(title: item.title, snippet: item.snippet),
+      ));
+    }
+    notifyListeners();
+  }
+
   Future<bool> showDurationPicker(BuildContext context,
-      {bool isStop = false}) async {
+      {bool isStop = false, Marker? marker}) async {
     bool? result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -105,137 +181,42 @@ class MapProvider with ChangeNotifier {
     return result ?? false;
   }
 
-  //  Future<bool> showDurationPicker(BuildContext context,
-  //     {bool isStop = false}) async {
-  //   TextEditingController minuteController = TextEditingController();
-  //   // String? selectedWindDirection;
-  //   List<String> windDirections = [
-  //     "North",
-  //     "South",
-  //     "East",
-  //     "West",
-  //     "Northeast",
-  //     "Northwest",
-  //     "Southeast",
-  //     "Southwest"
-  //   ];
-
-  //   bool isDurationSet = await showDialog<bool>(
-  //         context: context,
-  //         builder: (BuildContext context) {
-  //           return AlertDialog(
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(16.0),
-  //             ),
-  //             elevation: 8.0,
-  //             backgroundColor: Colors.white,
-  //             title: const Center(
-  //               child: Text(
-  //                 "Set Duration",
-  //                 style: TextStyle(
-  //                   fontSize: 22,
-  //                   fontWeight: FontWeight.bold,
-  //                   color: Colors.blueGrey,
-  //                 ),
-  //               ),
-  //             ),
-  //             content: Column(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children: [
-  //                 TextField(
-  //                   controller: minuteController,
-  //                   keyboardType: TextInputType.number,
-  //                   decoration: InputDecoration(
-  //                     labelText: "Enter time in minutes",
-  //                     labelStyle: TextStyle(color: Colors.blueGrey[600]),
-  //                     hintText: "e.g., 30",
-  //                     hintStyle: TextStyle(color: Colors.grey[400]),
-  //                     border: OutlineInputBorder(
-  //                       borderRadius: BorderRadius.circular(12.0),
-  //                       borderSide: const BorderSide(color: Colors.blueGrey),
-  //                     ),
-  //                     focusedBorder: OutlineInputBorder(
-  //                       borderRadius: BorderRadius.circular(12.0),
-  //                       borderSide: const BorderSide(
-  //                           color: Colors.blueAccent, width: 2.0),
-  //                     ),
-  //                     filled: true,
-  //                     fillColor: Colors.blueGrey[50],
-  //                   ),
-  //                   style:
-  //                       const TextStyle(color: Colors.blueGrey, fontSize: 16),
-  //                 ),
-  //                 const SizedBox(height: 20),
-  //                 DropdownButtonFormField<String>(
-  //                   decoration: InputDecoration(
-  //                     labelText: "Select Wind Direction",
-  //                     border: OutlineInputBorder(
-  //                       borderRadius: BorderRadius.circular(12.0),
-  //                     ),
-  //                   ),
-  //                   value: selectedWindDirection,
-  //                   items: windDirections.map((String direction) {
-  //                     return DropdownMenuItem<String>(
-  //                       value: direction,
-  //                       child: Text(direction),
-  //                     );
-  //                   }).toList(),
-  //                   onChanged: (String? newValue) {
-  //                     selectedWindDirection = newValue!;
-  //                   },
-  //                 ),
-  //               ],
-  //             ),
-  //             actions: [
-  //               TextButton(
-  //                 onPressed: () {
-  //                   Navigator.of(context).pop(false);
-  //                 },
-  //                 child: const Text(
-  //                   "Cancel",
-  //                   style: TextStyle(
-  //                     color: Colors.redAccent,
-  //                     fontSize: 16,
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //               ),
-  //               ElevatedButton(
-  //                 onPressed: () async {
-  //                   if (minuteController.text.isNotEmpty &&
-  //                       selectedWindDirection != null) {
-  //                     int minutes = int.parse(minuteController.text);
-  //                     await setTimeDuration(minutes, isStop: isStop);
-  //                     Navigator.of(context).pop(true);
-  //                   } else {
-  //                     Navigator.of(context).pop(false);
-  //                   }
-  //                 },
-  //                 style: ElevatedButton.styleFrom(
-  //                   backgroundColor: Colors.blueAccent,
-  //                   shape: RoundedRectangleBorder(
-  //                     borderRadius: BorderRadius.circular(12.0),
-  //                   ),
-  //                   padding: const EdgeInsets.symmetric(
-  //                       horizontal: 24, vertical: 12),
-  //                 ),
-  //                 child: const Text(
-  //                   "Set",
-  //                   style: TextStyle(
-  //                     color: Colors.white,
-  //                     fontSize: 16,
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //               ),
-  //             ],
-  //           );
-  //         },
-  //       ) ??
-  //       false;
-
-  //   return isDurationSet;
+  // void setMarkersWithOnTap(BuildContext context) {
+  //   mapMarkers = mapMarkers.map((marker) {
+  //     return marker.copyWith(
+  //       onTapParam: () {
+  //         showDurationPicker(context, marker: marker);
+  //       },
+  //     );
+  //   }).toSet();
+  //   notifyListeners();
   // }
+  void setMarkersWithOnTap(BuildContext context) {
+    mapMarkers = mapMarkers.map((marker) {
+      return marker.copyWith(
+        onTapParam: () {
+          _showMarkerDialog(context, marker);
+        },
+      );
+    }).toSet();
+    notifyListeners();
+  }
+
+  void _showMarkerDialog(BuildContext context, Marker marker) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Marker Tapped'),
+        content: Text('Marker ID: ${marker.markerId.value}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> getWeather(LatLng latAndLng) async {
     isLoading = true;
@@ -245,16 +226,14 @@ class MapProvider with ChangeNotifier {
     isLoading = false;
   }
 
-  Future<void> getCurrentLocation() async {
+  Future<Position> getCurrentLocation() async {
     isLoading = true;
     try {
-      // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw Exception('Location services are disabled.');
       }
 
-      // Check and request location permission
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -267,33 +246,44 @@ class MapProvider with ChangeNotifier {
         throw Exception('Location permissions are permanently denied.');
       }
 
-      // Get the current position
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // Update initial position with the retrieved coordinates
       initialPosition = LatLng(position.latitude, position.longitude);
       await getWeather(initialPosition);
       isLoading = false;
-
       notifyListeners();
+
+      return position;
     } catch (e) {
+      return Position(
+          longitude: 23,
+          latitude: 23,
+          timestamp: DateTime.now(),
+          accuracy: 3,
+          altitude: 1,
+          altitudeAccuracy: 2,
+          heading: 2,
+          headingAccuracy: 3,
+          speed: speed,
+          speedAccuracy: 3);
       debugPrint("Error getting current location: $e");
     }
   }
 
-  /// Load custom live location icon
-  void loadCustomLiveLocationIcon() async {
-    _markerIcon = await BitmapDescriptor.fromAssetImage(
-      const ImageConfiguration(size: Size(100, 100)),
-      'assets/images/marker_icon.png',
-    );
+  LatLng currentCameraTarget = LatLng(28.00, 28.00);
+  double currentZoom = 12;
+
+  void onCameraMove(CameraPosition position) {
+    currentCameraTarget = position.target;
+    currentZoom = position.zoom;
+    notifyListeners();
   }
 
-  String convertMinutesToHours({bool isTotal = true, bool}) {
+  String convertMinutesToHours(double distance, {bool isTotal = true, bool}) {
     double minutes = isTotal
-        ? (totalTime + ((distance) / speed) * 60)
+        ? (totalTime + ((distance / 1000) / speed) * 60)
         : ((distance) / speed) * 60;
 
     int hours = minutes ~/ 60;
@@ -318,17 +308,153 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  bool isNotificationSend = true;
+
+  int currentMarkerIndex = 0;
+  bool hasSentArrivalNotification = false;
+  bool isAtStop = false;
+  Timer? stayTimer;
+  static const double arrivalThreshold = 50; // meters
+  StreamSubscription<Position>? positionStream;
+  String formattedDistance = '';
+  List<LatLng> routePolylinePoints = [];
+  List<double> cumulativeDistances = [];
+  int lastClosestPointIndex = 0;
+  double totalRouteDistance = 0.0;
+  List<double> _computeCumulativeDistances(List<LatLng> points) {
+    List<double> distances = [0.0];
+    for (int i = 1; i < points.length; i++) {
+      double dist = _coordinateDistance(
+        points[i - 1].latitude,
+        points[i - 1].longitude,
+        points[i].latitude,
+        points[i].longitude,
+      );
+      distances.add(distances.last + dist);
+    }
+    return distances;
+  }
+
+  double _coordinateDistance(
+      double lat1, double lon1, double lat2, double lon2) {
+    const p = 0.017453292519943295;
+    final a = 0.5 -
+        cos((lat2 - lat1) * p) / 2 +
+        cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2;
+    return 12742 * asin(sqrt(a)) * 1000; // Return distance in meters
+  }
+
+  int selectedRouteIndex = 0;
+  List<Map<String, dynamic>> routeList = [];
+
+  int shortestRouteIndex = 0;
+  bool showAllRoutes = true;
+
+  void selectRoute(int index) {
+    selectedRouteIndex = index;
+    showAllRoutes = false;
+    routePolylinePoints = routeList[index]['polyPoints'];
+    cumulativeDistances = _computeCumulativeDistances(routePolylinePoints);
+    totalRouteDistance = cumulativeDistances.last;
+    distance = totalRouteDistance;
+    _updatePolylines();
+    convertMinutesToHours(distance);
+    notifyListeners();
+  }
+
+  String formatDistance(double meters, BuildContext context) {
+    final userProvider = Provider.of<UserViewModel>(context, listen: false);
+
+    if (userProvider.user.userUnit == "Miles") {
+      if (meters < 1609.34) {
+        // Less than 1 mile
+        return '${(meters / 1609.34).toStringAsFixed(1)} mi';
+      }
+      final miles = meters / 1609.34;
+      return '${miles.toStringAsFixed(2)} mi';
+    } else {
+      // Kilometers
+      if (meters < 1000) {
+        return '${meters.toStringAsFixed(2)} m';
+      }
+      final km = meters / 1000;
+      return '${km.toStringAsFixed(2)} km';
+    }
+  }
+
+  int _findClosestPointIndex(LatLng currentPosition) {
+    // Start searching from last known position for efficiency
+    int startIndex = max(0, lastClosestPointIndex - 10);
+    double minDistance = double.infinity;
+    int closestIndex = startIndex;
+
+    for (int i = startIndex; i < routePolylinePoints.length; i++) {
+      final point = routePolylinePoints[i];
+      final distance = Geolocator.distanceBetween(
+        currentPosition.latitude,
+        currentPosition.longitude,
+        point.latitude,
+        point.longitude,
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = i;
+      }
+      // Early exit if moving away from route
+      if (i > startIndex + 20 && distance > minDistance * 2) break;
+    }
+
+    lastClosestPointIndex = closestIndex;
+    return closestIndex;
+  }
+
+  Stream<LatLng>? locationStream;
+
+  double _calculate5MinuteDistance(double? speed) {
+    final metersPerMinute = (speed ?? 1.0) * 60; // Convert m/s to m/min
+    return metersPerMinute * 5;
+  }
+
+  Future<void> initLocationStream() async {
+    LocationPermission permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      return; // Handle permission denial
+    }
+
+    locationStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10, // Update every 10 meters
+      ),
+    ).map((position) => LatLng(position.latitude, position.longitude));
+  }
+
+  Future<WeatherResponse> getCurrentWeather(LatLng latAndLng) async {
+    // isLoading = true;
+    // notifyListeners();
+    var response =
+        await _tripAPIs.getWeather(latAndLng.latitude, latAndLng.longitude);
+    // isLoading = false;
+    // notifyListeners();
+    return WeatherResponse.fromJson(response);
+  }
+
   void letsHunt() async {
     isTripStart = true;
     isSave = false;
     isLoading = true;
     onTapOnMap = false;
+    currentMarkerIndex = 0;
+    hasSentArrivalNotification = false;
+    isAtStop = false;
+    stayTimer?.cancel();
+    stayTimer = null;
 
     notifyListeners();
 
     try {
-      // Request location permissions
-      final user = Provider.of<UserViewModel>(context, listen: false);
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         throw Exception('Location services are disabled.');
@@ -346,48 +472,169 @@ class MapProvider with ChangeNotifier {
         throw Exception('Location permissions are permanently denied.');
       }
 
-      // Get the initial location and fetch the route
       Position initialPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      path.add(LatLng(initialPosition.latitude, initialPosition.longitude));
+      LatLng initialLatLng =
+          LatLng(initialPosition.latitude, initialPosition.longitude);
 
-      // Fetch the route only once
+      if (!_isWithinRadius(initialLatLng, path, 1000)) {
+        path.add(initialLatLng);
+      }
+
       await fetchRouteWithWaypoints(path, isPathShow: true);
-      // updateCameraPosition(LatLng(initialPosition.latitude, initialPosition.longitude));
 
       isLoading = false;
       notifyListeners();
+      formattedDistance = formatDistance(distance, context);
 
-      // Start listening to location updates for the user pointer
-      Geolocator.getPositionStream(
+      positionStream = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 5, // Update only if user moves 5 meters
+          distanceFilter: 5,
         ),
-      ).listen((Position position) {
-        double distanceTravelled = Geolocator.distanceBetween(
-          initialPosition.latitude,
-          initialPosition.longitude,
-          position.latitude,
-          position.longitude,
-        );
-        // print(distanceTravelled);
-        if (user.user.userUnit == "KM") {
-          distance = distance - distanceTravelled / 1000;
-        } else {
-          distance = distance - distanceTravelled / 1609.34;
-        }
+      ).listen((Position position) async {
+        LatLng currentLatLng = LatLng(position.latitude, position.longitude);
 
-        convertMinutesToHours();
+        // if (!_isWithinRadius(currentLatLng, path, 1000)) {
+        //   path.add(currentLatLng);
+        // }
 
-        if (mapController != null) {
-          mapController!.animateCamera(
-            CameraUpdate.newLatLng(
-                LatLng(position.latitude, position.longitude)),
+        // Check if there are markers to process
+        if (!isAtStop &&
+            currentMarkerIndex < selectedTripModel.markers.length) {
+          final currentMarker = selectedTripModel.markers[currentMarkerIndex];
+          double distanceToMarker = Geolocator.distanceBetween(
+            currentLatLng.latitude,
+            currentLatLng.longitude,
+            currentMarker.position.latitude,
+            currentMarker.position.longitude,
           );
+
+          // Check if arrived at the current marker
+          if (distanceToMarker <= arrivalThreshold) {
+            isAtStop = true;
+            hasSentArrivalNotification = false;
+
+            // Send arrival notification
+            final userProvider =
+                Provider.of<UserViewModel>(context, listen: false);
+            userProvider.sendNotifications(
+              "Trip Update",
+              "Arrived at stop ${currentMarkerIndex + 1}",
+              NotificationType.tripUpdate,
+              selectedTripModel.id,
+            );
+
+            // Schedule 2-minute remaining notification
+            int stayDuration = currentMarker.duration;
+            if (stayDuration > 2) {
+              stayTimer = Timer(
+                Duration(minutes: stayDuration - 2),
+                () {
+                  userProvider.sendNotifications(
+                    "Trip Update",
+                    "2 minutes left at stop ${currentMarkerIndex + 1}",
+                    NotificationType.tripUpdate,
+                    selectedTripModel.id,
+                  );
+                },
+              );
+            }
+
+            // Schedule moving to next marker after full duration
+            Timer(
+              Duration(minutes: stayDuration),
+              () {
+                stayTimer?.cancel();
+                currentMarkerIndex++;
+                isAtStop = false;
+                notifyListeners();
+              },
+            );
+            WeatherResponse currentWeather =
+                await getCurrentWeather(currentMarker.position);
+            WeatherMarker _weatherMarker = WeatherMarker(
+                location: Weatherlocation(
+                  timezone: currentWeather.timezone,
+                  name: currentWeather.name,
+                  country: currentWeather.sys.country,
+                  latitude: currentMarker.position.latitude,
+                  longitude: currentMarker.position.longitude,
+                ),
+                weather: WeatherData(
+                    temperature: currentWeather.main.temp,
+                    feelsLike: currentWeather.main.feelsLike,
+                    tempMin: currentWeather.main.tempMin,
+                    tempMax: currentWeather.main.tempMax,
+                    pressure: currentWeather.main.pressure,
+                    humidity: currentWeather.main.humidity,
+                    visibility: currentWeather.visibility,
+                    windSpeed: currentWeather.wind.speed,
+                    windDegree: currentWeather.wind.deg,
+                    windGust: currentWeather.wind.gust,
+                    cloudiness: currentWeather.clouds.all,
+                    weatherMain: currentWeather.weather.first.main,
+                    weatherDescription:
+                        currentWeather.weather.first.description,
+                    weatherIcon: currentWeather.weather.first.icon,
+                    sunrise: currentWeather.sys.sunrise,
+                    sunset: currentWeather.sys.sunset,
+                    recordedAt: currentWeather.timezone));
+            await _tripAPIs.addWeatherMarker(
+                selectedTripModel.id, _weatherMarker);
+          } else {
+            // Calculate ETA if possible
+            double speed = position.speed ?? 0;
+            if (speed > 1) {
+              double etaSeconds = distanceToMarker / speed;
+              if (etaSeconds <= 5 * 60 && !hasSentArrivalNotification) {
+                final userProvider =
+                    Provider.of<UserViewModel>(context, listen: false);
+                userProvider.sendNotifications(
+                  "Trip Update",
+                  "5 minutes until arrival at stop ${currentMarkerIndex + 1}",
+                  NotificationType.tripUpdate,
+                  selectedTripModel.id,
+                );
+                hasSentArrivalNotification = true;
+              }
+            }
+          }
         }
+        final closestIndex = _findClosestPointIndex(currentLatLng);
+        final remainingDistance =
+            cumulativeDistances.last - cumulativeDistances[closestIndex];
+
+        // Update distance and ETA
+        distance = remainingDistance;
+        formattedDistance = formatDistance(remainingDistance, context);
+        convertMinutesToHours(remainingDistance);
+        if (mapController != null) {
+          mapController!.animateCamera(CameraUpdate.newLatLng(currentLatLng));
+        }
+
+        // Marker arrival logic
+        // _handleMarkerArrival(currentLatLng, position.speed);
+
+        notifyListeners();
+        // Existing distance calculation and map update logic
+        // double distanceTravelled = Geolocator.distanceBetween(
+        //   initialPosition.latitude,
+        //   initialPosition.longitude,
+        //   position.latitude,
+        //   position.longitude,
+        // );
+        // distance -= distanceTravelled;
+
+        // if (mapController != null) {
+        //   mapController!.animateCamera(
+        //     CameraUpdate.newLatLng(currentLatLng),
+        //   );
+        // }
+        // formattedDistance = formatDistance(distance, context);
+        // convertMinutesToHours();
 
         // notifyListeners();
       });
@@ -395,6 +642,23 @@ class MapProvider with ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Helper function to check if a LatLng is within a given radius (meters) of any point in a list
+  bool _isWithinRadius(
+      LatLng newPoint, List<LatLng> existingPoints, double radius) {
+    for (LatLng point in existingPoints) {
+      double distance = Geolocator.distanceBetween(
+        newPoint.latitude,
+        newPoint.longitude,
+        point.latitude,
+        point.longitude,
+      );
+      if (distance <= radius) {
+        return true; // Found a point within the radius, so return true
+      }
+    }
+    return false; // No points found within the radius
   }
 
   void addStop() async {
@@ -527,49 +791,54 @@ class MapProvider with ChangeNotifier {
       return;
     }
     String userId = SharedPrefUtil.getValue(userIdPref, "") as String;
-    WeatherMarker _weatherMarker = WeatherMarker(
-        location: Weatherlocation(
-            timezone: weather.timezone,
-            name: weather.name,
-            country: weather.sys.country,
-            latitude: weather.coord.lat,
-            longitude: weather.coord.lon),
-        weather: WeatherData(
-            temperature: weather.main.temp,
-            feelsLike: weather.main.feelsLike,
-            tempMin: weather.main.tempMin,
-            tempMax: weather.main.tempMax,
-            pressure: weather.main.pressure,
-            humidity: weather.main.humidity,
-            visibility: weather.visibility,
-            windSpeed: weather.wind.speed,
-            windDegree: weather.wind.deg,
-            windGust: weather.wind.gust,
-            cloudiness: weather.clouds.all,
-            weatherMain: weather.weather.first.main,
-            weatherDescription: weather.weather.first.description,
-            weatherIcon: weather.weather.first.icon,
-            sunrise: weather.sys.sunrise,
-            sunset: weather.sys.sunset,
-            recordedAt: weather.timezone));
+    // WeatherMarker _weatherMarker = WeatherMarker(
+    //     location: Weatherlocation(
+    //         timezone: weather.timezone,
+    //         name: weather.name,
+    //         country: weather.sys.country,
+    //         latitude: weather.coord.lat,
+    //         longitude: weather.coord.lon),
+    //     weather: WeatherData(
+    //         temperature: weather.main.temp,
+    //         feelsLike: weather.main.feelsLike,
+    //         tempMin: weather.main.tempMin,
+    //         tempMax: weather.main.tempMax,
+    //         pressure: weather.main.pressure,
+    //         humidity: weather.main.humidity,
+    //         visibility: weather.visibility,
+    //         windSpeed: weather.wind.speed,
+    //         windDegree: weather.wind.deg,
+    //         windGust: weather.wind.gust,
+    //         cloudiness: weather.clouds.all,
+    //         weatherMain: weather.weather.first.main,
+    //         weatherDescription: weather.weather.first.description,
+    //         weatherIcon: weather.weather.first.icon,
+    //         sunrise: weather.sys.sunrise,
+    //         sunset: weather.sys.sunset,
+    //         recordedAt: weather.timezone));
 
-    List<WeatherMarker> lstWeatherMarker = [];
+    // List<WeatherMarker> lstWeatherMarker = [];
 
-    lstWeatherMarker.add(_weatherMarker);
+    // lstWeatherMarker.add(_weatherMarker);
     final trip = TripModel(
+        tripStatus: 'created',
         id: const Uuid().v4(),
         animalSeen: 0,
         animalKilled: 0,
         name: 'Trip ${trips.length + 1}',
-        startLocation: startController.text,
-        destination: destinationController.text,
+        startLocation: startController.text.isNotEmpty
+            ? startController.text
+            : "Location 1",
+        destination: destinationController.text.isEmpty
+            ? "Location"
+            : destinationController.text,
         waypoints: destinationControllers.map((c) => c.text).toList(),
         totalDistance: distance,
         createdAt: DateTime.now(),
         routePoints: List.from(points),
         markers: markers,
         images: [],
-        weatherMarkers: lstWeatherMarker,
+        weatherMarkers: [], //lstWeatherMarker,
         userId: userId);
 
     var res = await _tripAPIs.addTrip(trip);
@@ -645,15 +914,6 @@ class MapProvider with ChangeNotifier {
           duration: timeDurations,
           markerType: "inbetween",
         ));
-        // markers.add(Marker(
-        //   markerId: MarkerId(uniqueId),
-        //   // // icon: _markerIcon,
-        //   position: latAndLng,
-        //   infoWindow: InfoWindow(
-        //     title: 'Point ${points.length}',
-        //     snippet: '${latAndLng.latitude}, ${latAndLng.longitude}',
-        //   ),
-        // ));
 
         if (points.isNotEmpty) {
           initialPosition = LatLng(points[0].latitude, points[0].longitude);
@@ -693,7 +953,7 @@ class MapProvider with ChangeNotifier {
     }
 
     if (points.length >= 2) {
-      distance = calculateTotalDistance();
+      // distance = calculateTotalDistance();
       isSave = true;
       isHurryUp = false;
       isKeyDataPoint = false;
@@ -735,21 +995,23 @@ class MapProvider with ChangeNotifier {
     destinationController.clear();
     destinationControllers.clear();
     mapMarkers.clear();
+    markers.clear();
     points.clear();
     path.clear();
-    markers.clear();
     isSavedTrip = false;
     onTapOnMap = false;
     isTripStart = false;
     providerLetsHuntButton = false;
     polylines.clear();
-    markers.clear();
     onTapOnMap = false;
     isSave = false;
     distance = 0.0;
     totalTime = 0;
     destinationCount = 1;
     timeDurations = 0;
+    if (positionStream != null) {
+      positionStream!.cancel();
+    }
     notifyListeners();
   }
 
@@ -795,36 +1057,29 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  int selectedRouteIndex = 0;
-  List<Map<String, dynamic>> routeList = [];
-
-  int shortestRouteIndex = 0;
-  bool showAllRoutes = true;
-  void selectRoute(int index) {
-    selectedRouteIndex = index;
-    showAllRoutes = false;
-    _updatePolylines();
-    notifyListeners();
-  }
-
-  void toggleRouteDisplay() {
+  void toggleRouteDisplay() async {
+    // isLoading = true;
+    // notifyListeners();
     showAllRoutes = !showAllRoutes;
-    _updatePolylines();
+    await _updatePolylines();
+    //s isLoading = false;
     notifyListeners();
   }
 
-  void _updatePolylines() {
+  bool isPolylines = false;
+
+  Future<void> _updatePolylines() async {
     polylines.clear();
 
     if (showAllRoutes) {
       // Draw all routes with appropriate styling
       for (int i = 0; i < routeList.length; i++) {
-        _addRoutePolyline(routeList[i]['polyPoints'], i == selectedRouteIndex,
-            i == shortestRouteIndex);
+        await _addRoutePolyline(routeList[i]['polyPoints'],
+            i == selectedRouteIndex, i == shortestRouteIndex);
       }
     } else {
       // Draw only selected route
-      _addRoutePolyline(
+      await _addRoutePolyline(
           routeList[selectedRouteIndex]['polyPoints'], true, false);
     }
 
@@ -836,8 +1091,8 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  void _addRoutePolyline(
-      List<LatLng> points, bool isSelected, bool isShortest) {
+  Future<void> _addRoutePolyline(
+      List<LatLng> points, bool isSelected, bool isShortest) async {
     if (isSelected) {
       polylines.add(Polyline(
         polylineId: PolylineId('route_selected_border'),
@@ -855,13 +1110,13 @@ class MapProvider with ChangeNotifier {
       polylines.add(Polyline(
         polylineId: PolylineId('route_shortest_border'),
         points: points,
-        color: Colors.green[900]!,
+        color: Colors.blue.withOpacity(0.3),
         width: 10,
       ));
       polylines.add(Polyline(
         polylineId: PolylineId('route_shortest_inner'),
         points: points,
-        color: Colors.green,
+        color: Colors.white,
         width: 6,
       ));
     } else {
@@ -889,112 +1144,77 @@ class MapProvider with ChangeNotifier {
       debugPrint("At least two locations are required.");
       return;
     }
-
-    if (locations.length == 1) {
-      locations.add(locations.first);
-    }
-
+    // if (routeList.isNotEmpty) {
+    //   selectRoute(selectedRouteIndex); // Initialize route data
+    // }
     isLoading = true;
     notifyListeners();
     routeList = [];
 
     try {
       List<String> placeNames = await Future.wait(locations.map(getPlaceName));
+      List<List<RouteSegment>> allSegments = [];
 
-      String origin = placeNames.first;
-      String destination = placeNames.last;
+      // Fetch routes for each segment
+      for (int i = 0; i < locations.length - 1; i++) {
+        String origin = placeNames[i];
+        String destination = placeNames[i + 1];
+        final url = 'https://maps.googleapis.com/maps/api/directions/json?'
+            'origin=$origin&destination=$destination&mode=driving&'
+            'alternatives=true&key=$apiKey';
 
-      String waypoints = placeNames.sublist(1, placeNames.length - 1).join('|');
+        final response = await http.get(Uri.parse(url));
+        final data = jsonDecode(response.body);
 
-      // Fetch routes using Place Names
-      final url =
-          'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&waypoints=optimize:true|&mode=driving&alternatives=true&key=$apiKey';
-
-      final response = await http.get(Uri.parse(url));
-      final data = jsonDecode(response.body);
-
-      if (data['status'] == 'OK') {
-        polylines.clear();
-
-        // Calculate the shortest route
-        int shortestRouteIndex = 0;
-        double shortestDistance = double.infinity;
-
-        for (int i = 0; i < data['routes'].length; i++) {
-          final route = data['routes'][i];
-          final encodedPolyline = route['overview_polyline']['points'];
-          final polylinePoints = _decodePolyline(encodedPolyline);
-          final dis = route['legs'][0]['distance']['value']; // meters
-          final duration = route['legs'][0]['duration']['value'];
-
-          double distance = calculateTotalDistanceForMap(polylinePoints);
-          routeList.add({
-            "polyPoints": polylinePoints,
-            'distance': dis,
-            'duration': duration,
-            'summery': route["summary"]
-          });
-
-          if (distance < shortestDistance) {
-            shortestDistance = distance;
-            shortestRouteIndex = i;
-          }
-        }
-
-        // Assign colors based on the route
-        for (int i = 0; i < data['routes'].length; i++) {
-          final route = data['routes'][i];
-          final encodedPolyline = route['overview_polyline']['points'];
-          final polylinePoints = _decodePolyline(encodedPolyline);
-
-          if (i == shortestRouteIndex) {
-            // Shortest route: dark blue with border
-            polylines.add(Polyline(
-              polylineId: PolylineId('route_${i}_border'),
+        if (data['status'] == 'OK') {
+          List<RouteSegment> segmentRoutes = [];
+          for (var route in data['routes']) {
+            final encodedPolyline = route['overview_polyline']['points'];
+            final polylinePoints = _decodePolyline(encodedPolyline);
+            double distance = route['legs'][0]['distance']['value'].toDouble();
+            int duration = route['legs'][0]['duration']['value'];
+            segmentRoutes.add(RouteSegment(
               points: polylinePoints,
-              color: Colors.blue[900]!, // Dark blue border
-              width: 10, // Thicker for clear effect
-            ));
-            polylines.add(Polyline(
-              polylineId: PolylineId('route_${i}_inner'),
-              points: polylinePoints,
-              color: Colors.blue, // Inner blue for consistency
-              width: 6, // Slightly thinner
-            ));
-          } else {
-            // Other routes: light blue with opacity
-            polylines.add(Polyline(
-              polylineId: PolylineId('route_${i}_border'),
-              points: polylinePoints,
-              color: Colors.blue.withOpacity(0.5), // Light blue border
-              width: 10,
-            ));
-            polylines.add(Polyline(
-              polylineId: PolylineId('route_${i}_inner'),
-              points: polylinePoints,
-              color: Colors.white, // White inner
-              width: 5,
+              distance: distance,
+              duration: duration,
+              summary: route['summary'],
             ));
           }
-
-          debugPrint("Route $i: ${route['summary']}"); // Logs route names
+          allSegments.add(segmentRoutes);
+        } else {
+          debugPrint("Error in segment $i: ${data['status']}");
+          return;
         }
-        selectedRouteIndex = shortestRouteIndex;
-
-// Replace the polyline creation code with:
-        _updatePolylines();
-
-        if (polylines.isNotEmpty && mapController != null) {
-          LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
-          mapController
-              ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-        }
-        if (isPathShow) showRoutesBottomSheet(context);
-        debugPrint("Successfully fetched ${data['routes'].length} routes.");
-      } else {
-        debugPrint(
-            "Error: ${data['status']} - ${data['error_message'] ?? 'No details provided'}");
       }
+
+      // Generate all possible route combinations
+      routeList = _combineRouteSegments(allSegments);
+      if (routeList.length > 5) {
+        routeList = routeList.sublist(0, 5);
+      }
+
+      // Select the shortest route
+      if (routeList.isNotEmpty) {
+        selectedRouteIndex = 0;
+        double shortestDistance = routeList.first['distance'];
+        for (int i = 1; i < routeList.length; i++) {
+          if (routeList[i]['distance'] < shortestDistance) {
+            shortestDistance = routeList[i]['distance'];
+            distance = shortestDistance;
+            selectedRouteIndex = i;
+          } else {
+            distance = shortestDistance;
+          }
+        }
+        _updatePolylines();
+        if (polylines.isNotEmpty && mapController != null) {
+          // LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
+          // mapController
+          //     ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+        }
+      }
+
+      if (isPathShow) showRoutesBottomSheet(context);
     } catch (e) {
       debugPrint("Error fetching routes: $e");
     } finally {
@@ -1009,109 +1229,130 @@ class MapProvider with ChangeNotifier {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        height: MediaQuery.of(context).size.height * 0.6,
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Available Routes',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                      showAllRoutes ? Icons.visibility_off : Icons.visibility),
-                  onPressed: toggleRouteDisplay,
-                  tooltip:
-                      showAllRoutes ? 'Hide other routes' : 'Show all routes',
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: routeList.length,
-                itemBuilder: (context, index) {
-                  final route = routeList[index];
-                  final isSelected = index == selectedRouteIndex;
-                  final isShortest = index == shortestRouteIndex;
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              height: MediaQuery.of(context).size.height * 0.45,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Available Routes',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[800],
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(showAllRoutes
+                            ? Icons.visibility_off
+                            : Icons.visibility),
+                        onPressed: () {
+                          toggleRouteDisplay();
 
-                  return GestureDetector(
-                    onTap: () {
-                      selectRoute(index);
-                      Navigator.pop(context);
-                    },
-                    child: Card(
-                      color: isSelected
-                          ? Colors.blue[50]
-                          : isShortest
-                              ? Colors.green[50]
-                              : Colors.white,
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          color: isSelected
-                              ? Colors.blue
-                              : isShortest
-                                  ? Colors.green
-                                  : Colors.grey[300]!,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
+                          setState(() {
+                            //showAllRoutes = !showAllRoutes;
+                          });
+                        },
+                        tooltip: showAllRoutes
+                            ? 'Hide other routes'
+                            : 'Show all routes',
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 16,
-                        ),
-                        leading: isShortest
-                            ? Icon(Icons.star, color: Colors.green)
-                            : null,
-                        title: Text(
-                          route['summery'] ?? 'Route ${index + 1}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: routeList.length,
+                      itemBuilder: (context, index) {
+                        final route = routeList[index];
+                        final isSelected = index == selectedRouteIndex;
+                        final isShortest = index == shortestRouteIndex;
+
+                        return GestureDetector(
+                          onTap: () {
+                            selectRoute(index);
+                            // setState(() {
+                            //   selectedRouteIndex = index;
+                            //   distance = route['distance'];
+                            // });
+                            Navigator.pop(context);
+                          },
+                          child: Card(
                             color: isSelected
-                                ? Colors.blue[900]
+                                ? Colors.blue[50]
                                 : isShortest
-                                    ? Colors.green[900]
-                                    : Colors.black,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 4),
-                            _buildInfoRow(
-                              Icons.directions_car,
-                              _formatDistance(route['distance']),
+                                    ? Colors.green[50]
+                                    : Colors.white,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                color: isSelected
+                                    ? Colors.blue
+                                    : isShortest
+                                        ? Colors.green
+                                        : Colors.grey[300]!,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            const SizedBox(height: 4),
-                            _buildInfoRow(
-                              Icons.access_time,
-                              _formatDuration(route['duration']),
-                            )
-                          ],
-                        ),
-                        trailing: isSelected
-                            ? Icon(Icons.check_circle, color: Colors.blue)
-                            : null,
-                      ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 16,
+                              ),
+                              leading: isShortest
+                                  ? const Icon(Icons.star, color: Colors.green)
+                                  : null,
+                              title: Text(
+                                route['summary'] ?? 'Route ${index + 1}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? Colors.blue[900]
+                                      : isShortest
+                                          ? Colors.green[900]
+                                          : Colors.black,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  _buildInfoRow(
+                                    Icons.directions_car,
+                                    formatDistance(
+                                        double.parse(
+                                            route['distance'].toString()),
+                                        context),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  _buildInfoRow(
+                                    Icons.access_time,
+                                    _formatDuration(route['duration']),
+                                  )
+                                ],
+                              ),
+                              trailing: isSelected
+                                  ? Icon(Icons.check_circle, color: Colors.blue)
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1125,11 +1366,20 @@ class MapProvider with ChangeNotifier {
     );
   }
 
-  String _formatDistance(int meters) {
-    return meters > 1000
-        ? '${(meters / 1000).toStringAsFixed(1)} km'
-        : '$meters m';
-  }
+  // String formatDistance(double meters, BuildContext context) {
+  //   final userProvider = Provider.of<UserViewModel>(context, listen: false);
+
+  //   if (userProvider.user.userUnit == "Miles") {
+  //     double miles = meters / 1609.34; // Convert meters to miles
+  //     return miles > 0.1
+  //         ? '${miles.toStringAsFixed(1)} mi'
+  //         : '${(miles * 5280).toStringAsFixed(0)} ft';
+  //   } else {
+  //     double km = meters / 1000;
+
+  //     return km > 1 ? '${km.toStringAsFixed(1)} km' : '$meters m';
+  //   }
+  // }
 
   String _formatDuration(int seconds) {
     final hours = seconds ~/ 3600;
@@ -1151,14 +1401,14 @@ class MapProvider with ChangeNotifier {
     return totalDistance;
   }
 
-  double _coordinateDistance(
-      double lat1, double lon1, double lat2, double lon2) {
-    const p = 0.017453292519943295;
-    final a = 0.5 -
-        cos((lat2 - lat1) * p) / 2 +
-        cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2;
-    return 12742 * asin(sqrt(a));
-  }
+  // double _coordinateDistance(
+  //     double lat1, double lon1, double lat2, double lon2) {
+  //   const p = 0.017453292519943295;
+  //   final a = 0.5 -
+  //       cos((lat2 - lat1) * p) / 2 +
+  //       cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2;
+  //   return 12742 * asin(sqrt(a));
+  // }
 
   Future<void> getPlaceSuggestions(String input, bool isStartField) async {
     isStartSuggestions = true;
@@ -1214,14 +1464,14 @@ class MapProvider with ChangeNotifier {
     final userProvider = Provider.of<UserViewModel>(context, listen: false);
     double totalDistance = 0.0;
 
-    for (int i = 0; i < points.length - 1; i++) {
-      totalDistance += Geolocator.distanceBetween(
-        points[i].latitude,
-        points[i].longitude,
-        points[i + 1].latitude,
-        points[i + 1].longitude,
-      );
-    }
+    // for (int i = 0; i < points.length - 1; i++) {
+    //   totalDistance += _coordinateDistance(
+    //     points[i].latitude,
+    //     points[i].longitude,
+    //     points[i + 1].latitude,
+    //     points[i + 1].longitude,
+    //   );
+    // }
 
     if (userProvider.user.userUnit == "KM") {
       totalDistance = totalDistance / 1000; // Convert meters to kilometers
@@ -1229,7 +1479,7 @@ class MapProvider with ChangeNotifier {
       totalDistance = totalDistance / 1609.34; // Convert meters to miles
     }
     if (isRefresh) {
-      distance = totalDistance;
+      //  distance = totalDistance;
       notifyListeners();
     }
     return totalDistance;

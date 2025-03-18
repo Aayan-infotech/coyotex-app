@@ -122,7 +122,7 @@
 // class MapProvider with ChangeNotifier {
 //   // Dependencies
 //   final LocationService _locationService = LocationService();
-//   final MapsService _mapsService = MapsService("AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s");
+//   final MapsService _mapsService = MapsService("AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc");
 //   final RouteCalculator _routeCalculator = RouteCalculator();
 //   final TripAPIs _tripAPIs = TripAPIs();
 

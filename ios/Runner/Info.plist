@@ -27,7 +27,7 @@
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>
 	<key>GMSApiKey</key>
-	<string>AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s</string>
+	<string>AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
@@ -46,6 +46,8 @@
 	<string>We need access to your photo library to select photos/videos.</string>
 	<key>NSPushNotificationsUsageDescription</key>
 	<string>We need permission to send you notifications about important updates.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>We need access to motion sensors to provide compass functionality.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

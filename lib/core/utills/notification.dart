@@ -188,14 +188,17 @@ class NotificationService {
         return null;
       }
 
-   
       // Fetch the FCM token
       String? token = await messaging.getToken();
+      print("token");
+      print(token);
       if (token != null) {
         var response = await LoginAPIs().updateUserFCM(token);
         print(response);
       }
       debugPrint("FCM Device Token: $token");
+      print("fcm token");
+      print(token);
       return token;
     } catch (e) {
       debugPrint("Error getting device token: $e");

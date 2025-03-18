@@ -5,6 +5,7 @@ import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
+import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,10 +13,15 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:dio/dio.dart';
+import 'package:path/path.dart' as path;
+import 'package:http_parser/http_parser.dart';
 
 class AddPhotoScreen extends StatefulWidget {
   MarkerData? markerData;
-  AddPhotoScreen({this.markerData, Key? key}) : super(key: key);
+  bool? isRestart;
+  AddPhotoScreen({this.isRestart = false, this.markerData, Key? key})
+      : super(key: key);
 
   @override
   State<AddPhotoScreen> createState() => _AddPhotoScreenState();
@@ -29,12 +35,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   VideoPlayerController? _controller;
   bool isVideo = false;
   String? selectedMarkerId;
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
+  late ValueNotifier<double> _uploadProgressNotifier;
 
   int _imageCount = 0;
   int _videoCount = 0;
@@ -188,180 +189,241 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     });
   }
 
-  // Future<void> _pickMedia(BuildContext context) async {
-  //   isVideo = false;
-  //   final action = await showModalBottomSheet<String>(
+  // Add this variable at the top of the _AddPhotoScreenState class
+  double _uploadProgress = 0.0;
+
+// Modify the _uploadMedia function
+  // Future<void> _uploadMedia(BuildContext context) async {
+  //   setState(() => _isUploading = true);
+  //   _uploadProgressNotifier.value = 0.0;
+
+  //   showDialog(
   //     context: context,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+  //     barrierDismissible: false,
+  //     builder: (context) => WillPopScope(
+  //       onWillPop: () async => false,
+  //       child: ValueListenableBuilder<double>(
+  //         valueListenable: _uploadProgressNotifier,
+  //         builder: (context, progress, _) {
+  //           return AlertDialog(
+  //             content: Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 CircularProgressIndicator(
+  //                     value: progress > 0 ? progress : null),
+  //                 const SizedBox(height: 16),
+  //                 Text("Uploading: ${(progress * 100).toStringAsFixed(0)}%"),
+  //               ],
+  //             ),
+  //           );
+  //         },
+  //       ),
   //     ),
-  //     builder: (BuildContext context) {
-  //       return Padding(
-  //         padding: const EdgeInsets.all(16.0),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             const Text(
-  //               'Select Media',
-  //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //             ),
-  //             const SizedBox(height: 10),
-  //             ListTile(
-  //               leading: const Icon(Icons.camera_alt),
-  //               title: const Text('Capture Image'),
-  //               onTap: () => Navigator.of(context).pop('camera_image'),
-  //             ),
-  //             ListTile(
-  //               leading: const Icon(Icons.photo_library),
-  //               title: const Text('Pick Image from Gallery'),
-  //               onTap: () => Navigator.of(context).pop('gallery_image'),
-  //             ),
-  //             ListTile(
-  //               leading: const Icon(Icons.videocam),
-  //               title: const Text('Record Video'),
-  //               onTap: () => Navigator.of(context).pop('camera_video'),
-  //             ),
-  //             ListTile(
-  //               leading: const Icon(Icons.video_library),
-  //               title: const Text('Pick Video from Gallery'),
-  //               onTap: () => Navigator.of(context).pop('gallery_video'),
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
   //   );
 
-  //   if (action != null) {
-  //     XFile? pickedFile;
-  //     if (action == 'camera_image') {
-  //       isVideo = false;
+  //   try {
+  //     final provider = Provider.of<MapProvider>(context, listen: false);
+  //     String accessToken =
+  //         SharedPrefUtil.getValue(accessTokenPref, "") as String;
+  //     String tripId = provider.selectedTripModel.id;
+  //     String markerId = selectedMarkerId!;
 
-  //       pickedFile = await _picker.pickImage(source: ImageSource.camera);
-  //     } else if (action == 'gallery_image') {
-  //       isVideo = false;
+  //     // Create FormData instance
+  //     FormData formData = FormData();
 
-  //       pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-  //     } else if (action == 'camera_video') {
-  //       isVideo = true;
+  //     // Add media files
+  //     for (File file in _mediaFiles) {
+  //       String fileName = path.basename(file.path);
+  //       String? fileExtension = fileName.split('.').last.toLowerCase();
 
-  //       pickedFile = await _picker.pickVideo(source: ImageSource.camera);
-  //       if (pickedFile != null) {
-  //         _controller?.dispose(); // Dispose the old controller
-  //         _controller = VideoPlayerController.file(File(pickedFile.path))
-  //           ..initialize().then((_) {
-  //             setState(() {
-  //               _controller!.play(); // Auto-play the selected video
-  //             });
-  //           });
+  //       // Determine media type
+  //       MediaType mediaType = MediaType('image', 'jpeg'); // default to image
+  //       if (['mp4', 'mov', 'avi'].contains(fileExtension)) {
+  //         mediaType = MediaType('video', fileExtension);
+  //       } else if (['jpg', 'jpeg', 'png'].contains(fileExtension)) {
+  //         mediaType = MediaType('image', fileExtension);
   //       }
-  //     } else if (action == 'gallery_video') {
-  //       isVideo = true;
 
-  //       pickedFile = await _picker.pickVideo(source: ImageSource.gallery);
-  //       if (pickedFile != null) {
-  //         _controller?.dispose(); // Dispose the old controller
-  //         _controller = VideoPlayerController.file(File(pickedFile.path))
-  //           ..initialize().then((_) {
-  //             setState(() {
-  //               _controller!.play(); // Auto-play the selected video
-  //             });
-  //           });
-  //       }
+  //       formData.files.add(MapEntry(
+  //         'images', // Use the same field name as in your API
+  //         await MultipartFile.fromFile(
+  //           file.path,
+  //           filename: fileName,
+  //           contentType: mediaType,
+  //         ),
+  //       ));
   //     }
 
-  //     if (pickedFile != null) {
-  //       setState(() {
-  //         _mediaFiles.add(File(pickedFile!.path));
+  //     // Add other form fields
+  //     formData.fields.addAll([
+  //       MapEntry('tripId', tripId),
+  //       MapEntry('markerId', markerId),
+  //     ]);
+
+  //     final response = await Dio().post(
+  //       'http://54.236.98.193:5647/api/trips/upload-media',
+  //       data: formData,
+  //       options: Options(
+  //         headers: {
+  //           'Authorization': 'Bearer $accessToken',
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       ),
+  //       onSendProgress: (sent, total) {
+  //         if (total != -1) {
+  //           _uploadProgressNotifier.value = sent / total;
+  //         }
+  //       },
+  //     );
+  //     if (response.statusCode == 200) {
+  //       final mapProvider = Provider.of<MapProvider>(context, listen: false);
+  //       mapProvider.getTrips();
+  //       Navigator.of(context).pop();
+  //       setState(() => _isUploading = false);
+  //       AppDialog.showSuccessDialog(context, "Media uploaded successfully", () {
+  //         setState(() {
+  //           _isUploading = false;
+  //         });
   //       });
+  //     } else {
+  //       AppDialog.showErrorDialog(context, 'Upload failed: ${response.data}',
+  //           () {
+  //         Navigator.pop(context);
+  //       });
+  //     }
+  //   } catch (e) {
+  //     // ... existing error handling ...
+  //     AppDialog.showErrorDialog(context, 'Upload failed: ${e.toString()}', () {
+  //       Navigator.pop(context);
+  //     });
+  //   } finally {
+  //     _uploadProgressNotifier.value = 0.0;
+  //     if (mounted) {
+  //       setState(() => _isUploading = false);
+  //       Navigator.pop(context); // Close dialog
+
+  //       // Close the progress dialog
   //     }
   //   }
   // }
-
+  // Modify the _uploadMedia function as follows
   Future<void> _uploadMedia(BuildContext context) async {
     setState(() => _isUploading = true);
+    _uploadProgressNotifier.value = 0.0;
+
+    bool uploadSuccess = false;
+    String? errorMessage;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => WillPopScope(
         onWillPop: () async => false,
-        child: AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text("Uploading media... Please wait"),
-            ],
-          ),
+        child: ValueListenableBuilder<double>(
+          valueListenable: _uploadProgressNotifier,
+          builder: (context, progress, _) {
+            return AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                      value: progress > 0 ? progress : null),
+                  const SizedBox(height: 16),
+                  Text("Uploading: ${(progress * 100).toStringAsFixed(0)}%"),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
 
-    if (_mediaFiles.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select at least one photo or video')),
-      );
-      setState(() => _isUploading = false);
-      Navigator.pop(context);
-      return;
-    }
-
-    final provider = Provider.of<MapProvider>(context, listen: false);
-    if (selectedMarkerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a marker')),
-      );
-      setState(() => _isUploading = false);
-      Navigator.pop(context);
-      return;
-    }
-
     try {
+      final provider = Provider.of<MapProvider>(context, listen: false);
       String accessToken =
           SharedPrefUtil.getValue(accessTokenPref, "") as String;
       String tripId = provider.selectedTripModel.id;
       String markerId = selectedMarkerId!;
 
-      final uri = Uri.parse('http://54.236.98.193:5647/api/trips/upload-media');
-      final request = http.MultipartRequest('POST', uri);
-      request.headers['Authorization'] = 'Bearer $accessToken';
+      FormData formData = FormData();
 
-      for (final file in _mediaFiles) {
-        request.files
-            .add(await http.MultipartFile.fromPath('files', file.path));
+      for (File file in _mediaFiles) {
+        String fileName = path.basename(file.path);
+        String? fileExtension = fileName.split('.').last.toLowerCase();
+
+        MediaType mediaType = MediaType('image', 'jpeg');
+        if (['mp4', 'mov', 'avi'].contains(fileExtension)) {
+          mediaType = MediaType('video', fileExtension);
+        } else if (['jpg', 'jpeg', 'png'].contains(fileExtension)) {
+          mediaType = MediaType('image', fileExtension);
+        }
+
+        formData.files.add(MapEntry(
+          'images',
+          await MultipartFile.fromFile(
+            file.path,
+            filename: fileName,
+            contentType: mediaType,
+          ),
+        ));
       }
 
-      request.fields['tripId'] = tripId;
-      request.fields['markerId'] = markerId;
+      formData.fields.addAll([
+        MapEntry('tripId', tripId),
+        MapEntry('markerId', markerId),
+      ]);
 
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
+      final response = await Dio().post(
+        'http://54.236.98.193:5647/api/trips/upload-media',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+        onSendProgress: (sent, total) {
+          if (total != -1) {
+            _uploadProgressNotifier.value = sent / total;
+          }
+        },
+      );
 
       if (response.statusCode == 200) {
+        uploadSuccess = true;
         final mapProvider = Provider.of<MapProvider>(context, listen: false);
-        await mapProvider.getTrips();
-        setState(() => _isUploading = false);
-        AppDialog.showSuccessDialog(context, "Media uploaded successfully",
-            () async {
-          Navigator.popUntil(context, (route) => route.isFirst);
-        });
-        setState(() => _isUploading = false);
+        mapProvider.getTrips();
       } else {
-        AppDialog.showErrorDialog(context, 'Upload failed: $responseBody', () {
-          Navigator.pop(context);
-        });
+        errorMessage = 'Upload failed: ${response.data}';
       }
     } catch (e) {
-      AppDialog.showErrorDialog(context, 'Upload failed: ${e.toString()}', () {
-        Navigator.pop(context);
-      });
+      errorMessage = 'Upload failed: ${e.toString()}';
     } finally {
+      _uploadProgressNotifier.value = 0.0;
       if (mounted) {
         setState(() => _isUploading = false);
         Navigator.pop(context);
+        if (widget.isRestart!) Navigator.pop(context);
+
+        // Close progress dialog
+      }
+
+      if (uploadSuccess && mounted) {
+        AppDialog.showSuccessDialog(
+          context,
+          "Media uploaded successfully",
+          () {
+            // setState(() => _isUploading = false);
+            Navigator.of(context).pop(true);
+            Navigator.of(context).pop(true);
+          },
+        );
+      } else if (errorMessage != null && mounted) {
+        AppDialog.showErrorDialog(
+          context,
+          "Upload Failed",
+          () => Navigator.pop(context),
+        );
       }
     }
   }
@@ -372,7 +434,14 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     if (widget.markerData != null) {
       selectedMarkerId = widget.markerData!.id;
     }
+    _uploadProgressNotifier = ValueNotifier(0.0);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+   //s _controller?.dispose();
+    super.dispose();
   }
 
   @override
@@ -627,30 +696,29 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                       ? null
                       : () async {
                           setState(() => isLoading = true);
+                          final tripProvider = Provider.of<TripViewModel>(
+                              context,
+                              listen: false);
 
-                          NotificationModel notification = NotificationModel(
-                            id: '',
-                            userId: '',
-                            title: "Trip Update",
-                            body: "Your trip has been completed",
-                            type: NotificationType.tripUpdate,
-                            data: {},
-                            isRead: false,
-                            createdAt: DateTime.now().toString(),
-                            v: 1,
-                          );
-
-                          await userProvider.sendNotifications(
+                          var response = await userProvider.sendNotifications(
                             "Trip Update",
                             "Your Trip has been Completed",
                             NotificationType.tripUpdate,
                             mapProvider.selectedTripModel.id,
                           );
+                          if (response.success) {
+                            var response = await tripProvider.updateUserTrip(
+                                mapProvider.selectedTripModel.id);
+                            if (response.success) {
+                              await tripProvider.getUserTrip();
+                            }
+                          }
 
                           provider.resetFields();
                           if (context.mounted) {
                             Navigator.pop(context);
                             Navigator.pop(context);
+                            if (widget.isRestart!) Navigator.pop(context);
                           }
                         },
                   child: const Text("Finish"),

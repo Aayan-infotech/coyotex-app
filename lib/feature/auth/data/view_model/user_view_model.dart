@@ -1,6 +1,7 @@
 import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/services/model/notification_model.dart';
 import 'package:coyotex/core/services/server_calls/auth_apis.dart';
+import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/notification.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
@@ -8,6 +9,7 @@ import 'package:coyotex/feature/auth/data/model/plans.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/auth/data/model/user_model.dart';
 import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
+import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:flutter/material.dart';
 
 class UserViewModel extends ChangeNotifier {
@@ -16,6 +18,9 @@ class UserViewModel extends ChangeNotifier {
   // Variables to store response states
   bool isLoading = false;
   String errorMessage = '';
+  List<TripModel> trips = [];
+  TripAPIs _tripAPIs = TripAPIs();
+
   Map<String, dynamic>? userData;
   List<Plan> lstPlan = [];
   UserModel user = UserModel(
@@ -35,6 +40,7 @@ class UserViewModel extends ChangeNotifier {
 
   // Login
   List<NotificationModel> lstNotification = [];
+
   Future<ApiResponseWithData> login(
       String email, String password, BuildContext context) async {
     _setLoading(true);
@@ -65,6 +71,58 @@ class UserViewModel extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> createPaymentIntent(
+      String payment, String currency) async {
+    _setLoading(true);
+    try {
+      final response = await _loginAPIs.createPaymentIntent(payment, currency);
+      if (response.success) {
+        return response;
+      } else {
+        errorMessage = response.message;
+        return response;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      return ApiResponseWithData({"error": errorMessage}, false);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> paymentStatus(
+      String paymentId) async {
+    _setLoading(true);
+    try {
+      final response = await _loginAPIs.paymentStatus(paymentId);
+      if (response.success) {
+        return response;
+      } else {
+        errorMessage = response.message;
+        return response;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      return ApiResponseWithData({"error": errorMessage}, false);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  getTrips() async {
+    isLoading = true;
+    notifyListeners();
+    var response = await _tripAPIs.getUserTrip();
+    if (response.success) {
+      trips = (response.data["data"] as List).map((item) {
+        return TripModel.fromJson(item);
+      }).toList();
+      print(trips);
+    }
+    notifyListeners();
+    isLoading = false;
   }
 
   Future<ApiResponseWithData> getUser() async {
@@ -109,6 +167,31 @@ class UserViewModel extends ChangeNotifier {
     }
   }
 
+  int animalKilled = 0;
+  int animalSeen = 0;
+  Future<ApiResponseWithData<Map<String, dynamic>>> getAnimalStats() async {
+    _setLoading(true);
+    try {
+      final response = await _loginAPIs.getAnimalStats();
+      if (response.success) {
+        // Handle successful response here
+        animalKilled = response.data["totalAnimalKilled"];
+        animalSeen = response.data["totalAnimalSeen"];
+
+        print('Animal stats: ${response.data}');
+        return response;
+      } else {
+        errorMessage = response.message;
+        return response;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      return ApiResponseWithData({"error": errorMessage}, false);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<ApiResponse> sendNotifications(
     String title,
     String body,
@@ -120,7 +203,7 @@ class UserViewModel extends ChangeNotifier {
       final response =
           await _loginAPIs.sendUserNotification(title, body, type, tripId);
       if (response.success) {
-        getNotifications();
+        await getNotifications();
         return response;
       } else {
         errorMessage = response.message;

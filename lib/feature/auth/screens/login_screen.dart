@@ -161,6 +161,7 @@ class LoginScreen extends StatelessWidget {
 
                                   if (response.success) {
                                     SharedPrefUtil.setValue(isLoginPref, true);
+                                   
                                   } else {
                                     AppDialog.showErrorDialog(
                                         context, response.message, () {
