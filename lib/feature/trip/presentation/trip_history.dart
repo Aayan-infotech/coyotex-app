@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
-import 'package:coyotex/feature/map/presentation/trip_details.dart';
+import 'package:coyotex/feature/trip/presentation/trip_details.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,15 +24,11 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
           appBar: AppBar(
             backgroundColor: Colors.black,
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            title: Text(
-              'Trips History',
-              style: TextStyle(color: Colors.white),
+            iconTheme: IconThemeData(color: Colors.white),
+            title: const Text(
+              'Your Trips',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
             ),
             centerTitle: true,
           ),
@@ -65,6 +61,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                       final trip = trips[index];
                       return GestureDetector(
                         onTap: () {
+                          mapProvider.selectedTripModel = trip;
                           Navigator.of(context)
                               .push(MaterialPageRoute(builder: (context) {
                             return TripDetailsScreen(
@@ -165,8 +162,10 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
-              placeholder: (context, url) =>
-                  const Center(child: CircularProgressIndicator()),
+              placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator.adaptive(
+                backgroundColor: Colors.white,
+              )),
               errorWidget: (context, url, error) =>
                   const Icon(Icons.image_not_supported, color: Colors.white),
             ),

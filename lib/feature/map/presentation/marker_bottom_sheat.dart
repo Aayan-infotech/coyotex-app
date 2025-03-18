@@ -52,7 +52,7 @@ class _MarkersBottomSheetState extends State<MarkersBottomSheet> {
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Card(
-                          elevation: 5,
+                          elevation: 1,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),

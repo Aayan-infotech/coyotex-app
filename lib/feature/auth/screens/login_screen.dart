@@ -1,6 +1,7 @@
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/notification.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
@@ -76,15 +77,23 @@ class LoginScreen extends StatelessWidget {
             child: Consumer<UserViewModel>(
               builder: (context, userProvider, child) {
                 return userProvider.isLoading
-                    ? const CircularProgressIndicator()
+                    ? const Center(
+                        child: CircularProgressIndicator.adaptive(
+                        backgroundColor: Colors.white,
+                      ))
                     : Form(
                         key: _formKey,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset(
-                              "assets/images/logo.png",
-                              width: MediaQuery.of(context).size.width * 0.2,
+                            GestureDetector(
+                              onTap: () {
+                                NotificationService.requestPermission();
+                              },
+                              child: Image.asset(
+                                "assets/images/logo.png",
+                                width: MediaQuery.of(context).size.width * 0.2,
+                              ),
                             ),
                             const SizedBox(height: 30),
                             const Text(
@@ -96,7 +105,7 @@ class LoginScreen extends StatelessWidget {
                               ),
                             ),
                             const Text(
-                              "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                              "Your go-to hunting companion! Track, plan, and record your adventures with ease. Stay informed, stay safe, and make every hunt count!.",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.white,

@@ -127,7 +127,7 @@ class _CustomDialogState extends State<CustomDialog> {
 
     if (response.success) {
       widget.mapProvider.getTrips();
-      setState(() => isLoading = false);
+       setState(() => isLoading = false);
       Navigator.pop(context);
     } else {
       setState(() => isLoading = false);

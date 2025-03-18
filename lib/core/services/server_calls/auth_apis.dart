@@ -1,5 +1,6 @@
 import 'package:coyotex/core/services/api_base.dart';
 import 'package:coyotex/core/services/call_halper.dart';
+import 'package:coyotex/core/services/model/notification_model.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
@@ -55,7 +56,6 @@ class LoginAPIs extends ApiBase {
       "confirmPassword": password,
       "referralCode": referralCode
     };
-
     return await CallHelper().postWithData('api/auth/signup', data, {});
   }
 
@@ -99,6 +99,35 @@ class LoginAPIs extends ApiBase {
     return await CallHelper().post('api/auth/reset-password', data);
   }
 
+  Future<ApiResponse> updateUserFCM(
+    String token,
+  ) async {
+    Map<String, String> data = {
+      'fcmToken': token,
+    };
+
+    return await CallHelper().post('api/users/update-fcm', data);
+  }
+
+  Future<ApiResponse> sendUserNotification(
+    String title,
+    String body,
+    NotificationType type,
+    String tripId,
+  ) async {
+    String id = SharedPrefUtil.getValue(userIdPref, "") as String;
+
+    Map<String, dynamic> data = {
+      "userId": id,
+      "title": title,
+      "body": body,
+      "type": type,
+      "data": {"tripId": tripId}
+    };
+
+    return await CallHelper().post('api/notifications/send', data);
+  }
+
   Future<ApiResponse> logout() async {
     String refToken = SharedPrefUtil.getValue(refreshTokenPref, "") as String;
 
@@ -128,7 +157,19 @@ class LoginAPIs extends ApiBase {
       "newPassword": newPassword,
       "confirmNewPassword": confirmNewPassword,
     };
-    return await CallHelper().patch('api/auth/change-password', data, );
+    return await CallHelper().patch(
+      'api/auth/change-password',
+      data,
+    );
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> getNotifications() async {
+    Map<String, String> data = {};
+
+    return await CallHelper().getWithData(
+      'api/notifications',
+      data,
+    );
   }
 
   Future<ApiResponse> updatePref(UserPreferences prefrences) async {
@@ -141,7 +182,10 @@ class LoginAPIs extends ApiBase {
     };
 
     prefrences.toJson();
-    return await CallHelper().patch('api/update-preferences', data,);
+    return await CallHelper().patch(
+      'api/update-preferences',
+      data,
+    );
   }
 
   Future<ApiResponseWithData> getUserById() async {
