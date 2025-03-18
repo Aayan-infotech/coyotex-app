@@ -17,6 +17,7 @@ class FilterDialog extends StatefulWidget {
 
 class _FilterDialogState extends State<FilterDialog> {
   late List<String> tempSelected;
+  bool isApplied = false;
 
   @override
   void initState() {
@@ -79,29 +80,43 @@ class _FilterDialogState extends State<FilterDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                    padding: EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(10), // Border radius set to 10
                     ),
                   ),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(fontSize: 14),
+                  ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 50),
                 ElevatedButton(
                   onPressed: () {
                     widget.onApply(tempSelected);
-                    Navigator.pop(context);
+                    setState(() {
+                      isApplied = true;
+                    });
+                    Future.delayed(Duration(milliseconds: 500), () {
+                      Navigator.pop(context);
+                    });
                   },
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: isApplied
+                        ? Colors.green
+                        : Theme.of(context).primaryColor,
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: Text(
-                    'Apply Filters',
-                    style: TextStyle(fontSize: 14),
+                    'Apply',
+                    style: TextStyle(fontSize: 14, color: Colors.white),
                   ),
                 ),
               ],

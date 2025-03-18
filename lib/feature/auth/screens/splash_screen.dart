@@ -41,10 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
       } else {
         await UserContextData.setCurrentUserAndFetchUserData(context);
         Future.delayed(const Duration(seconds: 3), () {
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => HomeScreen()),
-          // );
+         
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => HomeScreen()),

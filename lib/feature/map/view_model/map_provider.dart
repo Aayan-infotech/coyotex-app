@@ -101,7 +101,7 @@ class MapProvider with ChangeNotifier {
   GoogleMapController? mapController;
   LatLng initialPosition = const LatLng(26.862421770613125, 80.99804357972356);
   int timeDurations = 0;
-  // int travelTime = 0;
+
   LatLng? pointA;
   LatLng? pointB;
   bool isSave = false;
@@ -158,61 +158,68 @@ class MapProvider with ChangeNotifier {
     isLoading = false;
   }
 
-  // void updateCameraPosition(LatLng newPosition) {
-  //   if (mapController == null) return;
+  void onMapCreated(GoogleMapController controller) {
+    mapController = controller;
 
-  //   final CameraPosition newCameraPosition = CameraPosition(
-  //     bearing: 90, // 90 degree rotation (east direction)
-  //     target: newPosition,
-  //     zoom: 10,
-  //     tilt: 0, // Optional: Set to 30-45 if you want 3D tilt
-  //   );
-  //   mapController!.animateCamera(
-  //     CameraUpdate.newCameraPosition(newCameraPosition),
-  //   );
+    if (routeList.isNotEmpty) {
+      final points = routeList[selectedRouteIndex]['polyPoints'];
+      LatLngBounds bounds = _getLatLngBounds(points);
+      controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 10));
+    } else if (points.isNotEmpty) {
+      adjustCameraBounds();
+    } else {
+      // Set zoom level to 0 (or minimum possible zoom)
+      controller.animateCamera(CameraUpdate.newLatLngZoom(
+          LatLng(initialPosition.latitude, initialPosition.longitude), 10));
+    }
 
-  //   mapController!.animateCamera(CameraUpdate.scrollBy(24, 80));
+    setMarkersWithOnTap(context);
+    notifyListeners();
+  }
 
-  //   notifyListeners();
-  // }
+  void adjustCameraBounds() {
+    if (points.isNotEmpty && mapController != null) {
+      LatLngBounds bounds = _getLatLngBounds(points);
+      mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
+    }
+  }
+
   void updateCameraPosition(LatLng newPosition) {
     if (mapController == null) return;
 
-    // Ensure map is ready before animating camera
-    mapController!.getVisibleRegion().then((_) {
-    final CameraPosition newCameraPosition = CameraPosition(
-      bearing: 90, // 90 degree rotation (east direction)
-      target: newPosition,
-      zoom: 10,
-      tilt: 0, // Optional: Set to 30-45 if you want 3D tilt
-    );
+    try {
+      final CameraPosition newCameraPosition = CameraPosition(
+        target: newPosition,
+        zoom: 10,
+        tilt: 0, // Optional: Adjust for 3D effect if needed
+      );
 
-    mapController!.animateCamera(
-      CameraUpdate.newCameraPosition(newCameraPosition),
-    );
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(newCameraPosition),
+      );
 
-    // Wait for the first animation to complete before applying another
-    Future.delayed(const Duration(milliseconds: 500), () {
-      mapController!.animateCamera(CameraUpdate.scrollBy(24, 80));
-    });
+      // // Wait for the first animation to complete before applying another
+      // Future.delayed(const Duration(milliseconds: 500), () {
+      //   mapController!.animateCamera(CameraUpdate.scrollBy(24, 20));
+      // });
 
-    notifyListeners();
-    }).catchError((error) {
-      print("Error getting map visible region: $error");
-    });
+      notifyListeners();
+    } catch (error) {
+      print("Error in updateCameraPosition: $error");
+    }
   }
 
-  void updateMapMarkers(List<MarkerData> markers) {
+  void updateMapMarkers(List<MarkerData> mar) {
     mapMarkers.clear();
-    for (var item in markers) {
+    for (var item in mar) {
       mapMarkers.add(Marker(
         markerId: MarkerId(item.id),
         position: item.position,
         infoWindow: InfoWindow(title: item.title, snippet: item.snippet),
       ));
     }
-
-    // notifyListeners();
+    setMarkersWithOnTap(context);
+    notifyListeners();
   }
 
   Future<bool> showDurationPicker(BuildContext context,
@@ -221,6 +228,8 @@ class MapProvider with ChangeNotifier {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: Colors.transparent,
       builder: (context) => DurationPickerBottomSheet(
         isStop: isStop,
@@ -230,42 +239,18 @@ class MapProvider with ChangeNotifier {
     return result ?? false;
   }
 
-  // void setMarkersWithOnTap(BuildContext context) {
-  //   mapMarkers = mapMarkers.map((marker) {
-  //     return marker.copyWith(
-  //       onTapParam: () {
-  //         showDurationPicker(context, marker: marker);
-  //       },
-  //     );
-  //   }).toSet();
-  //   notifyListeners();
-  // }
-  void setMarkersWithOnTap(BuildContext context) {
+  void setMarkersWithOnTap(
+    BuildContext context,
+  ) {
     mapMarkers = mapMarkers.map((item) {
       return item.copyWith(
         onTapParam: () {
+          onTapOnMap = true;
           showDurationPicker(context, marker: item);
-          //_showMarkerDialog(context, marker);
         },
       );
     }).toSet();
     notifyListeners();
-  }
-
-  void _showMarkerDialog(BuildContext context, Marker marker) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Marker Tapped'),
-        content: Text('Marker ID: ${marker.markerId.value}'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> getWeather(LatLng latAndLng) async {
@@ -323,7 +308,7 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  LatLng currentCameraTarget = LatLng(28.00, 28.00);
+  LatLng currentCameraTarget = const LatLng(28.00, 28.00);
   double currentZoom = 12;
 
   void onCameraMove(CameraPosition position) {
@@ -401,6 +386,12 @@ class MapProvider with ChangeNotifier {
 
   int shortestRouteIndex = 0;
   bool showAllRoutes = true;
+  // void selectRoute(int index) {
+  //   selectedRouteIndex = index;
+  //   distance = routeList[index]['distance'];
+  //   _updatePolylines();
+  //   notifyListeners();
+  // }
 
   void selectRoute(int index) {
     selectedRouteIndex = index;
@@ -439,12 +430,13 @@ class MapProvider with ChangeNotifier {
   }
 
   int _findClosestPointIndex(LatLng currentPosition) {
-    // Start searching from last known position for efficiency
-    int startIndex = max(0, lastClosestPointIndex - 10);
-    double minDistance = double.infinity;
-    int closestIndex = startIndex;
+    if (routePolylinePoints.isEmpty) return 0;
 
-    for (int i = startIndex; i < routePolylinePoints.length; i++) {
+    int closestIndex = 0;
+    double minDistance = double.infinity;
+
+    // Search the entire route if no previous index is known
+    for (int i = 0; i < routePolylinePoints.length; i++) {
       final point = routePolylinePoints[i];
       final distance = Geolocator.distanceBetween(
         currentPosition.latitude,
@@ -457,13 +449,38 @@ class MapProvider with ChangeNotifier {
         minDistance = distance;
         closestIndex = i;
       }
-      // Early exit if moving away from route
-      if (i > startIndex + 20 && distance > minDistance * 2) break;
     }
 
     lastClosestPointIndex = closestIndex;
     return closestIndex;
   }
+
+  // int _findClosestPointIndex(LatLng currentPosition) {
+  //   // Start searching from last known position for efficiency
+  //   int startIndex = max(0, lastClosestPointIndex - 10);
+  //   double minDistance = double.infinity;
+  //   int closestIndex = startIndex;
+
+  //   for (int i = startIndex; i < routePolylinePoints.length; i++) {
+  //     final point = routePolylinePoints[i];
+  //     final distance = Geolocator.distanceBetween(
+  //       currentPosition.latitude,
+  //       currentPosition.longitude,
+  //       point.latitude,
+  //       point.longitude,
+  //     );
+
+  //     if (distance < minDistance) {
+  //       minDistance = distance;
+  //       closestIndex = i;
+  //     }
+  //     // Early exit if moving away from route
+  //     if (i > startIndex + 20 && distance > minDistance * 2) break;
+  //   }
+
+  //   lastClosestPointIndex = closestIndex;
+  //   return closestIndex;
+  // }
 
   Stream<LatLng>? locationStream;
 
@@ -509,6 +526,7 @@ class MapProvider with ChangeNotifier {
     stayTimer = null;
 
     notifyListeners();
+    late LatLng startTripLatLang;
 
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -528,13 +546,14 @@ class MapProvider with ChangeNotifier {
         throw Exception('Location permissions are permanently denied.');
       }
 
-      Position initialPosition = await Geolocator.getCurrentPosition(
+      Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      LatLng initialLatLng =
-          LatLng(initialPosition.latitude, initialPosition.longitude);
-      updateCameraPosition(initialLatLng);
+      LatLng initialLatLng = LatLng(position.latitude, position.longitude);
+      startTripLatLang = initialLatLng;
+      //updateCameraPosition(initialLatLng);
+      // path.add(initialLatLng);
 
       if (!_isWithinRadius(initialLatLng, path, 1000)) {
         path.add(initialLatLng);
@@ -544,24 +563,35 @@ class MapProvider with ChangeNotifier {
 
       isLoading = false;
       // formattedDistance = formatDistance(distance, context);
-      notifyListeners();
+      // notifyListeners();
 
       positionStream = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 5,
+          distanceFilter: 6,
         ),
       ).listen((Position position) async {
         LatLng currentLatLng = LatLng(position.latitude, position.longitude);
-        // if (!_isWithinRadius(currentLatLng, path, 1000)) {
-        //   path.add(currentLatLng);
-        // }
-        if (mapController != null) {
-          mapController!.animateCamera(
-            CameraUpdate.newLatLng(
-                LatLng(position.latitude, position.longitude)),
-          );
-        }
+
+        // Update current location marker
+        currentLocationMarker = Marker(
+          markerId: const MarkerId("currentLocation"),
+          position: currentLatLng,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          infoWindow: const InfoWindow(title: "Current Location"),
+        );
+
+        // Clear old markers and add the updated current location
+        mapMarkers.removeWhere((m) => m.markerId.value == "currentLocation");
+        mapMarkers.add(currentLocationMarker);
+        initialPosition = currentLatLng;
+        notifyListeners();
+
+        // Update camera and notify
+        // mapController?.animateCamera(CameraUpdate.newLatLng(currentLatLng));
+
+        // notifyListeners();
+
         // Check if there are markers to process
         if (!isAtStop &&
             currentMarkerIndex < selectedTripModel.markers.length) {
@@ -711,45 +741,52 @@ class MapProvider with ChangeNotifier {
             }
           }
         }
-        final closestIndex = _findClosestPointIndex(currentLatLng);
-        final remainingDistance =
-            cumulativeDistances.last - cumulativeDistances[closestIndex];
+        // final closestIndex = _findClosestPointIndex(currentLatLng);
+        double? travelledDistance = await getDistance(
+            origin: startTripLatLang, destination: currentLatLng);
+        final remainingDistance = cumulativeDistances.last - travelledDistance!;
 
-        // Update distance and ETA
-        distance = remainingDistance;
+        // // Update distance and ETA
+        // distance = remainingDistance;
+        // formattedDistance = formatDistance(remainingDistance, context);
+        // convertMinutesToHours(remainingDistance);
+        // if (routePolylinePoints.isNotEmpty && cumulativeDistances.isNotEmpty) {
+        //   final closestIndex = _findClosestPointIndex(currentLatLng);
+        //   final remainingDistance = cumulativeDistances.last -
+        //       cumulativeDistances[
+        //           cumulativeDistances.length - closestIndex + 1];
+
+        //   // Ensure remaining distance doesn't go negative
+        distance = remainingDistance > 0 ? remainingDistance : 0;
         formattedDistance = formatDistance(remainingDistance, context);
-        convertMinutesToHours(remainingDistance);
-        if (mapController != null) {
-          mapController!.animateCamera(CameraUpdate.newLatLng(currentLatLng));
-        }
-
-        // Marker arrival logic
-        // _handleMarkerArrival(currentLatLng, position.speed);
-
-        notifyListeners();
-        // Existing distance calculation and map update logic
-        // double distanceTravelled = Geolocator.distanceBetween(
-        //   initialPosition.latitude,
-        //   initialPosition.longitude,
-        //   position.latitude,
-        //   position.longitude,
-        // );
-        // distance -= distanceTravelled;
-
-        // if (mapController != null) {
-        //   mapController!.animateCamera(
-        //     CameraUpdate.newLatLng(currentLatLng),
-        //   );
+        convertMinutesToHours(distance);
         // }
-        // formattedDistance = formatDistance(distance, context);
-        // convertMinutesToHours();
 
-        // notifyListeners();
+        // updateCameraPosition(initialLatLng);
       });
     } catch (e) {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<double> getDistanceBetween(
+      double lat1, double lon1, double lat2, double lon2) async {
+    String apiKey = "AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
+    String url =
+        "https://maps.googleapis.com/maps/api/directions/json?origin=$lat1,$lon1&destination=$lat2,$lon2&key=$apiKey";
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['routes'].isNotEmpty) {
+        double distanceMeters =
+            data['routes'][0]['legs'][0]['distance']['value'].toDouble();
+        return distanceMeters / 1000; // Convert meters to km
+      }
+    }
+    return 0.0;
   }
 
   /// Helper function to check if a LatLng is within a given radius (meters) of any point in a list
@@ -880,6 +917,7 @@ class MapProvider with ChangeNotifier {
   }
 
   void saveTrip(BuildContext context) async {
+    final tripProvidr = Provider.of<TripViewModel>(context, listen: false);
     isLoading = true;
     notifyListeners();
     if (points.isEmpty) {
@@ -912,6 +950,7 @@ class MapProvider with ChangeNotifier {
     var res = await _tripAPIs.addTrip(trip);
     if (res.success) {
       await getTrips();
+      await tripProvidr.getAllMarker();
 
       resetFields();
     } else {
@@ -1005,6 +1044,7 @@ class MapProvider with ChangeNotifier {
     isLoading = true;
     isSavedTrip = false;
     onTapOnMap = true;
+    // notifyListeners();
 
     points.add(position);
     path.add(position);
@@ -1051,10 +1091,12 @@ class MapProvider with ChangeNotifier {
 
     isLoading = false;
 
-    notifyListeners();
-    Future.delayed(Duration(seconds: 1)).then((value) {
+    Future.delayed(Duration(seconds: 0)).then((value) {
       showDurationPicker(buildContext);
     });
+    setMarkersWithOnTap(context);
+
+    notifyListeners();
   }
 
   Future<double?> getDistance({
@@ -1095,18 +1137,23 @@ class MapProvider with ChangeNotifier {
   void resetFields() {
     final tripProvider = Provider.of<TripViewModel>(context, listen: false);
 
-    liveTripMarker = tripProvider.lstMarker;
     isStartavigation = false;
     startController.clear();
+
     if (countdownTimer != null) {
       countdownTimer!.cancel();
     }
-    remainingStopTime = 0;
 
+    tripProvider.lstMarker.clear();
+
+    // Create a new list instead of referencing the same list
+    tripProvider.lstMarker = List.from(tripProvider.lstAllMarker);
+
+    remainingStopTime = 0;
     destinationController.clear();
     destinationControllers.clear();
-    mapMarkers.clear();
     markers.clear();
+    mapMarkers.clear();
     points.clear();
     path.clear();
     isSavedTrip = false;
@@ -1114,23 +1161,22 @@ class MapProvider with ChangeNotifier {
     isTripStart = false;
     providerLetsHuntButton = false;
     polylines.clear();
-    onTapOnMap = false;
     isSave = false;
     distance = 0.0;
     totalTime = 0;
     destinationCount = 1;
     timeDurations = 0;
+
     if (positionStream != null) {
       positionStream!.cancel();
     }
-    
 
-    notifyListeners();
+    updateMapMarkers(tripProvider.lstMarker);
   }
 
   Future<void> setTimeDuration(int duration, String name,
       {bool isStop = false}) async {
-    final provider = Provider.of<TripViewModel>(context, listen: false);
+    // final provider = Provider.of<TripViewModel>(context, listen: false);
 
     timeDurations = duration;
     totalTime += duration;
@@ -1179,12 +1225,41 @@ class MapProvider with ChangeNotifier {
     // isLoading = true;
     // notifyListeners();
     showAllRoutes = !showAllRoutes;
-    await _updatePolylines();
+    _updatePolylines();
     //s isLoading = false;
     notifyListeners();
   }
 
   bool isPolylines = false;
+  // void _updatePolylines() {
+  //   polylines.clear();
+
+  //   if (routeList.isEmpty) return;
+
+  //   // Draw selected route
+  //   final selectedRoute = routeList[selectedRouteIndex];
+  //   polylines.add(Polyline(
+  //     polylineId: PolylineId('selected_route'),
+  //     points: selectedRoute['polyPoints'],
+  //     color: Colors.blue,
+  //     width: 5,
+  //   ));
+
+  //   // Optionally draw other routes
+  //   if (showAllRoutes) {
+  //     for (int i = 0; i < routeList.length; i++) {
+  //       if (i == selectedRouteIndex) continue;
+  //       polylines.add(Polyline(
+  //         polylineId: PolylineId('route_$i'),
+  //         points: routeList[i]['polyPoints'],
+  //         color: Colors.grey,
+  //         width: 3,
+  //       ));
+  //     }
+  //   }
+
+  //   notifyListeners();
+  // }
 
   Future<void> _updatePolylines() async {
     polylines.clear();
@@ -1205,7 +1280,7 @@ class MapProvider with ChangeNotifier {
     if (polylines.isNotEmpty && mapController != null) {
       final points = routeList[selectedRouteIndex]['polyPoints'];
       LatLngBounds bounds = _getLatLngBounds(points);
-      mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+      mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
     }
   }
 
@@ -1255,104 +1330,6 @@ class MapProvider with ChangeNotifier {
 
   List<Map<String, String>> distanceOfSegments = [];
 
-  // Future<void> fetchRouteWithWaypoints(
-  //   List<LatLng> locations, {
-  //   bool isRemove = false,
-  //   bool isPathShow = false,
-  // }) async {
-  //   if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
-  //     debugPrint("At least two locations are required.");
-  //     return;
-  //   }
-  //   // if (routeList.isNotEmpty) {
-  //   //   selectRoute(selectedRouteIndex); // Initialize route data
-  //   // }
-
-  //   isLoading = true;
-  //   notifyListeners();
-  //   routeList = [];
-  //   int counter = 0;
-  //   if (markers.length > 2) {
-  //     double? distance = await getDistance(
-  //         origin: markers[counter].position,
-  //         destination: markers[counter].position);
-
-  //   }
-
-  //   try {
-  //     List<String> placeNames = await Future.wait(locations.map(getPlaceName));
-  //     List<List<RouteSegment>> allSegments = [];
-
-  //     // Fetch routes for each segment
-  //     for (int i = 0; i < locations.length - 1; i++) {
-  //       // String markerName = markers[i].title;
-  //       String origin = placeNames[i];
-  //       String destination = placeNames[i + 1];
-  //       final url = 'https://maps.googleapis.com/maps/api/directions/json?'
-  //           'origin=$origin&destination=$destination&mode=driving&'
-  //           'alternatives=true&key=$apiKey';
-
-  //       final response = await http.get(Uri.parse(url));
-  //       final data = jsonDecode(response.body);
-
-  //       if (data['status'] == 'OK') {
-  //         List<RouteSegment> segmentRoutes = [];
-
-  //         for (var route in data['routes']) {
-  //           final encodedPolyline = route['overview_polyline']['points'];
-  //           final polylinePoints = _decodePolyline(encodedPolyline);
-  //           double distance = route['legs'][0]['distance']['value'].toDouble();
-  //           int duration = route['legs'][0]['duration']['value'];
-
-  //           segmentRoutes.add(RouteSegment(
-  //             points: polylinePoints,
-  //             distance: distance,
-  //             duration: duration,
-  //             summary: route['summary'],
-  //           ));
-  //         }
-  //         allSegments.add(segmentRoutes);
-  //       } else {
-  //         debugPrint("Error in segment $i: ${data['status']}");
-  //         return;
-  //       }
-  //     }
-
-  //     // Generate all possible route combinations
-  //     routeList = _combineRouteSegments(allSegments);
-  //     if (routeList.length > 5) {
-  //       routeList = routeList.sublist(0, 5);
-  //     }
-
-  //     // Select the shortest route
-  //     if (routeList.isNotEmpty) {
-  //       selectedRouteIndex = 0;
-  //       double shortestDistance = routeList.first['distance'];
-  //       for (int i = 1; i < routeList.length; i++) {
-  //         if (routeList[i]['distance'] < shortestDistance) {
-  //           shortestDistance = routeList[i]['distance'];
-  //           distance = shortestDistance;
-  //           selectedRouteIndex = i;
-  //         } else {
-  //           distance = shortestDistance;
-  //         }
-  //       }
-  //       _updatePolylines();
-  //       if (polylines.isNotEmpty && mapController != null) {
-  //         LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
-  //         mapController
-  //             ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-  //       }
-  //     }
-
-  //     if (isPathShow) showRoutesBottomSheet(context);
-  //   } catch (e) {
-  //     debugPrint("Error fetching routes: $e");
-  //   } finally {
-  //     isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
   List<Map<String, dynamic>> segmentDistances = [];
   double totalDirectDistance = 0.0;
 
@@ -1410,9 +1387,12 @@ class MapProvider with ChangeNotifier {
     bool isRemove = false,
     bool isPathShow = false,
   }) async {
-    if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
-      debugPrint("At least two locations are required.");
-      return;
+    // if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
+    //   debugPrint("At least two locations are required.");
+    //   return;
+    // }
+    if (isRemove) {
+      locations.add(locations.first);
     }
 
     isLoading = true;
@@ -1423,9 +1403,6 @@ class MapProvider with ChangeNotifier {
     try {
       List<String> placeNames = await Future.wait(locations.map(getPlaceName));
       List<List<RouteSegment>> allSegments = [];
-      // final distanceData = await calculateSegmentDistances(locations);
-      // segmentDistances = distanceData!['segments'];
-      // totalDirectDistance = distanceData['totalDirectDistance'];
 
       for (int i = 0; i < locations.length - 1; i++) {
         String origin = placeNames[i];
@@ -1442,7 +1419,12 @@ class MapProvider with ChangeNotifier {
 
           for (var route in data['routes']) {
             final encodedPolyline = route['overview_polyline']['points'];
+
             final polylinePoints = _decodePolyline(encodedPolyline);
+            // routePolylinePoints =
+            //     polylinePoints; //routeList[index]['polyPoints'];
+            // cumulativeDistances =
+            //     _computeCumulativeDistances(routePolylinePoints);
             double distance = route['legs'][0]['distance']['value'].toDouble();
             int duration = route['legs'][0]['duration']['value'];
 
@@ -1488,11 +1470,11 @@ class MapProvider with ChangeNotifier {
         }
 
         _updatePolylines();
-        if (polylines.isNotEmpty && mapController != null) {
-          LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
-          mapController
-              ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-        }
+        // if (polylines.isNotEmpty && mapController != null) {
+        //   LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
+        //   mapController
+        //       ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+        // }
       }
 
       if (isPathShow) showRoutesBottomSheet(context);
@@ -1505,6 +1487,90 @@ class MapProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  // logic to get only one route
+  // Future<void> fetchRouteWithWaypoints(
+  //   List<LatLng> locations, {
+  //   bool isRemove = false,
+  //   bool isPathShow = false,
+  // }) async {
+  //   if (locations.length < 2) {
+  //     debugPrint("At least two locations are required.");
+  //     return;
+  //   }
+
+  //   isLoading = true;
+  //   notifyListeners();
+  //   routeList = [];
+
+  //   try {
+  //     // Build origin and destination
+  //     final origin = "${locations.first.latitude},${locations.first.longitude}";
+  //     final destination =
+  //         "${locations.last.latitude},${locations.last.longitude}";
+
+  //     // Build waypoints parameter if intermediate points exist
+  //     String waypoints = "";
+  //     if (locations.length > 2) {
+  //       waypoints = "&waypoints=" +
+  //           locations
+  //               .sublist(1, locations.length - 1)
+  //               .map((latLng) => "${latLng.latitude},${latLng.longitude}")
+  //               .join("|");
+  //     }
+
+  //     // Single API call with all waypoints
+  //     final url = 'https://maps.googleapis.com/maps/api/directions/json?'
+  //         'origin=$origin&destination=$destination$waypoints&mode=driving&'
+  //         'alternatives=true&key=$kGoogleApiKey';
+
+  //     final response = await http.get(Uri.parse(url));
+  //     final data = jsonDecode(response.body);
+
+  //     if (data['status'] == 'OK') {
+  //       routeList.clear();
+
+  //       // Process each complete route
+  //       for (var route in data['routes']) {
+  //         final encodedPolyline = route['overview_polyline']['points'];
+  //         final polylinePoints = _decodePolyline(encodedPolyline);
+
+  //         // Calculate total distance and duration
+  //         double totalDistance = 0;
+  //         int? totalDuration = 0;
+  //         for (var leg in route['legs']) {
+  //           totalDistance += leg['distance']['value'];
+  //           // totalDuration += leg['duration']['value'];
+  //         }
+
+  //         routeList.add({
+  //           'polyPoints': polylinePoints,
+  //           'distance': totalDistance,
+  //           'duration': totalDuration,
+  //           'summary': route['summary'],
+  //         });
+  //       }
+
+  //       // Find shortest route
+  //       if (routeList.isNotEmpty) {
+  //         double shortestDistance = routeList.first['distance'];
+  //         selectedRouteIndex = 0;
+  //         for (int i = 0; i < routeList.length; i++) {
+  //           if (routeList[i]['distance'] < shortestDistance) {
+  //             shortestDistance = routeList[i]['distance'];
+  //             selectedRouteIndex = i;
+  //           }
+  //         }
+  //         distance = routeList[selectedRouteIndex]['distance'];
+  //         _updatePolylines();
+  //       }
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Error fetching routes: $e");
+  //   } finally {
+  //     isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
 
   // Add this in your provider class
 
@@ -1512,6 +1578,7 @@ class MapProvider with ChangeNotifier {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -1538,9 +1605,9 @@ class MapProvider with ChangeNotifier {
                         onPressed: () {
                           toggleRouteDisplay();
 
-                          setState(() {
-                            //showAllRoutes = !showAllRoutes;
-                          });
+                          // setState(() {
+                          //   //showAllRoutes = !showAllRoutes;
+                          // });
                         },
                         tooltip: showAllRoutes
                             ? 'Hide other routes'
@@ -1772,12 +1839,12 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  void adjustCameraBounds() {
-    if (points.isNotEmpty && mapController != null) {
-      LatLngBounds bounds = _getLatLngBounds(points);
-      mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-    }
-  }
+  // void adjustCameraBounds() {
+  //   if (points.isNotEmpty && mapController != null) {
+  //     LatLngBounds bounds = _getLatLngBounds(points);
+  //     mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+  //   }
+  // }
 
   double calculateTotalDistance({bool isRefresh = false}) {
     final userProvider = Provider.of<UserViewModel>(context, listen: false);
@@ -1869,6 +1936,8 @@ class MapProvider with ChangeNotifier {
   }
 
   void onRemove(LatLng position) async {
+    final tripProvider = Provider.of<TripViewModel>(context, listen: false);
+
     isLoading = true;
     notifyListeners();
 
@@ -1877,6 +1946,7 @@ class MapProvider with ChangeNotifier {
 
     markers.removeWhere((marker) => marker.position == position);
     mapMarkers.removeWhere((marker) => marker.position == position);
+    tripProvider.lstMarker.removeWhere((marker) => marker.position == position);
     destinationControllers.removeWhere(
       (controller) =>
           controller.text == "${position.latitude}, ${position.longitude}",

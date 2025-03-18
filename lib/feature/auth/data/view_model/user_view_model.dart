@@ -5,12 +5,15 @@ import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/notification.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:coyotex/core/utills/user_context_data.dart';
 import 'package:coyotex/feature/auth/data/model/plans.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/auth/data/model/user_model.dart';
 import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
+import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class UserViewModel extends ChangeNotifier {
   final LoginAPIs _loginAPIs = LoginAPIs();
@@ -43,6 +46,7 @@ class UserViewModel extends ChangeNotifier {
 
   Future<ApiResponseWithData> login(
       String email, String password, BuildContext context) async {
+    final tripProvider = Provider.of<TripViewModel>(context, listen: false);
     _setLoading(true);
     try {
       final response = await _loginAPIs.login(email, password);
@@ -52,7 +56,10 @@ class UserViewModel extends ChangeNotifier {
             refreshTokenPref, response.data["refreshToken"]);
 
         NotificationService.getDeviceToken();
-        await getUser();
+        await UserContextData.setCurrentUserAndFetchUserData(context);
+
+        // await getUser();
+        // await tripProvider.getAllMarker();
 
         Navigator.pushAndRemoveUntil(
           context,

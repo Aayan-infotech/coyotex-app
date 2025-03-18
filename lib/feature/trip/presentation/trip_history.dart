@@ -268,25 +268,29 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                   child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
               )),
-              errorWidget: (context, url, error) =>
-                  const Icon(Icons.image_not_supported, color: Colors.white),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 35, left: 5, right: 5),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Text(
-                trip.markers.isNotEmpty ? trip.markers.first.snippet : 'Trip',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+              errorWidget: (context, url, error) => Image.asset(
+                "assets/images/coyotex_place_holder.jpg",
+                width: 50,
+                height: 50,
+                fit: BoxFit.contain,
               ),
             ),
           ),
+          // Padding(
+          //   padding: const EdgeInsets.only(bottom: 35, left: 5, right: 5),
+          //   child: Align(
+          //     alignment: Alignment.bottomCenter,
+          //     child: Text(
+          //       trip.markers.isNotEmpty ? trip.markers.first.snippet : 'Trip',
+          //       style: const TextStyle(
+          //         color: Colors.white,
+          //         fontSize: 14,
+          //         fontWeight: FontWeight.bold,
+          //       ),
+          //       textAlign: TextAlign.center,
+          //     ),
+          //   ),
+          // ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(

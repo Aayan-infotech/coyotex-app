@@ -182,7 +182,30 @@ class _WeatherPreferenceScreenState extends State<WeatherPreferenceScreen> {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () async {
+                                try {
+                                  var response = await userViewModel
+                                      .updatePref(widget.userPreferences!);
+                                  if (response.success) {
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                HomeScreen()));
+                                  } else {
+                                    AppDialog.showErrorDialog(
+                                        context,
+                                        response.message ??
+                                            'Failed to update preferences', () {
+                                      Navigator.of(context).pop();
+                                    });
+                                  }
+                                } catch (e) {
+                                  AppDialog.showErrorDialog(
+                                      context, 'An error occurred: $e', () {
+                                    Navigator.of(context).pop();
+                                  });
+                                }
+                              },
                               child: const Text(
                                 "Skip",
                                 style: TextStyle(
@@ -194,7 +217,7 @@ class _WeatherPreferenceScreenState extends State<WeatherPreferenceScreen> {
                           ],
                         ),
                       ],
-                      SizedBox(
+                      const SizedBox(
                         height: 20,
                       )
                     ],

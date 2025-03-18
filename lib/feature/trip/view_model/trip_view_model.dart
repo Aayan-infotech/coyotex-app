@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 class TripViewModel extends ChangeNotifier {
   final TripAPIs _tripAPIs = TripAPIs();
   List<MarkerData> lstMarker = [];
+  List<MarkerData> lstAllMarker = [];
 
   Future<ApiResponseWithData<Map<String, dynamic>>> addTrip(
       TripModel tripModel) async {
@@ -26,7 +27,9 @@ class TripViewModel extends ChangeNotifier {
       lstMarker = (response.data["markers"] as List)
           .map((item) => MarkerData.fromJson(item))
           .toList();
-    
+      lstAllMarker = (response.data["markers"] as List)
+          .map((item) => MarkerData.fromJson(item))
+          .toList();
     } else {
       lstMarker = [];
     }

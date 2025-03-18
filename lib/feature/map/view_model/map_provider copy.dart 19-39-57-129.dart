@@ -37,6 +37,7 @@
 //   late TripModel selectedTripModel;
 //   bool providerLetsHuntButton = false;
 //   String selectedWindDirection = 'North';
+//   List<Map<String, dynamic>> routeDetails = [];
 
 //   final String sessionToken = const Uuid().v4();
 //   var kGoogleApiKey = "AIzaSyDknLyGZRHAWa4s5GuX5bafBsf-WD8wd7s";
@@ -353,7 +354,7 @@
 //       path.add(LatLng(initialPosition.latitude, initialPosition.longitude));
 
 //       // Fetch the route only once
-//       await fetchRouteWithWaypoints(path);
+//       await fetchRouteWithWaypoints(path, isPathShow: true);
 //       // updateCameraPosition(LatLng(initialPosition.latitude, initialPosition.longitude));
 
 //       isLoading = false;
@@ -795,10 +796,95 @@
 //   }
 
 //   int selectedRouteIndex = 0;
-//   List<Map<String, dynamic>> routeDetails = [];
+//   List<Map<String, dynamic>> routeList = [];
 
-//   Future<void> fetchRouteWithWaypoints(List<LatLng> locations,
-//       {bool isRemove = false}) async {
+//   int shortestRouteIndex = 0;
+//   bool showAllRoutes = true;
+//   void selectRoute(int index) {
+//     selectedRouteIndex = index;
+//     showAllRoutes = false;
+//     _updatePolylines();
+//     notifyListeners();
+//   }
+
+//   void toggleRouteDisplay() {
+//     showAllRoutes = !showAllRoutes;
+//     _updatePolylines();
+//     notifyListeners();
+//   }
+
+//   void _updatePolylines() {
+//     polylines.clear();
+
+//     if (showAllRoutes) {
+//       // Draw all routes with appropriate styling
+//       for (int i = 0; i < routeList.length; i++) {
+//         _addRoutePolyline(routeList[i]['polyPoints'], i == selectedRouteIndex,
+//             i == shortestRouteIndex);
+//       }
+//     } else {
+//       // Draw only selected route
+//       _addRoutePolyline(
+//           routeList[selectedRouteIndex]['polyPoints'], true, false);
+//     }
+
+//     // Update camera position
+//     if (polylines.isNotEmpty && mapController != null) {
+//       final points = routeList[selectedRouteIndex]['polyPoints'];
+//       LatLngBounds bounds = _getLatLngBounds(points);
+//       mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+//     }
+//   }
+
+//   void _addRoutePolyline(
+//       List<LatLng> points, bool isSelected, bool isShortest) {
+//     if (isSelected) {
+//       polylines.add(Polyline(
+//         polylineId: PolylineId('route_selected_border'),
+//         points: points,
+//         color: Colors.blue[900]!,
+//         width: 10,
+//       ));
+//       polylines.add(Polyline(
+//         polylineId: PolylineId('route_selected_inner'),
+//         points: points,
+//         color: Colors.blue,
+//         width: 6,
+//       ));
+//     } else if (isShortest) {
+//       polylines.add(Polyline(
+//         polylineId: PolylineId('route_shortest_border'),
+//         points: points,
+//         color: Colors.green[900]!,
+//         width: 10,
+//       ));
+//       polylines.add(Polyline(
+//         polylineId: PolylineId('route_shortest_inner'),
+//         points: points,
+//         color: Colors.green,
+//         width: 6,
+//       ));
+//     } else {
+//       polylines.add(Polyline(
+//         polylineId: PolylineId('route_${points.hashCode}_border'),
+//         points: points,
+//         color: Colors.blue.withOpacity(0.3),
+//         width: 10,
+//       ));
+//       polylines.add(Polyline(
+//         polylineId: PolylineId('route_${points.hashCode}_inner'),
+//         points: points,
+//         color: Colors.white.withOpacity(0.7),
+//         width: 5,
+//       ));
+//     }
+//   }
+
+//   Future<void> fetchRouteWithWaypoints(
+//     List<LatLng> locations, {
+//     bool isRemove = false,
+//     bool isPathShow = false,
+//   }) async {
 //     if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
 //       debugPrint("At least two locations are required.");
 //       return;
@@ -810,17 +896,15 @@
 
 //     isLoading = true;
 //     notifyListeners();
+//     routeList = [];
 
 //     try {
-//       // Convert LatLng to Place Names
 //       List<String> placeNames = await Future.wait(locations.map(getPlaceName));
 
 //       String origin = placeNames.first;
 //       String destination = placeNames.last;
 
-//       String waypoints = placeNames
-//           .sublist(1, placeNames.length - 1)
-//           .join('|'); // Middle points as waypoints
+//       String waypoints = placeNames.sublist(1, placeNames.length - 1).join('|');
 
 //       // Fetch routes using Place Names
 //       final url =
@@ -840,9 +924,17 @@
 //           final route = data['routes'][i];
 //           final encodedPolyline = route['overview_polyline']['points'];
 //           final polylinePoints = _decodePolyline(encodedPolyline);
-          
+//           final dis = route['legs'][0]['distance']['value']; // meters
+//           final duration = route['legs'][0]['duration']['value'];
 
 //           double distance = calculateTotalDistanceForMap(polylinePoints);
+//           routeList.add({
+//             "polyPoints": polylinePoints,
+//             'distance': dis,
+//             'duration': duration,
+//             'summery': route["summary"]
+//           });
+
 //           if (distance < shortestDistance) {
 //             shortestDistance = distance;
 //             shortestRouteIndex = i;
@@ -887,13 +979,17 @@
 
 //           debugPrint("Route $i: ${route['summary']}"); // Logs route names
 //         }
+//         selectedRouteIndex = shortestRouteIndex;
+
+// // Replace the polyline creation code with:
+//         _updatePolylines();
 
 //         if (polylines.isNotEmpty && mapController != null) {
 //           LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
 //           mapController
 //               ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
 //         }
-
+//         if (isPathShow) showRoutesBottomSheet(context);
 //         debugPrint("Successfully fetched ${data['routes'].length} routes.");
 //       } else {
 //         debugPrint(
@@ -905,6 +1001,141 @@
 //       isLoading = false;
 //       notifyListeners();
 //     }
+//   }
+
+//   // Add this in your provider class
+
+//   void showRoutesBottomSheet(BuildContext context) {
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       builder: (context) => Container(
+//         padding: const EdgeInsets.all(16),
+//         height: MediaQuery.of(context).size.height * 0.6,
+//         child: Column(
+//           children: [
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: [
+//                 Text(
+//                   'Available Routes',
+//                   style: TextStyle(
+//                     fontSize: 20,
+//                     fontWeight: FontWeight.bold,
+//                     color: Colors.blue[800],
+//                   ),
+//                 ),
+//                 IconButton(
+//                   icon: Icon(
+//                       showAllRoutes ? Icons.visibility_off : Icons.visibility),
+//                   onPressed: toggleRouteDisplay,
+//                   tooltip:
+//                       showAllRoutes ? 'Hide other routes' : 'Show all routes',
+//                 ),
+//               ],
+//             ),
+//             const SizedBox(height: 10),
+//             Expanded(
+//               child: ListView.builder(
+//                 itemCount: routeList.length,
+//                 itemBuilder: (context, index) {
+//                   final route = routeList[index];
+//                   final isSelected = index == selectedRouteIndex;
+//                   final isShortest = index == shortestRouteIndex;
+
+//                   return GestureDetector(
+//                     onTap: () {
+//                       selectRoute(index);
+//                       Navigator.pop(context);
+//                     },
+//                     child: Card(
+//                       color: isSelected
+//                           ? Colors.blue[50]
+//                           : isShortest
+//                               ? Colors.green[50]
+//                               : Colors.white,
+//                       elevation: 2,
+//                       shape: RoundedRectangleBorder(
+//                         side: BorderSide(
+//                           color: isSelected
+//                               ? Colors.blue
+//                               : isShortest
+//                                   ? Colors.green
+//                                   : Colors.grey[300]!,
+//                           width: 2,
+//                         ),
+//                         borderRadius: BorderRadius.circular(10),
+//                       ),
+//                       child: ListTile(
+//                         contentPadding: const EdgeInsets.symmetric(
+//                           vertical: 8,
+//                           horizontal: 16,
+//                         ),
+//                         leading: isShortest
+//                             ? Icon(Icons.star, color: Colors.green)
+//                             : null,
+//                         title: Text(
+//                           route['summery'] ?? 'Route ${index + 1}',
+//                           style: TextStyle(
+//                             fontWeight: FontWeight.w600,
+//                             color: isSelected
+//                                 ? Colors.blue[900]
+//                                 : isShortest
+//                                     ? Colors.green[900]
+//                                     : Colors.black,
+//                           ),
+//                         ),
+//                         subtitle: Column(
+//                           crossAxisAlignment: CrossAxisAlignment.start,
+//                           children: [
+//                             const SizedBox(height: 4),
+//                             _buildInfoRow(
+//                               Icons.directions_car,
+//                               _formatDistance(route['distance']),
+//                             ),
+//                             const SizedBox(height: 4),
+//                             _buildInfoRow(
+//                               Icons.access_time,
+//                               _formatDuration(route['duration']),
+//                             )
+//                           ],
+//                         ),
+//                         trailing: isSelected
+//                             ? Icon(Icons.check_circle, color: Colors.blue)
+//                             : null,
+//                       ),
+//                     ),
+//                   );
+//                 },
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildInfoRow(IconData icon, String text) {
+//     return Row(
+//       children: [
+//         Icon(icon, size: 16, color: Colors.grey),
+//         const SizedBox(width: 6),
+//         Text(text, style: TextStyle(color: Colors.grey[600])),
+//       ],
+//     );
+//   }
+
+//   String _formatDistance(int meters) {
+//     return meters > 1000
+//         ? '${(meters / 1000).toStringAsFixed(1)} km'
+//         : '$meters m';
+//   }
+
+//   String _formatDuration(int seconds) {
+//     final hours = seconds ~/ 3600;
+//     final minutes = (seconds % 3600) ~/ 60;
+
+//     return hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
 //   }
 
 //   double calculateTotalDistanceForMap(List<LatLng> points) {
@@ -927,11 +1158,6 @@
 //         cos((lat2 - lat1) * p) / 2 +
 //         cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2;
 //     return 12742 * asin(sqrt(a));
-//   }
-
-//   void selectRoute(int index) {
-//     selectedRouteIndex = index;
-//     notifyListeners();
 //   }
 
 //   Future<void> getPlaceSuggestions(String input, bool isStartField) async {

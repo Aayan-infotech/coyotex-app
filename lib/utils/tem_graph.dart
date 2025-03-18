@@ -77,7 +77,7 @@ class TemperatureChart extends StatelessWidget {
       xAxis: {
         categories: [$jsCategories],
         title: {
-          text: 'Temperature Range (°C)',
+          text: 'Temperature Range (°F)',
           style: {
             color: '#ffffff'
           }
@@ -137,6 +137,7 @@ class TemperatureChart extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: HighCharts(
+      
         size: const Size(double.infinity, 400),
         data: chartData,
         scripts: const [

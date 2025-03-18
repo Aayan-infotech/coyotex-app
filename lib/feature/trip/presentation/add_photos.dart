@@ -402,7 +402,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       _uploadProgressNotifier.value = 0.0;
       if (mounted) {
         setState(() => _isUploading = false);
-        Navigator.pop(context);
+        //  Navigator.pop(context);
         if (widget.isRestart!) Navigator.pop(context);
 
         // Close progress dialog
@@ -414,8 +414,10 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           "Media uploaded successfully",
           () {
             // setState(() => _isUploading = false);
-            Navigator.of(context).pop(true);
-            Navigator.of(context).pop(true);
+            if (widget.isRestart!) {
+              Navigator.of(context).pop(true);
+              Navigator.of(context).pop(true);
+            }
           },
         );
       } else if (errorMessage != null && mounted) {
@@ -440,7 +442,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
 
   @override
   void dispose() {
-   //s _controller?.dispose();
+    //s _controller?.dispose();
     super.dispose();
   }
 

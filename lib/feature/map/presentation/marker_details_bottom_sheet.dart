@@ -62,6 +62,7 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
 
     markerData = tripProvider.lstMarker.firstWhere(
       (i) => i.id == widget.mapMarker!.markerId.value,
+      // ignore: cast_from_null_always_fails
       orElse: () => null as MarkerData, // hacky way, not recommended
     );
     mapProvider.selectedOldMarker = markerData;
@@ -211,6 +212,12 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                                   isUnfocus: true,
                                   name: "Cancel",
                                   onPressed: () {
+                                    if (widget.mapMarker == null) {
+                                      mapProvider.points.removeLast();
+                                      mapProvider.path.removeLast();
+                                      mapProvider.markers.removeLast();
+                                    }
+
                                     Navigator.of(context).pop();
                                   })),
                           const SizedBox(width: 10),
@@ -242,6 +249,9 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
           mapProvider.markers.add(markerData!);
           mapProvider.points.add(markerData!.position);
           mapProvider.path.add(markerData!.position);
+          if (mapProvider.markers.length >= 2)
+            mapProvider.fetchRouteWithWaypoints(mapProvider.path);
+          mapProvider.isSave = true;
           Navigator.of(context).pop(true);
         } else {
           int minutes = int.parse(_minuteController.text);

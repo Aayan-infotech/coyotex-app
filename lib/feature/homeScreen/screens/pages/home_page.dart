@@ -33,8 +33,9 @@ class _HomePageState extends State<HomePage> {
     mapProvider.getCurrentLocation();
     mapProvider.getTrips();
     NotificationService.getDeviceToken();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
+      if (mounted && _scrollController.hasClients) {
         _scrollController.jumpTo(_scrollController.position.minScrollExtent);
       }
     });
@@ -49,6 +50,7 @@ class _HomePageState extends State<HomePage> {
         body: mapProvider.isLoading
             ? const Center(child: CircularProgressIndicator.adaptive())
             : SingleChildScrollView(
+                controller: _scrollController,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 13.0),
                   child: Column(
@@ -155,7 +157,7 @@ class _HomePageState extends State<HomePage> {
                                     Text(
                                         'Wind: ${mapProvider.weather.wind.speed}mph'),
                                     Text(
-                                        'Barometric pressure: ${(mapProvider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg')
+                                        'BP: ${(mapProvider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg')
                                   ],
                                 ),
                               ],
@@ -189,149 +191,254 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      SizedBox(
-                        height: 200,
-                        child: ListView.builder(
-                          reverse: false,
-                          controller: _scrollController,
-                          scrollDirection: Axis.horizontal,
-                          itemCount: mapProvider.trips.length,
-                          itemBuilder: (context, index) {
-                            final trip = mapProvider
-                                .trips[mapProvider.trips.length - 1 - index];
-                            return GestureDetector(
-                              onTap: () {
-                                final mapProvider = Provider.of<MapProvider>(
-                                    context,
-                                    listen: false);
-                                mapProvider.selectedTripModel = trip;
-                                Navigator.of(context)
-                                    .push(MaterialPageRoute(builder: (context) {
-                                  return TripDetailsScreen(
-                                    tripModel: trip,
-                                  );
-                                }));
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: Card(
-                                  color: Colors.grey[900],
-                                  child: Stack(
-                                    // mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(
-                                            10), // Adjust the radius as needed
-                                        child: CachedNetworkImage(
-                                          imageUrl: (trip.markers.isNotEmpty &&
-                                                  trip.markers.first.media !=
-                                                      null &&
-                                                  trip.markers.first.media!
-                                                      .isNotEmpty)
-                                              ? trip.markers.first.media!
-                                                  .firstWhere(
-                                                  (media) =>
-                                                      media.isNotEmpty &&
-                                                      !checkIfVideo(media),
-                                                  orElse: () =>
-                                                      '', // Return an empty string if no valid image is found
-                                                )
-                                              : '',
-                                          width: 200,
-                                          height: 200,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) =>
-                                              Container(
-                                            width: 150,
-                                            height: 100,
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey[300],
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            child: const Center(
-                                              child: CircularProgressIndicator
-                                                  .adaptive(),
-                                            ),
-                                          ),
-                                          errorWidget: (context, url, error) =>
-                                              Container(
-                                            width: 150,
-                                            height: 100,
-                                            decoration: BoxDecoration(
-                                              color: const Color.fromARGB(
-                                                  255, 58, 55, 55),
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            child: const Icon(Icons.image,
-                                                color: Colors.red),
-                                          ),
-                                        ),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.bottomLeft,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              left: 10, bottom: 30),
-                                          child: SizedBox(
-                                            width: 150,
-                                            child: Text(
-                                              trip.name,
-                                              style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.bottomLeft,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              left: 10, bottom: 10),
-                                          child: Text(
-                                            '${trip.markers.length} Locations',
-                                            style: const TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 12),
-                                          ),
-                                        ),
-                                      ),
+                      mapProvider.trips.isEmpty
+                          ? SizedBox(
+                              height: 270,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 20),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.grey[850]!,
+                                      Colors.red[900]!, // Changed to deep red
                                     ],
                                   ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.red.withOpacity(
+                                          0.4), // Changed to red shadow
+                                      blurRadius: 15,
+                                      spreadRadius: 3,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                  image: DecorationImage(
+                                    image: AssetImage(
+                                        'assets/camouflage_pattern.png'),
+                                    fit: BoxFit.cover,
+                                    opacity: 0.15,
+                                  ),
+                                  border: Border.all(
+                                    color: Colors.red[800]!, // Red border
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Icon(
+                                      Icons.track_changes_rounded,
+                                      size: 40,
+                                      color: Colors.amber[50]!,
+                                    ),
+                                    const Text(
+                                      "Your Hunting Journey Awaits!",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                        letterSpacing: 0.8,
+                                        fontFamily: 'RobotoCondensed',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      "Track your adventures, log trophies,\nand build your outdoor legacy",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w300,
+                                        color: Colors.white70,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    // ElevatedButton.icon(
+                                    //   icon: Icon(Icons.forest, size: 20),
+                                    //   label: const Text("Start New Hunt"),
+                                    //   style: ElevatedButton.styleFrom(
+                                    //     backgroundColor:
+                                    //         Colors.red[700], // Red button
+                                    //     foregroundColor: Colors.amber[50],
+                                    //     shape: RoundedRectangleBorder(
+                                    //       borderRadius:
+                                    //           BorderRadius.circular(12),
+                                    //     ),
+                                    //     padding: const EdgeInsets.symmetric(
+                                    //         horizontal: 20, vertical: 12),
+                                    //   ),
+                                    //   onPressed: () {},
+                                    // ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
+                            )
+                          : SizedBox(
+                              height: 200,
+                              child: ListView.builder(
+                                reverse: false,
+                                controller: _scrollController,
+                                scrollDirection: Axis.horizontal,
+                                itemCount: mapProvider.trips.length,
+                                itemBuilder: (context, index) {
+                                  final trip = mapProvider.trips[
+                                      mapProvider.trips.length - 1 - index];
+                                  return GestureDetector(
+                                    onTap: () {
+                                      final mapProvider =
+                                          Provider.of<MapProvider>(context,
+                                              listen: false);
+                                      mapProvider.selectedTripModel = trip;
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) {
+                                          return TripDetailsScreen(
+                                            tripModel: trip,
+                                          );
+                                        }),
+                                      );
+                                    },
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.only(right: 8.0),
+                                      child: Card(
+                                        color: Colors.grey[900],
+                                        elevation: 5,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Trip Image
+                                            ClipRRect(
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                topLeft: Radius.circular(12),
+                                                topRight: Radius.circular(12),
+                                              ),
+                                              child: CachedNetworkImage(
+                                                imageUrl: (trip.markers
+                                                            .isNotEmpty &&
+                                                        trip.markers.first
+                                                                .media !=
+                                                            null &&
+                                                        trip.markers.first
+                                                            .media!.isNotEmpty)
+                                                    ? trip.markers.first.media!
+                                                        .firstWhere(
+                                                        (media) =>
+                                                            media.isNotEmpty &&
+                                                            !checkIfVideo(
+                                                                media),
+                                                        orElse: () => '',
+                                                      )
+                                                    : '',
+                                                width: 200,
+                                                height: 130,
+                                                fit: BoxFit.fitWidth,
+                                                placeholder: (context, url) =>
+                                                    Container(
+                                                  width: 200,
+                                                  height: 130,
+                                                  color: Colors.grey[300],
+                                                  child: const Center(
+                                                    child:
+                                                        CircularProgressIndicator
+                                                            .adaptive(),
+                                                  ),
+                                                ),
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        Image.asset(
+                                                  "assets/images/coyotex_place_holder.jpg",
+                                                  width: 200,
+                                                  height: 130,
+                                                  fit: BoxFit.contain,
+                                                ),
+                                              ),
+                                            ),
+                                            // Trip Details Below Image
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10.0,
+                                                      vertical: 8.0),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  // Trip Name
+                                                  SizedBox(
+                                                    width: 180,
+                                                    child: Text(
+                                                      trip.name,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      maxLines: 1,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  // Locations Count
+                                                  Text(
+                                                    '${trip.markers.length} Locations',
+                                                    style: const TextStyle(
+                                                      color: Colors.red,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+
                       const SizedBox(height: 16),
 
                       // Recent Trips Section
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Recent Trips',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                      if (mapProvider.trips.isNotEmpty)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Recent Trips',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context)
-                                  .push(MaterialPageRoute(builder: (context) {
-                                return TripsHistoryScreen();
-                              }));
-                            },
-                            child: const Text('See All',
-                                style: TextStyle(color: Colors.orange)),
-                          ),
-                        ],
-                      ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context)
+                                    .push(MaterialPageRoute(builder: (context) {
+                                  return TripsHistoryScreen();
+                                }));
+                              },
+                              child: const Text('See All',
+                                  style: TextStyle(color: Colors.orange)),
+                            ),
+                          ],
+                        ),
 
                       ListView.builder(
                         shrinkWrap: true,

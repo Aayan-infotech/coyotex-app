@@ -62,6 +62,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
       context,
     );
     int totalTime = 0;
+    totalKilledAnimal = 0;
+    totalSeenAnimal = 0;
     for (var item in widget.tripModel.markers) {
       totalTime += item.duration;
       totalKilledAnimal += int.parse(item.animalKilled);
@@ -71,7 +73,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     totalTravelTime =
         convertMinutesToHours(widget.tripModel.totalDistance, totalTime);
     return isLoading
-        ? Center(
+        ? const Center(
             child: CircularProgressIndicator.adaptive(
               backgroundColor: Colors.white,
             ),
@@ -215,6 +217,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                     mapProvider.points = tripModel.routePoints;
                     mapProvider.providerLetsHuntButton = true;
                     mapProvider.path = tripModel.routePoints;
+                    mapProvider.onTapOnMap = false;
                     mapProvider.isRestart =
                         (widget.tripModel.tripStatus == "created")
                             ? false
@@ -230,7 +233,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                         .push(MaterialPageRoute(builder: (context) {
                       return MapScreen(
                         isRestart: true,
-                        googleMapController: mapProvider.mapController,
                       );
                     }));
                   })

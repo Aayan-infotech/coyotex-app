@@ -135,6 +135,7 @@ class _MapScreenState extends State<MapScreen> {
       backgroundColor: Colors.white,
       builder: (context) {
         return DistanceDialogue(
+          provider: provider,
           // isLocation: isLocation,
           markers: provider.markers,
         );
@@ -142,19 +143,33 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  bool isMarkerLoading = false;
+  asyncInit() async {
+    setState(() {
+      isMarkerLoading = true;
+    });
+    final provider = Provider.of<MapProvider>(context, listen: false);
+    final tripProvider = Provider.of<TripViewModel>(context, listen: false);
+    await tripProvider.getAllMarker();
+
+    // provider.updateMapMarkers(tripProvider.lstMarker);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (provider.isStartavigation) {
+        provider.updateMapMarkers(provider.liveTripMarker);
+      } else {
+        provider.updateMapMarkers(tripProvider.lstMarker);
+      }
+    });
+    setState(() {
+      isMarkerLoading = false;
+    });
+  }
+
   @override
   void initState() {
     _loadMarkers();
-    final provider = Provider.of<MapProvider>(context, listen: false);
-    final tripProvider = Provider.of<TripViewModel>(context, listen: false);
 
-    // provider.updateMapMarkers(tripProvider.lstMarker);
-
-    if (provider.isStartavigation) {
-      provider.updateMapMarkers(provider.liveTripMarker);
-    } else {
-      provider.updateMapMarkers(tripProvider.lstMarker);
-    }
+    asyncInit();
     // _initCompass();
     super.initState();
   }
@@ -190,7 +205,7 @@ class _MapScreenState extends State<MapScreen> {
         //   ));
         // }
         provider.context = context;
-        return provider.isLoading
+        return provider.isLoading || isMarkerLoading
             ? const Center(
                 child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
@@ -213,12 +228,17 @@ class _MapScreenState extends State<MapScreen> {
                           child: Stack(
                             children: [
                               GoogleMap(
+                                // initialCameraPosition: CameraPosition(
+                                //   target: provider.mapMarkers.isNotEmpty
+                                //       ? provider.mapMarkers.last.position
+                                //       : provider.initialPosition,
+                                //   zoom: 12,
+                                // ),
                                 initialCameraPosition: CameraPosition(
-                                  target: provider.mapMarkers.isNotEmpty
-                                      ? provider.mapMarkers.last.position
-                                      : provider.initialPosition,
+                                  target: provider.initialPosition,
                                   zoom: 12,
                                 ),
+
                                 myLocationEnabled: true,
                                 mapType: MapType.normal,
                                 compassEnabled: true,
@@ -237,16 +257,18 @@ class _MapScreenState extends State<MapScreen> {
                                         provider.onMapTapped(latlang, context);
                                       },
                                 zoomGesturesEnabled: true,
-                                onMapCreated: (controller) {
-                                  provider.mapController = controller;
-                                  // if (widget.isRestart == true) {
-                                  //   provider.mapController =
-                                  //       widget.googleMapController;
-                                  // } else {
+                                onMapCreated: (controller) =>
+                                    provider.onMapCreated(controller),
+                                // onMapCreated: (controller) {
+                                //   provider.mapController = controller;
+                                //   // if (widget.isRestart == true) {
+                                //   //   provider.mapController =
+                                //   //       widget.googleMapController;
+                                //   // } else {
 
-                                  // }
-                                  provider.setMarkersWithOnTap(context);
-                                },
+                                //   // }
+
+                                // },
                               ),
                               //  if (provider.isTripStart)
                               // Padding(
@@ -643,8 +665,9 @@ class _MapScreenState extends State<MapScreen> {
                             const SizedBox(
                               height: 10,
                             ),
-                            if (provider.onTapOnMap &&
-                                provider.markers.isNotEmpty)
+                            if (provider.markers.length >= 2 &&
+                                !provider.isSavedTrip &&
+                                provider.onTapOnMap)
                               GestureDetector(
                                 onTap: () {
                                   showMarkersBottomSheet(context, provider);
@@ -790,6 +813,108 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     ),
+                    // if (provider.trips.isNotEmpty && !provider.isTripStart)
+                    //   Positioned(
+                    //     top: MediaQuery.of(context).size.height * 0.6,
+                    //     left: 15,
+                    //     right: 10,
+                    //     bottom: 10,
+                    //     child: SingleChildScrollView(
+                    //       scrollDirection: Axis.horizontal,
+                    //       reverse: true,
+                    //       child: Row(
+                    //         children:
+                    //             List.generate(provider.trips.length, (index) {
+                    //           TripModel tripModel = TripModel(
+                    //             tripStatus: provider.trips[index].tripStatus,
+                    //             id: provider.trips[index].id,
+                    //             userId: provider.trips[index].userId,
+                    //             name: provider.trips[index].name,
+                    //             startLocation:
+                    //                 provider.trips[index].startLocation,
+                    //             destination: provider.trips[index].destination,
+                    //             waypoints: List.from(
+                    //                 provider.trips[index].waypoints), // Copy
+                    //             totalDistance:
+                    //                 provider.trips[index].totalDistance,
+                    //             createdAt: provider.trips[index].createdAt,
+                    //             routePoints: List.from(
+                    //                 provider.trips[index].routePoints), // Copy
+                    //             markers: List.from(
+                    //                 provider.trips[index].markers), // Copy
+                    //             weatherMarkers: List.from(provider
+                    //                 .trips[index].weatherMarkers), // Copy
+                    //             animalKilled:
+                    //                 provider.trips[index].animalKilled,
+                    //             animalSeen: provider.trips[index].animalSeen,
+                    //             images: List.from(
+                    //                 provider.trips[index].images), // Copy
+                    //           );
+
+                    //           return GestureDetector(
+                    //             onTap: () async {
+                    //               provider.isSavedTrip = true;
+                    //               provider.isSave = true;
+                    //               provider.markers = tripModel.markers;
+                    //               provider.distance = tripModel.totalDistance;
+                    //               provider.selectedTripModel = tripModel;
+                    //               provider.points = tripModel.routePoints;
+                    //               provider.providerLetsHuntButton = true;
+                    //               provider.path = tripModel.routePoints;
+                    //               await provider.fetchRouteWithWaypoints(
+                    //                 tripModel.routePoints,
+                    //               );
+                    //             },
+                    //             child: Card(
+                    //               color: const Color.fromRGBO(255, 255, 255, 1),
+                    //               child: SizedBox(
+                    //                 height: MediaQuery.of(context).size.height *
+                    //                     0.13, // Explicit height of the card
+                    //                 width: MediaQuery.of(context).size.width *
+                    //                     0.8, // Set the width for each card
+                    //                 child: Row(
+                    //                   children: [
+                    //                     const SizedBox(width: 10),
+                    //                     Expanded(
+                    //                       child: Padding(
+                    //                         padding: const EdgeInsets.all(12.0),
+                    //                         child: Column(
+                    //                           crossAxisAlignment:
+                    //                               CrossAxisAlignment.start,
+                    //                           children: [
+                    //                             Text(
+                    //                               tripModel.name,
+                    //                               style: const TextStyle(
+                    //                                   fontSize: 14,
+                    //                                   fontWeight:
+                    //                                       FontWeight.bold,
+                    //                                   color: Color.fromRGBO(
+                    //                                       44, 51, 62, 1)),
+                    //                               overflow:
+                    //                                   TextOverflow.ellipsis,
+                    //                             ),
+                    //                             Text(
+                    //                               tripModel.startLocation,
+                    //                               maxLines: 4,
+                    //                               overflow:
+                    //                                   TextOverflow.ellipsis,
+                    //                               style: const TextStyle(
+                    //                                   color: Colors.grey,
+                    //                                   fontSize: 12),
+                    //                             )
+                    //                           ],
+                    //                         ),
+                    //                       ),
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //               ),
+                    //             ),
+                    //           );
+                    //         }),
+                    //       ),
+                    //     ),
+                    //   ),
                     if (provider.isSave) tripCard(provider, context),
                   ],
                 ),
@@ -840,27 +965,43 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                "${provider.weather.main.temp}\u00B0",
-                                style: TextStyle(fontSize: 22),
-                              ),
-                              SizedBox(width: 5),
-                              Text(
-                                  "(${provider.weather.weather.first.description})"),
-                            ],
+                          Text(
+                            "${provider.weather.main.temp}\u00B0",
+                            style: TextStyle(fontSize: 22),
                           ),
-                          SizedBox(
-                            width: 60,
+                          SizedBox(width: 5),
+                          Text(
+                              "(${provider.weather.weather.first.description})"),
+                        ],
+                      ),
+                      Text(
+                        DateFormat('MMM d yyyy').format(DateTime.now()),
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 13),
+                          const SizedBox(width: 8),
+                          Text(
+                            provider.weather.base,
+                            style: const TextStyle(fontSize: 12),
                           ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        children: [
                           GestureDetector(
                             onTap: () {
                               showCustomDialog(context, provider);
@@ -870,9 +1011,7 @@ class _MapScreenState extends State<MapScreen> {
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
-                          SizedBox(
-                            width: 10,
-                          ),
+                          SizedBox(width: 10),
                           GestureDetector(
                             onTap: () {
                               distanceDialogue(context, provider,
@@ -886,33 +1025,13 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         ],
                       ),
-                      Text(
-                        DateFormat('MMM d yyyy').format(DateTime.now()),
-                        style: const TextStyle(fontSize: 15),
-                      ),
-                      Row(
+                      SizedBox(height: 5),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 13,
-                          ),
-                          const SizedBox(width: 8),
+                          Text("Humidity: ${provider.weather.main.humidity}%"),
                           Text(
-                            provider.weather.base,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.37,
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                  "Humidity: ${provider.weather.main.humidity}%"),
-                              Text(
-                                  "Pressure: ${provider.weather.main.pressure} "),
-                            ],
-                          ),
+                              'BP: ${(provider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg')
                         ],
                       ),
                     ],

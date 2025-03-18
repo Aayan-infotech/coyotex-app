@@ -92,7 +92,7 @@ class _MarkerMediaScreenState extends State<MarkerMediaScreen> {
                           ),
                         ),
                         Spacer(),
-                        if (marker.media!.isEmpty)
+                        if (marker.media!.length <= 3)
                           TextButton(
                             onPressed: () {
                               Navigator.of(context)
