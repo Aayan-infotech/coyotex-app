@@ -27,33 +27,33 @@ class _DataPointsScreenState extends State<DataPointsScreen> {
       isLoading = true;
     });
 
-    Map<String, dynamic> data = {
-      "tripId": widget.id,
-      "key": "animalsSeen", //animalKilled
-      "value": _shwNumberController.text.isNotEmpty
-          ? int.parse(_shwNumberController.text)
-          : 0
-    };
-    var response = await _tripAPIs.addAnimalSeenAndKilled(data);
-    Map<String, dynamic> killedAnimalData = {
-      "tripId": widget.id,
-      "key": "animalKilled",
-      "value": _shwNumberController.text.isNotEmpty
-          ? int.parse(_shwNumberController.text)
-          : 0
-    };
-    response = await _tripAPIs.addAnimalSeenAndKilled(killedAnimalData);
-    if (response.success) {
-      AppDialog.showSuccessDialog(context, response.message, () {
-        final mapProvider = Provider.of<MapProvider>(context, listen: false);
-        mapProvider.submit(context);
-      });
-    } else {
-      AppDialog.showErrorDialog(context, response.message, () {
-        final mapProvider = Provider.of<MapProvider>(context, listen: false);
-        mapProvider.submit(context);
-      });
-    }
+    // Map<String, dynamic> data = {
+    //   "tripId": widget.id,
+    //   "key": "animalsSeen", //animalKilled
+    //   "value": _shwNumberController.text.isNotEmpty
+    //       ? int.parse(_shwNumberController.text)
+    //       : 0
+    // };
+    // var response = await _tripAPIs.addAnimalSeenAndKilled(data);
+    // Map<String, dynamic> killedAnimalData = {
+    //   "tripId": widget.id,
+    //   "key": "animalKilled",
+    //   "value": _shwNumberController.text.isNotEmpty
+    //       ? int.parse(_shwNumberController.text)
+    //       : 0
+    // };
+    // response = await _tripAPIs.addAnimalSeenAndKilled(killedAnimalData);
+    // if (response.success) {
+    //   AppDialog.showSuccessDialog(context, response.message, () {
+    //     final mapProvider = Provider.of<MapProvider>(context, listen: false);
+    //     mapProvider.submit(context);
+    //   });
+    // } else {
+    //   AppDialog.showErrorDialog(context, response.message, () {
+    //     final mapProvider = Provider.of<MapProvider>(context, listen: false);
+    //     //  mapProvider.submit(context);
+    //   });
+    // }
     setState(() {
       isLoading = false;
     });
@@ -157,8 +157,7 @@ class _DataPointsScreenState extends State<DataPointsScreen> {
                       onPressed: () async {
                         final mapProvider =
                             Provider.of<MapProvider>(context, listen: false);
-                        mapProvider
-                            .submit(context); // await addAnimalSeenAndKilled();
+                        await addAnimalSeenAndKilled();
                       })
                 ],
               ),

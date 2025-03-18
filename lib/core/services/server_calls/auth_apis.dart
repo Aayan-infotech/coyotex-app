@@ -1,5 +1,6 @@
 import 'package:coyotex/core/services/api_base.dart';
 import 'package:coyotex/core/services/call_halper.dart';
+import 'package:coyotex/core/services/model/notification_model.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
@@ -55,7 +56,6 @@ class LoginAPIs extends ApiBase {
       "confirmPassword": password,
       "referralCode": referralCode
     };
-
     return await CallHelper().postWithData('api/auth/signup', data, {});
   }
 
@@ -99,6 +99,43 @@ class LoginAPIs extends ApiBase {
     return await CallHelper().post('api/auth/reset-password', data);
   }
 
+  Future<ApiResponse> updateUserFCM(
+    String token,
+  ) async {
+    Map<String, String> data = {
+      'fcmToken': token,
+    };
+
+    return await CallHelper().post('api/users/update-fcm', data);
+  }
+
+  Future<ApiResponse> sendUserNotification(
+    String title,
+    String body,
+    NotificationType type,
+    String tripId,
+  ) async {
+    String id = SharedPrefUtil.getValue(userIdPref, "") as String;
+
+    Map<String, dynamic> data = {
+      "userId": id,
+      "title": title,
+      "body": body,
+      "type": type.toJson(),
+      "data": {"tripId": tripId}
+    };
+//     {
+//   "userId": "678e0135dfecdd53c910a47e",
+//   "title": "Trip Update",
+//   "body": "You have reached your next stop again!",
+//   "type": "trip_update",
+//   "data": { "tripId": "67c9aa76c6722545f5604965" }
+// }
+    print(data);
+
+    return await CallHelper().post('api/notifications/send', data);
+  }
+
   Future<ApiResponse> logout() async {
     String refToken = SharedPrefUtil.getValue(refreshTokenPref, "") as String;
 
@@ -134,6 +171,15 @@ class LoginAPIs extends ApiBase {
     );
   }
 
+  Future<ApiResponseWithData<Map<String, dynamic>>> getNotifications() async {
+    Map<String, String> data = {};
+
+    return await CallHelper().getWithData(
+      'api/notifications',
+      data,
+    );
+  }
+
   Future<ApiResponse> updatePref(UserPreferences prefrences) async {
     Map<String, String?> data = {
       'userPlan': prefrences.userPlan.isEmpty ? null : prefrences.userPlan,
@@ -144,12 +190,51 @@ class LoginAPIs extends ApiBase {
     };
 
     prefrences.toJson();
-    return await CallHelper().patch('api/update-preferences', data);
+    return await CallHelper().patch(
+      'api/update-preferences',
+      data,
+    );
   }
 
   Future<ApiResponseWithData> getUserById() async {
     Map<String, String> data = {};
 
     return await CallHelper().getWithData('api/userById', data);
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> createPaymentIntent(
+      String amount, String currency) async {
+    Map<String, String> data = {
+      "amount": amount,
+      "currency": currency,
+    };
+
+    return await CallHelper().postWithData(
+      'api/stripe/create-payment-intent',
+      data,
+      {},
+    );
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> paymentStatus(
+    String paymentId,
+  ) async {
+    Map<String, String> data = {"paymentId": paymentId};
+
+    return await CallHelper().postWithData(
+      'api/stripe/payment-success',
+      data,
+      {},
+    );
+  }
+
+  // New API call for animal stats
+  Future<ApiResponseWithData<Map<String, dynamic>>> getAnimalStats() async {
+    Map<String, String> data = {};
+
+    return await CallHelper().getWithData(
+      'api/trips/trip/animal-stats',
+      data,
+    );
   }
 }

@@ -1,5 +1,6 @@
 class UserModel {
   final String userId;
+  final String imageUrl;
   final String name;
   final String number;
   final String email;
@@ -12,8 +13,8 @@ class UserModel {
   final int userStatus;
   final DateTime insDate;
 
-
   UserModel({
+    required this.imageUrl,
     required this.userId,
     required this.name,
     required this.number,
@@ -30,14 +31,15 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      userId: json["_id"]??'',
+      imageUrl: json["profilePicture"] ?? '',
+      userId: json["_id"] ?? '',
       name: json['name'] ?? '',
       number: json['number'] ?? '',
       email: json['email'] ?? "",
       isVerified: json['isVerified'] ?? true,
       referralCode: json['referralCode'] ?? "",
       userPlan: json['userPlan'] ?? '',
-      userUnit: json['userUnit'] ?? "",
+      userUnit: json['userUnit'] ?? "KM",
       userWeatherPref: json['userWeatherPref'] ?? "",
       insIp: json['ins_ip'] ?? '',
       userStatus: json['user_status'] ?? 1,

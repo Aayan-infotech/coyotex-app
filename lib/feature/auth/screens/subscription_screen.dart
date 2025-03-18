@@ -4,6 +4,7 @@ import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/prefrence_dstance_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:provider/provider.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -14,12 +15,13 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  String? _selectedPlanId; // Store selected plan ID
+  String? _selectedPlanId;
+  String? _selectedPlanPrice = ""; // Store selected plan ID
 
   @override
   void initState() {
     super.initState();
-    getPlans();
+    //   getPlans();
   }
 
   void getPlans() {
@@ -66,7 +68,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         ),
                         const SizedBox(height: 30),
                         const Text(
-                          "Lorem Ipsum",
+                          "Coyotex",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -74,7 +76,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           ),
                         ),
                         const Text(
-                          "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                          "Stay on top of your hunting adventures with our all-in-one tracking app!",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
@@ -107,8 +109,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           itemCount: userViewModel.lstPlan.length,
                           itemBuilder: (context, index) {
                             final plan = userViewModel.lstPlan[index];
-                            return _buildPlanCard(
-                                plan.id, plan.planName, "\$${plan.planAmount}");
+                            return _buildPlanCard(plan.id, plan.planName,
+                                plan.planAmount.toString());
                           },
                         ),
                       ],
@@ -119,81 +121,102 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             },
           ),
           Positioned(
-            bottom: 20,
+            bottom: 40,
             left: 16,
             right: 16,
-            child: Row(
-              children: [
-                Flexible(
-                  flex: 3,
-                  child: BrandedPrimaryButton(
-                    isEnabled: _selectedPlanId !=
-                        null, // Disable button if no plan is selected
-                    suffixIcon: const Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                    ),
-                    name: "Make Payment",
-                    onPressed: () {
-                      if (_selectedPlanId != null) {
-                        UserPreferences userPreferences = UserPreferences(
-                          userPlan: _selectedPlanId!,
-                          userUnit: '',
-                          userWeatherPref: '',
-                        );
+            child: BrandedPrimaryButton(
+                isEnabled: _selectedPlanId !=
+                    null, // Disable button if no plan is selected
+                suffixIcon: const Icon(
+                  Icons.arrow_forward,
+                  color: Colors.white,
+                ),
+                name: "Make Payment",
+                onPressed: () async {
+                  if (_selectedPlanId != null) {
+                    final userViewModel =
+                        Provider.of<UserViewModel>(context, listen: false);
 
-                        Navigator.of(context)
-                            .push(MaterialPageRoute(builder: (context) {
-                          return PrefernceDistanceScreen(
-                            userPreferences: userPreferences,
-                          );
-                        }));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please select a plan."),
+                    final paymentIntentResponse = await userViewModel
+                        .createPaymentIntent(_selectedPlanPrice!, "usd");
+
+                    if (paymentIntentResponse.success) {
+                      String paymentId =
+                          paymentIntentResponse.data["paymentId"];
+                      final clientSecret =
+                          paymentIntentResponse.data["clientSecret"];
+
+                      try {
+                        await Stripe.instance.initPaymentSheet(
+                          paymentSheetParameters: SetupPaymentSheetParameters(
+                            paymentIntentClientSecret: clientSecret,
+                            merchantDisplayName: 'Coyotex',
+                            style: ThemeMode.dark,
                           ),
                         );
-                      }
-                    },
-                  ),
-                ),
-                Flexible(
-                  flex: 1,
-                  child: TextButton(
-                    onPressed: () {
-                      UserPreferences userPreferences = UserPreferences(
-                          userPlan: '', userUnit: '', userWeatherPref: '');
 
-                      Navigator.of(context)
-                          .push(MaterialPageRoute(builder: (context) {
-                        return PrefernceDistanceScreen(
-                          userPreferences: userPreferences,
+                        await Stripe.instance.presentPaymentSheet();
+
+                        var response =
+                            await userViewModel.paymentStatus(paymentId);
+                        if (response.success) {
+                          UserPreferences userPreferences = UserPreferences(
+                            userPlan: _selectedPlanId!,
+                            userUnit: '',
+                            userWeatherPref: '',
+                          );
+
+                          Navigator.of(context)
+                              .push(MaterialPageRoute(builder: (context) {
+                            return PrefernceDistanceScreen(
+                              userPreferences: userPreferences,
+                            );
+                          }));
+                        }
+                      } on StripeException catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  'Payment canceled: ${e.error.localizedMessage}')),
                         );
-                      }));
-                    },
-                    child: Text(
-                      "Skip",
-                      style: TextStyle(
-                        color: Pallete.primaryColor,
-                        fontWeight: FontWeight.bold,
+                      } catch (e) {
+                        print(e);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                'Error: ${paymentIntentResponse.message}')),
+                      );
+                      print(paymentIntentResponse.message);
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please select a plan."),
                       ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                    );
+                  }
+                }),
           )
         ],
       ),
     );
   }
 
-  Widget _buildPlanCard(String planId, String title, String price) {
+  Widget _buildPlanCard(
+    String planId,
+    String title,
+    String price,
+  ) {
     final isSelected = _selectedPlanId == planId;
 
     return GestureDetector(
       onTap: () {
+        _selectedPlanPrice = price;
         setState(() {
           _selectedPlanId = planId; // Update selected plan ID
         });
@@ -234,7 +257,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    price,
+                    "\$${price}", //price,
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.black,
                       fontSize: 24,

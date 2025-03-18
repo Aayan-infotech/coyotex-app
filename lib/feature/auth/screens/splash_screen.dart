@@ -34,9 +34,8 @@ class _SplashScreenState extends State<SplashScreen> {
           // );
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-                builder: (context) => WelcomeScreen()),
-                (route) => false,
+            MaterialPageRoute(builder: (context) => WelcomeScreen()),
+            (route) => false,
           );
         });
       } else {
@@ -48,9 +47,8 @@ class _SplashScreenState extends State<SplashScreen> {
           // );
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-                builder: (context) => HomeScreen()),
-                (route) => false,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+            (route) => false,
           );
         });
       }
