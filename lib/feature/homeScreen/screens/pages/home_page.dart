@@ -216,12 +216,12 @@ class _HomePageState extends State<HomePage> {
                                       offset: const Offset(0, 8),
                                     ),
                                   ],
-                                  image: DecorationImage(
-                                    image: AssetImage(
-                                        'assets/camouflage_pattern.png'),
-                                    fit: BoxFit.cover,
-                                    opacity: 0.15,
-                                  ),
+                                  // image: const DecorationImage(
+                                  //   image: AssetImage(
+                                  //       'assets/images/camouflage_pattern.jpeg'),
+                                  //   fit: BoxFit.cover,
+                                  //   opacity: 0.15,
+                                  // ),
                                   border: Border.all(
                                     color: Colors.red[800]!, // Red border
                                     width: 1.5,

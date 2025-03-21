@@ -161,16 +161,25 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
 
   // This method will fetch the trips from the server based on the search query.
   Future<void> _searchTrips(TripViewModel tripViewModel, String query) async {
-    var response = await tripViewModel.searchTrip(
-        query, 1, 20); // Example with page 1 and limit 20
-    if (response.success && response.data != null) {
-      setState(() {
-        trips = response.data!.values
-            .toList()
-            .map((e) => TripModel.fromJson(e))
+    try {
+      var response = await tripViewModel.searchTrip(
+          query, 1, 20); // Example with page 1 and limit 20
+      if (response.success &&
+          response.data!["trips"] is List) {
+        var tripList = response.data!["trips"] as List; // Explicit casting
+        trips = tripList
+            .map((e) => TripModel.fromJson(e as Map<String, dynamic>))
             .toList();
-      });
-    } else {
+        // print(trips);
+        setState(() {});
+      } else {
+        setState(() {
+          trips = [];
+        });
+      }
+    } catch (e, stackTrace) {
+      print("Error searching trips: $e");
+      print(stackTrace);
       setState(() {
         trips = [];
       });
@@ -294,7 +303,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: 30,
+              height: 50,
               padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: const BoxDecoration(
                 color: Colors.red,
@@ -305,7 +314,8 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               ),
               child: Center(
                 child: Text(
-                  trip.name,
+                  trip.startLocation,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,

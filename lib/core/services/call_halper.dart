@@ -21,7 +21,7 @@ class ApiResponseWithData<T> {
 }
 
 class CallHelper {
-  static const String baseUrl = "http://54.236.98.193:5647/";
+  static const String baseUrl = "http://3.223.253.106:5647/";
   static const int timeoutInSeconds = 20;
   static const String internalServerErrorMessage = "Internal server error.";
   static bool _isRefreshing = false;

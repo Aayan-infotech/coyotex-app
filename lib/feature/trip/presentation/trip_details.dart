@@ -103,6 +103,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                       try {
                         final response =
                             await provider.generateTripPDF(widget.tripModel.id);
+                        print(response!.statusCode);
                         if (!mounted || response == null) return;
 
                         final Map<String, dynamic> responseData =
@@ -226,15 +227,16 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                       tripModel.routePoints,
                     );
 
-                    setState(() {
-                      isLoading = false;
-                    });
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
                       return MapScreen(
                         isRestart: true,
                       );
-                    }));
+                    })).then((value) {
+                      setState(() {
+                        isLoading = false;
+                      });
+                    });
                   })
             ],
             body: Container(

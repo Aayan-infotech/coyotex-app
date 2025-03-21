@@ -103,9 +103,7 @@ class _MyAppState extends State<MyApp> {
           textTheme: GoogleFonts.montserratTextTheme(),
           fontFamily: 'Montserrat',
         ),
-        home: SplashScreen(),
-        // initialRoute: AppRoutes.splash,
-        //onGenerateRoute: AppRoutes.generateRoute,
+        home: const SplashScreen(),
       ),
     );
   }

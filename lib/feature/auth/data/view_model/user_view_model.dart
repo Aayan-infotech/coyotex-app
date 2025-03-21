@@ -61,11 +61,7 @@ class UserViewModel extends ChangeNotifier {
         // await getUser();
         // await tripProvider.getAllMarker();
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-          (route) => false,
-        );
+     
 
         return response;
       } else {

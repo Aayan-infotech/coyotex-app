@@ -1044,7 +1044,7 @@ class MapProvider with ChangeNotifier {
     isLoading = true;
     isSavedTrip = false;
     onTapOnMap = true;
-    // notifyListeners();
+    notifyListeners();
 
     points.add(position);
     path.add(position);
@@ -1382,188 +1382,104 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchRouteWithWaypoints(
-    List<LatLng> locations, {
-    bool isRemove = false,
-    bool isPathShow = false,
-  }) async {
-    // if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
-    //   debugPrint("At least two locations are required.");
-    //   return;
-    // }
-    if (isRemove) {
-      locations.add(locations.first);
-    }
-
-    isLoading = true;
-    notifyListeners();
-    routeList = [];
-    distanceOfSegments = []; // Reset distances
-
-    try {
-      List<String> placeNames = await Future.wait(locations.map(getPlaceName));
-      List<List<RouteSegment>> allSegments = [];
-
-      for (int i = 0; i < locations.length - 1; i++) {
-        String origin = placeNames[i];
-        String destination = placeNames[i + 1];
-        final url = 'https://maps.googleapis.com/maps/api/directions/json?'
-            'origin=$origin&destination=$destination&mode=driving&'
-            'alternatives=true&key=$kGoogleApiKey';
-
-        final response = await http.get(Uri.parse(url));
-        final data = jsonDecode(response.body);
-
-        if (data['status'] == 'OK') {
-          List<RouteSegment> segmentRoutes = [];
-
-          for (var route in data['routes']) {
-            final encodedPolyline = route['overview_polyline']['points'];
-
-            final polylinePoints = _decodePolyline(encodedPolyline);
-            // routePolylinePoints =
-            //     polylinePoints; //routeList[index]['polyPoints'];
-            // cumulativeDistances =
-            //     _computeCumulativeDistances(routePolylinePoints);
-            double distance = route['legs'][0]['distance']['value'].toDouble();
-            int duration = route['legs'][0]['duration']['value'];
-
-            segmentRoutes.add(RouteSegment(
-              points: polylinePoints,
-              distance: distance,
-              duration: duration,
-              summary: route['summary'],
-            ));
-
-            //  Store the distance in the list
-            distanceOfSegments.add({
-              "$origin to $destination": "${(distance).toStringAsFixed(2)}"
-            });
-          }
-
-          allSegments.add(segmentRoutes);
-        } else {
-          debugPrint("Error in segment $i: ${data['status']}");
-          return;
-        }
-      }
-
-      routeList = _combineRouteSegments(allSegments);
-      if (routeList.length > 3) {
-        routeList = routeList.sublist(0, 3);
-      }
-
-      if (routeList.isNotEmpty) {
-        selectedRouteIndex = 0;
-        double shortestDistance = routeList.first['distance'];
-        for (int i = 1; i < routeList.length; i++) {
-          if (routeList[i]['distance'] < shortestDistance) {
-            shortestDistance = routeList[i]['distance'];
-            // distance = shortestDistance;
-            selectedRouteIndex = i;
-          } else {
-            //distance = shortestDistance;
-          }
-        }
-        if (locations.length >= 2) {
-          distance = await calculateTotalDistanceForMap(locations);
-        }
-
-        _updatePolylines();
-        // if (polylines.isNotEmpty && mapController != null) {
-        //   LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
-        //   mapController
-        //       ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-        // }
-      }
-
-      if (isPathShow) showRoutesBottomSheet(context);
-
-      debugPrint("Distance of Segments: $distanceOfSegments");
-    } catch (e) {
-      debugPrint("Error fetching routes: $e");
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
-  // logic to get only one route
   // Future<void> fetchRouteWithWaypoints(
   //   List<LatLng> locations, {
   //   bool isRemove = false,
   //   bool isPathShow = false,
   // }) async {
-  //   if (locations.length < 2) {
-  //     debugPrint("At least two locations are required.");
-  //     return;
+  //   // if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
+  //   //   debugPrint("At least two locations are required.");
+  //   //   return;
+  //   // }
+  //   if (isRemove) {
+  //     locations.add(locations.first);
   //   }
 
   //   isLoading = true;
-  //   notifyListeners();
+  //   // notifyListeners();
   //   routeList = [];
+  //   distanceOfSegments = []; // Reset distances
 
   //   try {
-  //     // Build origin and destination
-  //     final origin = "${locations.first.latitude},${locations.first.longitude}";
-  //     final destination =
-  //         "${locations.last.latitude},${locations.last.longitude}";
+  //     List<String> placeNames = await Future.wait(locations.map(getPlaceName));
+  //     List<List<RouteSegment>> allSegments = [];
 
-  //     // Build waypoints parameter if intermediate points exist
-  //     String waypoints = "";
-  //     if (locations.length > 2) {
-  //       waypoints = "&waypoints=" +
-  //           locations
-  //               .sublist(1, locations.length - 1)
-  //               .map((latLng) => "${latLng.latitude},${latLng.longitude}")
-  //               .join("|");
-  //     }
+  //     for (int i = 0; i < locations.length - 1; i++) {
+  //       String origin = placeNames[i];
+  //       String destination = placeNames[i + 1];
+  //       final url = 'https://maps.googleapis.com/maps/api/directions/json?'
+  //           'origin=$origin&destination=$destination&mode=driving&'
+  //           'alternatives=true&key=$kGoogleApiKey';
 
-  //     // Single API call with all waypoints
-  //     final url = 'https://maps.googleapis.com/maps/api/directions/json?'
-  //         'origin=$origin&destination=$destination$waypoints&mode=driving&'
-  //         'alternatives=true&key=$kGoogleApiKey';
+  //       final response = await http.get(Uri.parse(url));
+  //       final data = jsonDecode(response.body);
 
-  //     final response = await http.get(Uri.parse(url));
-  //     final data = jsonDecode(response.body);
+  //       if (data['status'] == 'OK') {
+  //         List<RouteSegment> segmentRoutes = [];
 
-  //     if (data['status'] == 'OK') {
-  //       routeList.clear();
+  //         for (var route in data['routes']) {
+  //           final encodedPolyline = route['overview_polyline']['points'];
 
-  //       // Process each complete route
-  //       for (var route in data['routes']) {
-  //         final encodedPolyline = route['overview_polyline']['points'];
-  //         final polylinePoints = _decodePolyline(encodedPolyline);
+  //           final polylinePoints = _decodePolyline(encodedPolyline);
+  //           // routePolylinePoints =
+  //           //     polylinePoints; //routeList[index]['polyPoints'];
+  //           // cumulativeDistances =
+  //           //     _computeCumulativeDistances(routePolylinePoints);
+  //           double distance = route['legs'][0]['distance']['value'].toDouble();
+  //           int duration = route['legs'][0]['duration']['value'];
 
-  //         // Calculate total distance and duration
-  //         double totalDistance = 0;
-  //         int? totalDuration = 0;
-  //         for (var leg in route['legs']) {
-  //           totalDistance += leg['distance']['value'];
-  //           // totalDuration += leg['duration']['value'];
+  //           segmentRoutes.add(RouteSegment(
+  //             points: polylinePoints,
+  //             distance: distance,
+  //             duration: duration,
+  //             summary: route['summary'],
+  //           ));
+
+  //           //  Store the distance in the list
+  //           distanceOfSegments.add({
+  //             "$origin to $destination": "${(distance).toStringAsFixed(2)}"
+  //           });
   //         }
 
-  //         routeList.add({
-  //           'polyPoints': polylinePoints,
-  //           'distance': totalDistance,
-  //           'duration': totalDuration,
-  //           'summary': route['summary'],
-  //         });
-  //       }
-
-  //       // Find shortest route
-  //       if (routeList.isNotEmpty) {
-  //         double shortestDistance = routeList.first['distance'];
-  //         selectedRouteIndex = 0;
-  //         for (int i = 0; i < routeList.length; i++) {
-  //           if (routeList[i]['distance'] < shortestDistance) {
-  //             shortestDistance = routeList[i]['distance'];
-  //             selectedRouteIndex = i;
-  //           }
-  //         }
-  //         distance = routeList[selectedRouteIndex]['distance'];
-  //         _updatePolylines();
+  //         allSegments.add(segmentRoutes);
+  //       } else {
+  //         debugPrint("Error in segment $i: ${data['status']}");
+  //         return;
   //       }
   //     }
+
+  //     routeList = _combineRouteSegments(allSegments);
+  //     if (routeList.length > 3) {
+  //       routeList = routeList.sublist(0, 3);
+  //     }
+
+  //     if (routeList.isNotEmpty) {
+  //       selectedRouteIndex = 0;
+  //       double shortestDistance = routeList.first['distance'];
+  //       for (int i = 1; i < routeList.length; i++) {
+  //         if (routeList[i]['distance'] < shortestDistance) {
+  //           shortestDistance = routeList[i]['distance'];
+  //           // distance = shortestDistance;
+  //           selectedRouteIndex = i;
+  //         } else {
+  //           //distance = shortestDistance;
+  //         }
+  //       }
+  //       if (locations.length >= 2) {
+  //         distance = await calculateTotalDistanceForMap(locations);
+  //       }
+
+  //       _updatePolylines();
+  //       // if (polylines.isNotEmpty && mapController != null) {
+  //       //   LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
+  //       //   mapController
+  //       //       ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+  //       // }
+  //     }
+
+  //     if (isPathShow) showRoutesBottomSheet(context);
+
+  //     debugPrint("Distance of Segments: $distanceOfSegments");
   //   } catch (e) {
   //     debugPrint("Error fetching routes: $e");
   //   } finally {
@@ -1571,6 +1487,90 @@ class MapProvider with ChangeNotifier {
   //     notifyListeners();
   //   }
   // }
+  // logic to get only one route
+  Future<void> fetchRouteWithWaypoints(
+    List<LatLng> locations, {
+    bool isRemove = false,
+    bool isPathShow = false,
+  }) async {
+    if (locations.length < 2) {
+      debugPrint("At least two locations are required.");
+      return;
+    }
+
+    isLoading = true;
+    notifyListeners();
+    routeList = [];
+
+    try {
+      // Build origin and destination
+      final origin = "${locations.first.latitude},${locations.first.longitude}";
+      final destination =
+          "${locations.last.latitude},${locations.last.longitude}";
+
+      // Build waypoints parameter if intermediate points exist
+      String waypoints = "";
+      if (locations.length > 2) {
+        waypoints = "&waypoints=" +
+            locations
+                .sublist(1, locations.length - 1)
+                .map((latLng) => "${latLng.latitude},${latLng.longitude}")
+                .join("|");
+      }
+
+      // Single API call with all waypoints
+      final url = 'https://maps.googleapis.com/maps/api/directions/json?'
+          'origin=$origin&destination=$destination$waypoints&mode=driving&'
+          'alternatives=true&key=$kGoogleApiKey';
+
+      final response = await http.get(Uri.parse(url));
+      final data = jsonDecode(response.body);
+
+      if (data['status'] == 'OK') {
+        routeList.clear();
+
+        // Process each complete route
+        for (var route in data['routes']) {
+          final encodedPolyline = route['overview_polyline']['points'];
+          final polylinePoints = _decodePolyline(encodedPolyline);
+
+          // Calculate total distance and duration
+          double totalDistance = 0;
+          int? totalDuration = 0;
+          for (var leg in route['legs']) {
+            totalDistance += leg['distance']['value'];
+            // totalDuration += leg['duration']['value'];
+          }
+
+          routeList.add({
+            'polyPoints': polylinePoints,
+            'distance': totalDistance,
+            'duration': totalDuration,
+            'summary': route['summary'],
+          });
+        }
+
+        // Find shortest route
+        if (routeList.isNotEmpty) {
+          double shortestDistance = routeList.first['distance'];
+          selectedRouteIndex = 0;
+          for (int i = 0; i < routeList.length; i++) {
+            if (routeList[i]['distance'] < shortestDistance) {
+              shortestDistance = routeList[i]['distance'];
+              selectedRouteIndex = i;
+            }
+          }
+          distance = routeList[selectedRouteIndex]['distance'];
+          _updatePolylines();
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching routes: $e");
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
   // Add this in your provider class
 
