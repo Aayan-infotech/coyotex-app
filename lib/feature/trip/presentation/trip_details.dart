@@ -11,7 +11,6 @@ import 'package:coyotex/utils/pdf_view.dart';
 import 'package:coyotex/utils/tem_graph.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../map/view_model/map_provider.dart';
 
@@ -62,6 +61,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
       context,
     );
     int totalTime = 0;
+    totalKilledAnimal = 0;
+    totalSeenAnimal = 0;
     for (var item in widget.tripModel.markers) {
       totalTime += item.duration;
       totalKilledAnimal += int.parse(item.animalKilled);
@@ -71,7 +72,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
     totalTravelTime =
         convertMinutesToHours(widget.tripModel.totalDistance, totalTime);
     return isLoading
-        ? Center(
+        ? const Center(
             child: CircularProgressIndicator.adaptive(
               backgroundColor: Colors.white,
             ),
@@ -101,6 +102,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                       try {
                         final response =
                             await provider.generateTripPDF(widget.tripModel.id);
+                        print(response!.statusCode);
                         if (!mounted || response == null) return;
 
                         final Map<String, dynamic> responseData =
@@ -186,6 +188,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                     });
                     final mapProvider =
                         Provider.of<MapProvider>(context, listen: false);
+                    mapProvider.resetFields();
                     TripModel tripModel = TripModel(
                       tripStatus: widget.tripModel.tripStatus,
                       id: widget.tripModel.id,
@@ -215,25 +218,30 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                     mapProvider.points = tripModel.routePoints;
                     mapProvider.providerLetsHuntButton = true;
                     mapProvider.path = tripModel.routePoints;
+                    mapProvider.onTapOnMap = false;
                     mapProvider.isRestart =
                         (widget.tripModel.tripStatus == "created")
                             ? false
                             : true;
+
                     await mapProvider.fetchRouteWithWaypoints(
                       tripModel.routePoints,
                     );
-
                     setState(() {
                       isLoading = false;
                     });
+
                     Navigator.of(context)
                         .push(MaterialPageRoute(builder: (context) {
                       return MapScreen(
                         isRestart: true,
-                        googleMapController: mapProvider.mapController,
                       );
-                    }));
-                  })
+                    })).then((value) {
+                      setState(() {
+                        isLoading = false;
+                      });
+                    });
+                  }),
             ],
             body: Container(
               color: Colors.black,
@@ -373,7 +381,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                       padding: EdgeInsets.only(left: 20),
                                       child: Text(
                                         totalTravelTime, // "6 hr 20 min",
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.black,
                                           fontWeight: FontWeight.w400,
                                           fontSize: 14,
@@ -556,17 +564,17 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
                 color: Color.fromRGBO(83, 82, 82, 1),
                 fontSize: 12,
                 fontWeight: FontWeight.w500),
           ),
-          SizedBox(
+          const SizedBox(
             height: 5,
           ),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               color: Color.fromRGBO(29, 27, 27, 1),
               fontWeight: FontWeight.bold,
               fontSize: 14,
@@ -613,7 +621,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                       ),
                       Text(
                         '$value $unit',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -624,7 +632,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 )
               : Text(
                   '$value $unit',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,

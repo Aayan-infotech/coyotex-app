@@ -12,11 +12,10 @@ import 'package:coyotex/feature/profile/presentation/change_password.dart';
 import 'package:coyotex/feature/profile/presentation/edit_profile.dart';
 import 'package:coyotex/feature/profile/presentation/linked_devices.dart';
 import 'package:coyotex/feature/profile/presentation/subscription_details_screen.dart';
+import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../../core/utills/shared_pref.dart';
-import '../../auth/screens/passowrd_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   ProfileScreen({super.key});
@@ -92,11 +91,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ? ClipOval(
                                   child: CachedNetworkImage(
                                     imageUrl: userViewModel.user.imageUrl,
-                                    width:
-                                        100, // Set width and height to ensure circular shape
+                                    width: 100, // Ensure circular shape
                                     height: 100,
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.grey,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.person,
+                                        size: 50,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
                                       width: 100,
                                       height: 100,
                                       decoration: const BoxDecoration(
@@ -185,11 +197,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                _buildStatCard(
-                                    'Trips',
-                                    '${userViewModel.trips.length}',
-                                    '+${userViewModel.trips.length}',
-                                    Colors.orange),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) {
+                                      return TripsHistoryScreen();
+                                    }));
+                                  },
+                                  child: _buildStatCard(
+                                      'Trips',
+                                      '${userViewModel.trips.length}',
+                                      '+${userViewModel.trips.length}',
+                                      Colors.orange),
+                                ),
                                 _buildStatCard('Animal Seen',
                                     '${userViewModel.animalSeen}', null, null),
                                 _buildStatCard(

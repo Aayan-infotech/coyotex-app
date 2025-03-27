@@ -69,7 +69,7 @@ class TripAPIs extends ApiBase {
 
   Future<http.Response?> generateTripPDF(String tripId) async {
     final String url =
-        'http://54.236.98.193:5647/api/trips/generate-trip-pdf/$tripId';
+        '${CallHelper.baseUrl}api/trips/generate-trip-pdf/$tripId';
     String accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
 
     try {

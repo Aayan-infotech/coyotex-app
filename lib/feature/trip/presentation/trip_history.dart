@@ -161,16 +161,24 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
 
   // This method will fetch the trips from the server based on the search query.
   Future<void> _searchTrips(TripViewModel tripViewModel, String query) async {
-    var response = await tripViewModel.searchTrip(
-        query, 1, 20); // Example with page 1 and limit 20
-    if (response.success && response.data != null) {
-      setState(() {
-        trips = response.data!.values
-            .toList()
-            .map((e) => TripModel.fromJson(e))
+    try {
+      var response = await tripViewModel.searchTrip(
+          query, 1, 20); // Example with page 1 and limit 20
+      if (response.success && response.data!["trips"] is List) {
+        var tripList = response.data!["trips"] as List; // Explicit casting
+        trips = tripList
+            .map((e) => TripModel.fromJson(e as Map<String, dynamic>))
             .toList();
-      });
-    } else {
+        // print(trips);
+        setState(() {});
+      } else {
+        setState(() {
+          trips = [];
+        });
+      }
+    } catch (e, stackTrace) {
+      print("Error searching trips: $e");
+      print(stackTrace);
       setState(() {
         trips = [];
       });
@@ -268,29 +276,33 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                   child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
               )),
-              errorWidget: (context, url, error) =>
-                  const Icon(Icons.image_not_supported, color: Colors.white),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 35, left: 5, right: 5),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Text(
-                trip.markers.isNotEmpty ? trip.markers.first.snippet : 'Trip',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+              errorWidget: (context, url, error) => Image.asset(
+                "assets/images/coyotex_place_holder.jpg",
+                width: 50,
+                height: 50,
+                fit: BoxFit.contain,
               ),
             ),
           ),
+          // Padding(
+          //   padding: const EdgeInsets.only(bottom: 35, left: 5, right: 5),
+          //   child: Align(
+          //     alignment: Alignment.bottomCenter,
+          //     child: Text(
+          //       trip.markers.isNotEmpty ? trip.markers.first.snippet : 'Trip',
+          //       style: const TextStyle(
+          //         color: Colors.white,
+          //         fontSize: 14,
+          //         fontWeight: FontWeight.bold,
+          //       ),
+          //       textAlign: TextAlign.center,
+          //     ),
+          //   ),
+          // ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: 30,
+              height: 50,
               padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: const BoxDecoration(
                 color: Colors.red,
@@ -302,6 +314,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               child: Center(
                 child: Text(
                   trip.name,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,

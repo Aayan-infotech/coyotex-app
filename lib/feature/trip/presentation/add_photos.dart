@@ -1,10 +1,13 @@
+import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/services/model/notification_model.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/media_widget.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
+import 'package:coyotex/feature/trip/presentation/media_details_screen.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
@@ -36,9 +39,11 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   bool isVideo = false;
   String? selectedMarkerId;
   late ValueNotifier<double> _uploadProgressNotifier;
+  late MarkerData selectedMarkerData;
 
   int _imageCount = 0;
   int _videoCount = 0;
+  List<String> existingMediaUrls = [];
 
 // Modify the _pickMedia function
   Future<void> _pickMedia(BuildContext context) async {
@@ -192,120 +197,6 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   // Add this variable at the top of the _AddPhotoScreenState class
   double _uploadProgress = 0.0;
 
-// Modify the _uploadMedia function
-  // Future<void> _uploadMedia(BuildContext context) async {
-  //   setState(() => _isUploading = true);
-  //   _uploadProgressNotifier.value = 0.0;
-
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder: (context) => WillPopScope(
-  //       onWillPop: () async => false,
-  //       child: ValueListenableBuilder<double>(
-  //         valueListenable: _uploadProgressNotifier,
-  //         builder: (context, progress, _) {
-  //           return AlertDialog(
-  //             content: Column(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children: [
-  //                 CircularProgressIndicator(
-  //                     value: progress > 0 ? progress : null),
-  //                 const SizedBox(height: 16),
-  //                 Text("Uploading: ${(progress * 100).toStringAsFixed(0)}%"),
-  //               ],
-  //             ),
-  //           );
-  //         },
-  //       ),
-  //     ),
-  //   );
-
-  //   try {
-  //     final provider = Provider.of<MapProvider>(context, listen: false);
-  //     String accessToken =
-  //         SharedPrefUtil.getValue(accessTokenPref, "") as String;
-  //     String tripId = provider.selectedTripModel.id;
-  //     String markerId = selectedMarkerId!;
-
-  //     // Create FormData instance
-  //     FormData formData = FormData();
-
-  //     // Add media files
-  //     for (File file in _mediaFiles) {
-  //       String fileName = path.basename(file.path);
-  //       String? fileExtension = fileName.split('.').last.toLowerCase();
-
-  //       // Determine media type
-  //       MediaType mediaType = MediaType('image', 'jpeg'); // default to image
-  //       if (['mp4', 'mov', 'avi'].contains(fileExtension)) {
-  //         mediaType = MediaType('video', fileExtension);
-  //       } else if (['jpg', 'jpeg', 'png'].contains(fileExtension)) {
-  //         mediaType = MediaType('image', fileExtension);
-  //       }
-
-  //       formData.files.add(MapEntry(
-  //         'images', // Use the same field name as in your API
-  //         await MultipartFile.fromFile(
-  //           file.path,
-  //           filename: fileName,
-  //           contentType: mediaType,
-  //         ),
-  //       ));
-  //     }
-
-  //     // Add other form fields
-  //     formData.fields.addAll([
-  //       MapEntry('tripId', tripId),
-  //       MapEntry('markerId', markerId),
-  //     ]);
-
-  //     final response = await Dio().post(
-  //       'http://54.236.98.193:5647/api/trips/upload-media',
-  //       data: formData,
-  //       options: Options(
-  //         headers: {
-  //           'Authorization': 'Bearer $accessToken',
-  //           'Content-Type': 'multipart/form-data',
-  //         },
-  //       ),
-  //       onSendProgress: (sent, total) {
-  //         if (total != -1) {
-  //           _uploadProgressNotifier.value = sent / total;
-  //         }
-  //       },
-  //     );
-  //     if (response.statusCode == 200) {
-  //       final mapProvider = Provider.of<MapProvider>(context, listen: false);
-  //       mapProvider.getTrips();
-  //       Navigator.of(context).pop();
-  //       setState(() => _isUploading = false);
-  //       AppDialog.showSuccessDialog(context, "Media uploaded successfully", () {
-  //         setState(() {
-  //           _isUploading = false;
-  //         });
-  //       });
-  //     } else {
-  //       AppDialog.showErrorDialog(context, 'Upload failed: ${response.data}',
-  //           () {
-  //         Navigator.pop(context);
-  //       });
-  //     }
-  //   } catch (e) {
-  //     // ... existing error handling ...
-  //     AppDialog.showErrorDialog(context, 'Upload failed: ${e.toString()}', () {
-  //       Navigator.pop(context);
-  //     });
-  //   } finally {
-  //     _uploadProgressNotifier.value = 0.0;
-  //     if (mounted) {
-  //       setState(() => _isUploading = false);
-  //       Navigator.pop(context); // Close dialog
-
-  //       // Close the progress dialog
-  //     }
-  //   }
-  // }
   // Modify the _uploadMedia function as follows
   Future<void> _uploadMedia(BuildContext context) async {
     setState(() => _isUploading = true);
@@ -374,7 +265,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       ]);
 
       final response = await Dio().post(
-        'http://54.236.98.193:5647/api/trips/upload-media',
+        '${CallHelper.baseUrl}api/trips/upload-media',
         data: formData,
         options: Options(
           headers: {
@@ -392,7 +283,13 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       if (response.statusCode == 200) {
         uploadSuccess = true;
         final mapProvider = Provider.of<MapProvider>(context, listen: false);
-        mapProvider.getTrips();
+        await mapProvider.getTrips();
+
+        TripModel? trip = mapProvider.trips.firstWhere(
+          (trip) => trip.id == provider.selectedTripModel.id,
+          orElse: () => null as TripModel,
+        );
+        provider.selectedTripModel = trip;
       } else {
         errorMessage = 'Upload failed: ${response.data}';
       }
@@ -402,10 +299,8 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       _uploadProgressNotifier.value = 0.0;
       if (mounted) {
         setState(() => _isUploading = false);
-        Navigator.pop(context);
-        if (widget.isRestart!) Navigator.pop(context);
 
-        // Close progress dialog
+        if (widget.isRestart!) Navigator.pop(context);
       }
 
       if (uploadSuccess && mounted) {
@@ -413,9 +308,12 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           context,
           "Media uploaded successfully",
           () {
-            // setState(() => _isUploading = false);
-            Navigator.of(context).pop(true);
-            Navigator.of(context).pop(true);
+            if (widget.isRestart!) {
+              Navigator.of(context).pop(true);
+              Navigator.of(context).pop(true);
+            } else {
+              Navigator.of(context).pop(true);
+            }
           },
         );
       } else if (errorMessage != null && mounted) {
@@ -428,11 +326,28 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     }
   }
 
+  // @override
+  // void initState() {
+  //   // TODO: implement initState
+  //   final provider = Provider.of<MapProvider>(context, listen: false);
+  //   if (widget.markerData != null) {
+  //     selectedMarkerId = widget.markerData!.id;
+  //     selectedMarkerData = widget.markerData!;
+  //   } else {
+  //     selectedMarkerData = provider.selectedTripModel.markers.first;
+  //   }
+  //   _uploadProgressNotifier = ValueNotifier(0.0);
+  //   super.initState();
+  // }
   @override
   void initState() {
-    // TODO: implement initState
+    final provider = Provider.of<MapProvider>(context, listen: false);
     if (widget.markerData != null) {
       selectedMarkerId = widget.markerData!.id;
+      selectedMarkerData = widget.markerData!;
+    } else if (provider.selectedTripModel.markers.isNotEmpty) {
+      selectedMarkerId = provider.selectedTripModel.markers.first.id;
+      selectedMarkerData = provider.selectedTripModel.markers.first;
     }
     _uploadProgressNotifier = ValueNotifier(0.0);
     super.initState();
@@ -440,7 +355,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
 
   @override
   void dispose() {
-   //s _controller?.dispose();
+    //s _controller?.dispose();
     super.dispose();
   }
 
@@ -463,19 +378,19 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           : [
               Row(
                 children: [
-                  if (widget.markerData == null)
-                    Expanded(
-                      child: BrandedPrimaryButton(
-                          isEnabled: true,
-                          isUnfocus: true,
-                          name: "Finish",
-                          onPressed: () =>
-                              _showFinishWarningDialog(provider, context)),
-                    ),
-                  const SizedBox(width: 10),
+                  // if (widget.markerData == null)
+                  // Expanded(
+                  //   child: BrandedPrimaryButton(
+                  //       isEnabled: true,
+                  //       isUnfocus: true,
+                  //       name: "Finish",
+                  //       onPressed: () =>
+                  //           _showFinishWarningDialog(provider, context)),
+                  // ),
+
                   Expanded(
                     child: BrandedPrimaryButton(
-                        isEnabled: true,
+                        isEnabled: _mediaFiles.isNotEmpty,
                         name: "Save",
                         onPressed:
                             _isUploading ? () {} : () => _uploadMedia(context)),
@@ -490,6 +405,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (provider.selectedTripModel.markers.isNotEmpty)
+                // In the build method, update the DropdownButton section
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -504,11 +420,22 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                       hint: const Text('Select Marker'),
                       isExpanded: true,
                       dropdownColor: const Color.fromRGBO(255, 255, 255, .8),
-                      onChanged: (String? newValue) =>
-                          setState(() => selectedMarkerId = newValue),
+                      onChanged: (String? newId) {
+                        if (newId != null) {
+                          setState(() {
+                            selectedMarkerId = newId;
+                            selectedMarkerData =
+                                provider.selectedTripModel.markers.firstWhere(
+                              (marker) => marker.id == newId,
+                            );
+                          });
+                        }
+                      },
                       items: provider.selectedTripModel.markers.map((marker) {
                         return DropdownMenuItem<String>(
-                            value: marker.id, child: Text(marker.snippet));
+                          value: marker.id,
+                          child: Text(marker.snippet),
+                        );
                       }).toList(),
                     ),
                   ),
@@ -597,68 +524,103 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                 ],
               ),
               const SizedBox(height: 10),
-              SizedBox(
-                height: 80,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _mediaFiles.length +
-                      ((_imageCount + _videoCount) < 3 ? 1 : 0),
-                  // itemCount: _mediaFiles.length + 1,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 10),
-                  itemBuilder: (context, index) {
-                    if (index == _mediaFiles.length) {
-                      return GestureDetector(
-                        onTap: () => _pickMedia(context),
-                        child: Container(
-                          width: 80,
-                          decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(10)),
-                          child: const Center(child: Icon(Icons.add)),
-                        ),
-                      );
-                    }
-
-                    bool isVideoFile = [
-                      '.mp4',
-                      '.mov',
-                      '.avi',
-                      '.MP4',
-                      '.MOV',
-                      '.AVI'
-                    ].any((ext) => _mediaFiles[index].path.endsWith(ext));
-
-                    return Stack(
-                      children: [
-                        Container(
-                          width: 80,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              image: isVideoFile
-                                  ? null
-                                  : DecorationImage(
-                                      image: FileImage(_mediaFiles[index]),
-                                      fit: BoxFit.cover)),
-                          child: isVideoFile
-                              ? Center(child: Icon(Icons.videocam, size: 40))
-                              : null,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10),
-                          child: Center(
-                            child: IconButton(
-                                icon:
-                                    const Icon(Icons.close, color: Colors.red),
-                                onPressed: () => _removeMedia(index)),
+              if (selectedMarkerData.media!.length < 3)
+                SizedBox(
+                  height: 80,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _mediaFiles.length +
+                        ((_imageCount + _videoCount) < 3 ? 1 : 0),
+                    // itemCount: _mediaFiles.length + 1,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 10),
+                    itemBuilder: (context, index) {
+                      if (index == _mediaFiles.length) {
+                        return GestureDetector(
+                          onTap: () => _pickMedia(context),
+                          child: Container(
+                            width: 80,
+                            decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(10)),
+                            child: const Center(child: Icon(Icons.add)),
                           ),
-                        ),
-                        if (isVideoFile && _isInitializingVideo)
-                          const Center(child: CircularProgressIndicator())
-                      ],
-                    );
-                  },
+                        );
+                      }
+
+                      bool isVideoFile = [
+                        '.mp4',
+                        '.mov',
+                        '.avi',
+                        '.MP4',
+                        '.MOV',
+                        '.AVI'
+                      ].any((ext) => _mediaFiles[index].path.endsWith(ext));
+
+                      return Stack(
+                        children: [
+                          Container(
+                            width: 80,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                image: isVideoFile
+                                    ? null
+                                    : DecorationImage(
+                                        image: FileImage(_mediaFiles[index]),
+                                        fit: BoxFit.cover)),
+                            child: isVideoFile
+                                ? Center(child: Icon(Icons.videocam, size: 40))
+                                : null,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Center(
+                              child: IconButton(
+                                  icon: const Icon(Icons.close,
+                                      color: Colors.red),
+                                  onPressed: () => _removeMedia(index)),
+                            ),
+                          ),
+                          if (isVideoFile && _isInitializingVideo)
+                            const Center(child: CircularProgressIndicator())
+                        ],
+                      );
+                    },
+                  ),
                 ),
+              SizedBox(
+                height: 20,
+              ),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1,
+                ),
+                itemCount: selectedMarkerData.media!.length.clamp(0, 3),
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (context) {
+                        return MediaDetailsScreen(
+                          url: selectedMarkerData.media![index],
+                          markerData: selectedMarkerData,
+                          tripModel: provider.selectedTripModel,
+                        );
+                      }));
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12.0),
+                      child: MediaItemWidget(
+                          isAddPhotoScreen: true,
+                          url: selectedMarkerData.media![index]),
+                    ),
+                  );
+                },
               )
             ],
           ),
