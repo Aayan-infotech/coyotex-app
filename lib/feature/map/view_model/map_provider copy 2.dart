@@ -9,6 +9,7 @@ import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
+import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';
 import 'package:coyotex/feature/map/presentation/marker_details_bottom_sheet.dart';
 import 'package:coyotex/feature/map/presentation/start_trip_bootom_sheat.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
@@ -26,6 +27,7 @@ import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui;
 
 import 'package:geocoding/geocoding.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RouteSegment {
   final List<LatLng> points;
@@ -90,15 +92,20 @@ class MapProvider with ChangeNotifier {
   List<LatLng> points = [];
   List<LatLng> path = [];
   late TripModel selectedTripModel;
+  String tripName = '';
+  // bool isNavigationStarted = false;
   bool providerLetsHuntButton = false;
   String selectedWindDirection = 'North';
   List<Map<String, dynamic>> routeDetails = [];
   final String sessionToken = const Uuid().v4();
   //"AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
+  bool isAddStopButton = false;
+
   String markerId = '';
   List<dynamic> startSuggestions = [];
   List<dynamic> destinationSuggestions = [];
   GoogleMapController? mapController;
+  double totalTravilMinutsWithStop = 0;
   LatLng initialPosition = const LatLng(26.862421770613125, 80.99804357972356);
   int timeDurations = 0;
 
@@ -113,14 +120,15 @@ class MapProvider with ChangeNotifier {
   bool isSavedTrip = false;
   bool isKeyDataPoint = false;
   bool isStartSuggestions = false;
-  double speed = 45;
+  double speed = 15;
   bool isRestart = false;
   TripAPIs _tripAPIs = TripAPIs();
   late WeatherResponse weather = defaultWeatherResponse;
 
   int totalTime = 0;
+  int stopTime = 0;
   String totalTravelTime = "";
-  String totalStopTime = "";
+  String totalStopWithTravelTime = "";
   List<MarkerData> liveTripMarker = [];
   Marker currentLocationMarker = const Marker(
     markerId: MarkerId("currentLocation"),
@@ -129,6 +137,118 @@ class MapProvider with ChangeNotifier {
   MarkerData? selectedOldMarker;
   bool isStartavigation = false;
   List<MarkerData> lstTripMarkerData = [];
+  // In MapProvider class
+  DateTime? _tripStartTime;
+  DateTime? _estimatedCompletionTime;
+
+  DateTime? get estimatedCompletionTime => _estimatedCompletionTime;
+  // In MapProvider class
+  Timer? _etaUpdateTimer;
+
+  DateTime? originalEstimate;
+  DateTime? currentEstimate;
+  String? timeChangeNotification;
+
+// Add these getters
+  // DateTime? get currentEstimate => _currentEstimate;
+  // String? get timeChangeNotification => _timeChangeNotification;
+
+  void startTripTimer(int totalMinutes) {
+    _tripStartTime = DateTime.now();
+    double totalMinutes = double.parse(totalTravilMinutsWithStop.toString());
+    int roundedMinutes = totalMinutes.round();
+
+    originalEstimate = _tripStartTime!.add(Duration(minutes: roundedMinutes));
+    // currentEstimate = originalEstimate;
+
+    // Start periodic updates every 30 minutes
+    _etaUpdateTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      _recalculateETA();
+    });
+
+    notifyListeners();
+  }
+
+  void _recalculateETA() async {
+    if (_tripStartTime == null) return;
+    // points.remove(points.last);
+    // points.add(currentLocationMarker.position);
+    double distanceTravelled = await calculateTotalDistanceForMap(points);
+    double timeRemaing = distanceTravelled * 60 / speed;
+
+    final newEst = DateTime.now().add(Duration(minutes: timeRemaing.round()));
+
+    //
+
+    // Update current estimatea
+
+    // DateTime.now().add(Duration(minutes: remainingMinutes.round()));
+
+    // Check for significant changes
+    final diff = originalEstimate!.difference(newEst!);
+    if (diff.inMinutes.abs() >= 20) {
+      _sendChangeNotification(diff);
+    }
+
+    notifyListeners();
+  }
+
+  void _sendChangeNotification(Duration difference) {
+    final direction = difference.isNegative ? 'earlier' : 'delay';
+    final minutes = difference.inMinutes.abs();
+
+    timeChangeNotification = 'Estimated arrival time changed by '
+        '${formatDuration(minutes)} minutes $direction';
+    final userProvider = Provider.of<UserViewModel>(context, listen: false);
+    userProvider.sendNotifications(
+      "Trip Update",
+      timeChangeNotification!, // "Arrived at stop ${currentMarkerIndex + 1}",
+      NotificationType.tripUpdate,
+      selectedTripModel.id,
+    );
+
+    notifyListeners();
+
+    // // Clear notification after 10 seconds
+    // Future.delayed(Duration(seconds: 10), () {
+    //   _timeChangeNotification = null;
+    //   notifyListeners();
+    // });
+  }
+
+  String formatDuration(int totalMinutes) {
+    if (totalMinutes < 0) throw ArgumentError("Duration cannot be negative");
+
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+
+    final List<String> parts = [];
+
+    if (hours > 0) parts.add('${hours}h');
+    if (minutes > 0 || totalMinutes == 0) parts.add('${minutes}m');
+
+    return parts.join(' ');
+  }
+
+  // void startTripTimer() {
+  //   try {
+  //     _tripStartTime = DateTime.now();
+
+  //     // Convert to double first, then round to nearest integer
+  //     double totalMinutes = double.parse(totalTravilMinutsWithStop.toString());
+  //     int roundedMinutes = totalMinutes.round();
+
+  //     _estimatedCompletionTime = _tripStartTime!.add(
+  //       Duration(minutes: roundedMinutes),
+  //     );
+
+  //     print(_estimatedCompletionTime);
+  //     notifyListeners();
+  //   } catch (e) {
+  //     print('Error in startTripTimer: $e');
+  //   }
+  // }
+
   getTrips() async {
     isLoading = true;
     notifyListeners();
@@ -206,6 +326,100 @@ class MapProvider with ChangeNotifier {
       notifyListeners();
     } catch (error) {
       print("Error in updateCameraPosition: $error");
+    }
+  }
+
+  // void launchGoogleMaps(TripModel tripModel) async {
+  //   String baseUrl = "https://www.google.com/maps/dir/?api=1";
+
+  //   String destination;
+  //   LatLng destinationLatLng;
+  //   List<String> waypointStrings = [];
+
+  //   if (tripModel.markers.isNotEmpty) {
+  //     destinationLatLng = tripModel.markers.last.position;
+  //     destination =
+  //         "${destinationLatLng.latitude},${destinationLatLng.longitude}";
+  //     waypointStrings = tripModel.markers
+  //         .sublist(0, tripModel.markers.length - 1)
+  //         .map((m) => "${m.position.latitude},${m.position.longitude}")
+  //         .toList();
+  //   } else if (tripModel.routePoints.isNotEmpty) {
+  //     destinationLatLng = tripModel.routePoints.last;
+  //     destination =
+  //         "${destinationLatLng.latitude},${destinationLatLng.longitude}";
+  //     waypointStrings = tripModel.routePoints
+  //         .sublist(0, tripModel.routePoints.length - 1)
+  //         .map((wp) => "${wp.latitude},${wp.longitude}")
+  //         .toList();
+  //   } else {
+  //     throw "No valid markers or route points found!";
+  //   }
+
+  //   String waypointsParam = waypointStrings.isNotEmpty
+  //       ? "&waypoints=${waypointStrings.join('|')}"
+  //       : "";
+
+  //   // Build final URL without origin parameter
+  //   String finalUrl =
+  //       "$baseUrl&destination=$destination$waypointsParam&travelmode=driving&dir_action=navigate";
+
+  //   if (await canLaunch(finalUrl)) {
+  //     await launch(
+  //       finalUrl,
+  //       forceSafariVC: false,
+  //       forceWebView: false,
+  //     );
+  //   } else {
+  //     throw "Could not launch $finalUrl";
+  //   }
+  // }
+  void launchGoogleMaps(TripModel tripModel) async {
+    String baseUrl = "https://www.google.com/maps/dir/?api=1";
+
+    String destination;
+    LatLng destinationLatLng;
+    List<String> waypointStrings = [];
+
+    if (tripModel.markers.isNotEmpty) {
+      destinationLatLng = tripModel.markers.last.position;
+      destination =
+          "${destinationLatLng.latitude},${destinationLatLng.longitude}";
+      waypointStrings = tripModel.markers
+          .sublist(0, tripModel.markers.length - 1)
+          .map((m) => "${m.position.latitude},${m.position.longitude}")
+          .toList();
+    } else if (tripModel.routePoints.isNotEmpty) {
+      destinationLatLng = tripModel.routePoints.last;
+      destination =
+          "${destinationLatLng.latitude},${destinationLatLng.longitude}";
+      waypointStrings = tripModel.routePoints
+          .sublist(0, tripModel.routePoints.length - 1)
+          .map((wp) => "${wp.latitude},${wp.longitude}")
+          .toList();
+    } else {
+      throw "No valid markers or route points found!";
+    }
+
+    String waypointsParam = waypointStrings.isNotEmpty
+        ? "&waypoints=${waypointStrings.join('|')}"
+        : "";
+
+    // Add units parameter (metric or imperial)
+    String unitsParam = "&units=imperial"; // or "imperial"
+
+    // Final URL with units
+    String finalUrl =
+        "$baseUrl&destination=$destination$waypointsParam&travelmode=driving$unitsParam&dir_action=navigate";
+
+    if (await canLaunch(finalUrl)) {
+      await launch(
+        finalUrl,
+        forceSafariVC: false,
+        forceWebView: false,
+      );
+    } else {
+      throw "Could not launch $finalUrl";
     }
   }
 
@@ -317,24 +531,68 @@ class MapProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  String convertMinutesToHours(double distance, {bool isTotal = true, bool}) {
-    double minutes = isTotal
-        ? (totalTime + ((distance / 1000) / speed) * 60)
-        : ((distance) / speed) * 60;
+  // String convertMinutesToHours(double distance, {bool isTotal = true}) {
+  //   double minutes = isTotal
+  //       ? (totalTime + ((distance / 1000) / speed) * 60)
+  //       : ((distance) / speed) * 60;
+
+  //   int hours = minutes ~/ 60;
+  //   int remainingMinutes =
+  //       (minutes % 60).truncate(); // Ensures an integer value
+
+  //   String hourText = hours > 0 ? "$hours hr" : "";
+  //   String minuteText = remainingMinutes > 0 ? "$remainingMinutes min" : "";
+
+  //   // Assign "4 min" if both hourText and minuteText are empty
+  //   if (hourText.isEmpty && minuteText.isEmpty) {
+  //     minuteText = "4 min";
+  //   }
+
+  //   totalTravelTime =
+  //       [hourText, minuteText].where((element) => element.isNotEmpty).join(" ");
+  //   notifyListeners();
+
+  //   return totalTravelTime;
+  // }
+  String convertMinutesToHours(double distance) {
+    stopTime = 0;
+    for (var item in selectedTripModel.markers) {
+      stopTime += item.duration;
+    }
+
+    double minutes = (stopTime + ((distance / 1000) / speed) * 60);
+    double travelMinutes = ((distance / 1000) / speed) * 60;
+    totalTravilMinutsWithStop = travelMinutes;
 
     int hours = minutes ~/ 60;
-    int remainingMinutes =
-        (minutes % 60).truncate(); // Ensures an integer value
+    int remainingMinutes = (minutes % 60).truncate();
+
+    int travelHours = travelMinutes ~/ 60;
+    int travelRemainingMinutes = (travelMinutes % 60).truncate();
 
     String hourText = hours > 0 ? "$hours hr" : "";
     String minuteText = remainingMinutes > 0 ? "$remainingMinutes min" : "";
+
+    String travelHourText = travelHours > 0 ? "$travelHours hr" : "";
+    String travelMinuteText =
+        travelRemainingMinutes > 0 ? "$travelRemainingMinutes min" : "";
+
+    if (hourText.isEmpty && minuteText.isEmpty) {
+      minuteText = "4 min";
+    }
+
+    if (travelHourText.isEmpty && travelMinuteText.isEmpty) {
+      travelMinuteText = "4 min";
+    }
+
+    totalStopWithTravelTime =
+        [hourText, minuteText].where((e) => e.isNotEmpty).join(" ");
     totalTravelTime =
-        [hourText, minuteText].where((element) => element.isNotEmpty).join(" ");
+        [travelHourText, travelMinuteText].where((e) => e.isNotEmpty).join(" ");
+
     notifyListeners();
 
-    return [hourText, minuteText]
-        .where((element) => element.isNotEmpty)
-        .join(" ");
+    return totalTravelTime;
   }
 
   void increaseCount() {
@@ -386,12 +644,6 @@ class MapProvider with ChangeNotifier {
 
   int shortestRouteIndex = 0;
   bool showAllRoutes = true;
-  // void selectRoute(int index) {
-  //   selectedRouteIndex = index;
-  //   distance = routeList[index]['distance'];
-  //   _updatePolylines();
-  //   notifyListeners();
-  // }
 
   void selectRoute(int index) {
     selectedRouteIndex = index;
@@ -484,21 +736,6 @@ class MapProvider with ChangeNotifier {
 
   Stream<LatLng>? locationStream;
 
-  Future<void> initLocationStream() async {
-    LocationPermission permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      return; // Handle permission denial
-    }
-
-    locationStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Update every 10 meters
-      ),
-    ).map((position) => LatLng(position.latitude, position.longitude));
-  }
-
   Future<WeatherResponse> getCurrentWeather(LatLng latAndLng) async {
     // isLoading = true;
     // notifyListeners();
@@ -514,18 +751,21 @@ class MapProvider with ChangeNotifier {
 
   bool isRedText = false;
   bool hasSent2MinNotification = false;
+
   void letsHunt() async {
     isTripStart = true;
     isSave = false;
     isLoading = true;
     onTapOnMap = false;
     currentMarkerIndex = 0;
+    tripName = 'not';
     hasSentArrivalNotification = false;
     isAtStop = false;
     stayTimer?.cancel();
     stayTimer = null;
-
+    isStartavigation = false;
     notifyListeners();
+    late LatLng startTripLatLang;
 
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -550,7 +790,7 @@ class MapProvider with ChangeNotifier {
       );
 
       LatLng initialLatLng = LatLng(position.latitude, position.longitude);
-
+      startTripLatLang = initialLatLng;
       //updateCameraPosition(initialLatLng);
       // path.add(initialLatLng);
 
@@ -563,6 +803,7 @@ class MapProvider with ChangeNotifier {
       isLoading = false;
       // formattedDistance = formatDistance(distance, context);
       // notifyListeners();
+      startTripTimer(totalTravilMinutsWithStop.round());
 
       positionStream = Geolocator.getPositionStream(
         locationSettings: const LocationSettings(
@@ -571,6 +812,9 @@ class MapProvider with ChangeNotifier {
         ),
       ).listen((Position position) async {
         LatLng currentLatLng = LatLng(position.latitude, position.longitude);
+        if (position.speed >= 5) {
+          speed = position.speed;
+        }
 
         // Update current location marker
         currentLocationMarker = Marker(
@@ -741,24 +985,14 @@ class MapProvider with ChangeNotifier {
           }
         }
         // final closestIndex = _findClosestPointIndex(currentLatLng);
-        // final remainingDistance =
-        //     cumulativeDistances.last - cumulativeDistances[closestIndex];
+        // double? travelledDistance = await getDistance(
+        //     origin: startTripLatLang, destination: currentLatLng);
+        // final remainingDistance = cumulativeDistances.last - travelledDistance!;
 
-        // // Update distance and ETA
-        // distance = remainingDistance;
+        // distance = remainingDistance > 0 ? remainingDistance : 0;
         // formattedDistance = formatDistance(remainingDistance, context);
-        // convertMinutesToHours(remainingDistance);
-        if (routePolylinePoints.isNotEmpty && cumulativeDistances.isNotEmpty) {
-          final closestIndex = _findClosestPointIndex(currentLatLng);
-          final remainingDistance = cumulativeDistances.last -
-              cumulativeDistances[
-                  cumulativeDistances.length - closestIndex + 1];
-
-          // Ensure remaining distance doesn't go negative
-          distance = remainingDistance > 0 ? remainingDistance : 0;
-          formattedDistance = formatDistance(distance, context);
-          convertMinutesToHours(distance);
-        }
+        // convertMinutesToHours(distance);
+        // }
 
         // updateCameraPosition(initialLatLng);
       });
@@ -804,7 +1038,7 @@ class MapProvider with ChangeNotifier {
     return false; // No points found within the radius
   }
 
-  void addStop() async {
+  void addStop(LatLng currentStop) async {
     try {
       isLoading = true;
       isHurryUp = false;
@@ -812,29 +1046,29 @@ class MapProvider with ChangeNotifier {
       isTripStart = true;
 
       notifyListeners();
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('Location services are disabled.');
-      }
+      // bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      // if (!serviceEnabled) {
+      //   throw Exception('Location services are disabled.');
+      // }
 
-      // Check and request location permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions are denied.');
-        }
-      }
+      // // Check and request location permission
+      // LocationPermission permission = await Geolocator.checkPermission();
+      // if (permission == LocationPermission.denied) {
+      //   permission = await Geolocator.requestPermission();
+      //   if (permission == LocationPermission.denied) {
+      //     throw Exception('Location permissions are denied.');
+      //   }
+      // }
 
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied.');
-      }
+      // if (permission == LocationPermission.deniedForever) {
+      //   throw Exception('Location permissions are permanently denied.');
+      // }
 
-      Position currentPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      LatLng currentStop =
-          LatLng(currentPosition.latitude, currentPosition.longitude);
+      // Position currentPosition = await Geolocator.getCurrentPosition(
+      //   desiredAccuracy: LocationAccuracy.high,
+      // );
+      // LatLng currentStop =
+      //     LatLng(currentPosition.latitude, currentPosition.longitude);
 
       points.add(currentStop);
       path.add(currentStop);
@@ -860,10 +1094,12 @@ class MapProvider with ChangeNotifier {
       // Fetch and redraw the updated route
       await fetchRouteWithWaypoints(path);
 
-      // Recalculate the total distance
-      distance = calculateTotalDistance();
+      distance = await calculateTotalDistanceForMap(path);
       notifyListeners();
-      await showDurationPicker(context).then((value) async {
+      await showDurationPicker(isStop: true, context).then((value) async {
+        isLoading = true;
+        notifyListeners();
+
         var response = await _tripAPIs.addStop(
           MarkerData(
             animalSeen: '0',
@@ -873,7 +1109,7 @@ class MapProvider with ChangeNotifier {
             id: uniqueId,
             position: currentStop,
             icon: "markerIcon",
-            title: "Stop",
+            title: stopName,
             snippet: locationName,
             duration: timeDurations,
             markerType: "inbetween",
@@ -896,7 +1132,13 @@ class MapProvider with ChangeNotifier {
           selectedTripModel.id,
           waypoint,
         );
+        final tripProvider = Provider.of<TripViewModel>(context, listen: false);
+        await tripProvider.getUserTrip();
+        if (response.success) {
+          Navigator.of(context).pop();
+        }
       });
+
       isSave = false;
     } catch (e) {
       debugPrint("Error while adding a stop: $e");
@@ -929,7 +1171,7 @@ class MapProvider with ChangeNotifier {
         id: const Uuid().v4(),
         animalSeen: 0,
         animalKilled: 0,
-        name: 'Trip ${trips.length + 1}',
+        name: tripName,
         startLocation: startController.text.isNotEmpty
             ? startController.text
             : "Location 1",
@@ -951,6 +1193,8 @@ class MapProvider with ChangeNotifier {
       await tripProvidr.getAllMarker();
 
       resetFields();
+      Provider.of<IndexProvider>(context, listen: false).updateIndex(0);
+      // Navigator.pop(context);
     } else {
       AppDialog.showErrorDialog(context, res.message, () {
         Navigator.of(context).pop();
@@ -1038,11 +1282,15 @@ class MapProvider with ChangeNotifier {
     }
   }
 
+  bool isProcessingTap = false;
   void onMapTapped(LatLng position, BuildContext buildContext) async {
     isLoading = true;
     isSavedTrip = false;
     onTapOnMap = true;
-    //notifyListeners();
+    if (isProcessingTap) return; // Prevent multiple taps
+    isProcessingTap = true;
+
+    // notifyListeners();
 
     points.add(position);
     path.add(position);
@@ -1093,7 +1341,7 @@ class MapProvider with ChangeNotifier {
       showDurationPicker(buildContext);
     });
     setMarkersWithOnTap(context);
-
+    isProcessingTap = false;
     notifyListeners();
   }
 
@@ -1131,11 +1379,13 @@ class MapProvider with ChangeNotifier {
     }
   }
 
-  // Reset input fields and points
   void resetFields() {
     final tripProvider = Provider.of<TripViewModel>(context, listen: false);
 
+    isProcessingTap = false;
+
     isStartavigation = false;
+    tripName = '';
     startController.clear();
 
     if (countdownTimer != null) {
@@ -1143,8 +1393,6 @@ class MapProvider with ChangeNotifier {
     }
 
     tripProvider.lstMarker.clear();
-
-    // Create a new list instead of referencing the same list
     tripProvider.lstMarker = List.from(tripProvider.lstAllMarker);
 
     remainingStopTime = 0;
@@ -1152,8 +1400,8 @@ class MapProvider with ChangeNotifier {
     destinationControllers.clear();
     markers.clear();
     mapMarkers.clear();
-    points.clear();
-    path.clear();
+    points = [];
+    path = [];
     isSavedTrip = false;
     onTapOnMap = false;
     isTripStart = false;
@@ -1164,14 +1412,21 @@ class MapProvider with ChangeNotifier {
     totalTime = 0;
     destinationCount = 1;
     timeDurations = 0;
+    _etaUpdateTimer?.cancel();
+    _tripStartTime = null;
+    originalEstimate = null;
+    currentEstimate = null;
+    timeChangeNotification = null;
 
     if (positionStream != null) {
       positionStream!.cancel();
     }
 
+    // Force UI update
     updateMapMarkers(tripProvider.lstMarker);
   }
 
+  String stopName = '';
   Future<void> setTimeDuration(int duration, String name,
       {bool isStop = false}) async {
     // final provider = Provider.of<TripViewModel>(context, listen: false);
@@ -1189,7 +1444,7 @@ class MapProvider with ChangeNotifier {
         provider.lstMarker.add(markers.last);
         updateMapMarkers(provider.lstMarker);
       }
-    }
+    } else {}
 
     notifyListeners();
   }
@@ -1385,99 +1640,92 @@ class MapProvider with ChangeNotifier {
     bool isRemove = false,
     bool isPathShow = false,
   }) async {
-    // if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
-    //   debugPrint("At least two locations are required.");
-    //   return;
-    // }
+    if (locations.length < 2) {
+      debugPrint("At least two locations are required.");
+      return;
+    }
     if (isRemove) {
       locations.add(locations.first);
     }
-
     isLoading = true;
     notifyListeners();
     routeList = [];
-    distanceOfSegments = []; // Reset distances
 
     try {
-      List<String> placeNames = await Future.wait(locations.map(getPlaceName));
-      List<List<RouteSegment>> allSegments = [];
+      // Build origin and destination
+      final origin = "${locations.first.latitude},${locations.first.longitude}";
+      final destination =
+          "${locations.last.latitude},${locations.last.longitude}";
 
-      for (int i = 0; i < locations.length - 1; i++) {
-        String origin = placeNames[i];
-        String destination = placeNames[i + 1];
-        final url = 'https://maps.googleapis.com/maps/api/directions/json?'
-            'origin=$origin&destination=$destination&mode=driving&'
-            'alternatives=true&key=$kGoogleApiKey';
+      // Build waypoints parameter if intermediate points exist
+      String waypoints = "";
+      if (locations.length > 2) {
+        waypoints =
+            "&waypoints=${locations.sublist(1, locations.length - 1).map((latLng) => "${latLng.latitude},${latLng.longitude}").join("|")}";
+      }
 
-        final response = await http.get(Uri.parse(url));
-        final data = jsonDecode(response.body);
+      // Single API call with all waypoints
+      final url = 'https://maps.googleapis.com/maps/api/directions/json?'
+          'origin=$origin&destination=$destination$waypoints&mode=driving&'
+          'alternatives=true&key=$kGoogleApiKey';
 
-        if (data['status'] == 'OK') {
-          List<RouteSegment> segmentRoutes = [];
+      final response = await http.get(Uri.parse(url));
+      final data = jsonDecode(response.body);
 
-          for (var route in data['routes']) {
-            final encodedPolyline = route['overview_polyline']['points'];
+      if (data['status'] == 'OK') {
+        routeList.clear();
 
-            final polylinePoints = _decodePolyline(encodedPolyline);
-            // routePolylinePoints =
-            //     polylinePoints; //routeList[index]['polyPoints'];
-            // cumulativeDistances =
-            //     _computeCumulativeDistances(routePolylinePoints);
-            double distance = route['legs'][0]['distance']['value'].toDouble();
-            int duration = route['legs'][0]['duration']['value'];
+        // Process each complete route
+        for (var route in data['routes']) {
+          final encodedPolyline = route['overview_polyline']['points'];
+          final polylinePoints = _decodePolyline(encodedPolyline);
 
-            segmentRoutes.add(RouteSegment(
-              points: polylinePoints,
-              distance: distance,
-              duration: duration,
-              summary: route['summary'],
-            ));
-
-            //  Store the distance in the list
-            distanceOfSegments.add({
-              "$origin to $destination": "${(distance).toStringAsFixed(2)}"
-            });
+          // Calculate total distance and duration
+          double totalDistance = 0;
+          int? totalDuration = 0;
+          for (var leg in route['legs']) {
+            totalDistance = (leg['distance']['value'] as num).toDouble();
+            distance = totalDistance;
+            // totalDuration += (leg['duration']['value'] as num).toDouble();
           }
 
-          allSegments.add(segmentRoutes);
-        } else {
-          debugPrint("Error in segment $i: ${data['status']}");
-          return;
+          routeList.add({
+            'polyPoints': polylinePoints,
+            'distance': totalDistance,
+            'duration': totalDuration,
+            'summary': route['summary'],
+          });
         }
-      }
 
-      routeList = _combineRouteSegments(allSegments);
-      if (routeList.length > 3) {
-        routeList = routeList.sublist(0, 3);
-      }
-
-      if (routeList.isNotEmpty) {
-        selectedRouteIndex = 0;
-        double shortestDistance = routeList.first['distance'];
-        for (int i = 1; i < routeList.length; i++) {
-          if (routeList[i]['distance'] < shortestDistance) {
-            shortestDistance = routeList[i]['distance'];
-            // distance = shortestDistance;
-            selectedRouteIndex = i;
-          } else {
-            //distance = shortestDistance;
+        // Find shortest route
+        if (routeList.isNotEmpty) {
+          double shortestDistance = routeList.first['distance'];
+          selectedRouteIndex = 0;
+          for (int i = 0; i < routeList.length; i++) {
+            if (routeList[i]['distance'] < shortestDistance) {
+              shortestDistance = routeList[i]['distance'];
+              selectedRouteIndex = i;
+            }
           }
+          // distance = shortestDistance;
+          if (locations.length >= 2) {
+            // distance = await calculateTotalDistanceForMap(locations);
+            // notifyListeners();
+          }
+
+          _updatePolylines();
         }
         if (locations.length >= 2) {
           distance = await calculateTotalDistanceForMap(locations);
+          formattedDistance = formatDistance(distance, context);
+          convertMinutesToHours(distance);
+          // selectRoute(0);
+
+          // notifyListeners();
         }
 
         _updatePolylines();
-        // if (polylines.isNotEmpty && mapController != null) {
-        //   LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
-        //   mapController
-        //       ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-        // }
       }
-
-      if (isPathShow) showRoutesBottomSheet(context);
-
-      debugPrint("Distance of Segments: $distanceOfSegments");
     } catch (e) {
       debugPrint("Error fetching routes: $e");
     } finally {
@@ -1485,90 +1733,6 @@ class MapProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  // logic to get only one route
-  // Future<void> fetchRouteWithWaypoints(
-  //   List<LatLng> locations, {
-  //   bool isRemove = false,
-  //   bool isPathShow = false,
-  // }) async {
-  //   if (locations.length < 2) {
-  //     debugPrint("At least two locations are required.");
-  //     return;
-  //   }
-
-  //   isLoading = true;
-  //   notifyListeners();
-  //   routeList = [];
-
-  //   try {
-  //     // Build origin and destination
-  //     final origin = "${locations.first.latitude},${locations.first.longitude}";
-  //     final destination =
-  //         "${locations.last.latitude},${locations.last.longitude}";
-
-  //     // Build waypoints parameter if intermediate points exist
-  //     String waypoints = "";
-  //     if (locations.length > 2) {
-  //       waypoints = "&waypoints=" +
-  //           locations
-  //               .sublist(1, locations.length - 1)
-  //               .map((latLng) => "${latLng.latitude},${latLng.longitude}")
-  //               .join("|");
-  //     }
-
-  //     // Single API call with all waypoints
-  //     final url = 'https://maps.googleapis.com/maps/api/directions/json?'
-  //         'origin=$origin&destination=$destination$waypoints&mode=driving&'
-  //         'alternatives=true&key=$kGoogleApiKey';
-
-  //     final response = await http.get(Uri.parse(url));
-  //     final data = jsonDecode(response.body);
-
-  //     if (data['status'] == 'OK') {
-  //       routeList.clear();
-
-  //       // Process each complete route
-  //       for (var route in data['routes']) {
-  //         final encodedPolyline = route['overview_polyline']['points'];
-  //         final polylinePoints = _decodePolyline(encodedPolyline);
-
-  //         // Calculate total distance and duration
-  //         double totalDistance = 0;
-  //         int? totalDuration = 0;
-  //         for (var leg in route['legs']) {
-  //           totalDistance += leg['distance']['value'];
-  //           // totalDuration += leg['duration']['value'];
-  //         }
-
-  //         routeList.add({
-  //           'polyPoints': polylinePoints,
-  //           'distance': totalDistance,
-  //           'duration': totalDuration,
-  //           'summary': route['summary'],
-  //         });
-  //       }
-
-  //       // Find shortest route
-  //       if (routeList.isNotEmpty) {
-  //         double shortestDistance = routeList.first['distance'];
-  //         selectedRouteIndex = 0;
-  //         for (int i = 0; i < routeList.length; i++) {
-  //           if (routeList[i]['distance'] < shortestDistance) {
-  //             shortestDistance = routeList[i]['distance'];
-  //             selectedRouteIndex = i;
-  //           }
-  //         }
-  //         distance = routeList[selectedRouteIndex]['distance'];
-  //         _updatePolylines();
-  //       }
-  //     }
-  //   } catch (e) {
-  //     debugPrint("Error fetching routes: $e");
-  //   } finally {
-  //     isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
 
   // Add this in your provider class
 
@@ -1714,21 +1878,6 @@ class MapProvider with ChangeNotifier {
       ],
     );
   }
-
-  // String formatDistance(double meters, BuildContext context) {
-  //   final userProvider = Provider.of<UserViewModel>(context, listen: false);
-
-  //   if (userProvider.user.userUnit == "Miles") {
-  //     double miles = meters / 1609.34; // Convert meters to miles
-  //     return miles > 0.1
-  //         ? '${miles.toStringAsFixed(1)} mi'
-  //         : '${(miles * 5280).toStringAsFixed(0)} ft';
-  //   } else {
-  //     double km = meters / 1000;
-
-  //     return km > 1 ? '${km.toStringAsFixed(1)} km' : '$meters m';
-  //   }
-  // }
 
   String _formatDuration(int seconds) {
     final hours = seconds ~/ 3600;

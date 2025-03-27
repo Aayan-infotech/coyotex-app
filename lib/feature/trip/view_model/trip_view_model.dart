@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:coyotex/core/services/model/notification_model.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
+import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +21,70 @@ class TripViewModel extends ChangeNotifier {
   Future<ApiResponseWithData<Map<String, dynamic>>> addTrip(
       TripModel tripModel) async {
     return await _tripAPIs.addTrip(tripModel);
+  }
+
+  void showFinishWarningDialog(MapProvider provider, BuildContext context) {
+    final userProvider = Provider.of<UserViewModel>(context, listen: false);
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        bool isLoading = false; // Declare isLoading outside StatefulBuilder
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Finish Trip"),
+              content: isLoading
+                  ? const SizedBox(
+                      height: 50,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : const Text("Are you sure you want to finish the trip?"),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setState(() => isLoading = true);
+                          final tripProvider = Provider.of<TripViewModel>(
+                              context,
+                              listen: false);
+
+                          var response = await userProvider.sendNotifications(
+                            "Trip Update",
+                            "Your Trip has been Completed",
+                            NotificationType.tripUpdate,
+                            mapProvider.selectedTripModel.id,
+                          );
+                          if (response.success) {
+                            var response = await tripProvider.updateUserTrip(
+                                mapProvider.selectedTripModel.id);
+                            if (response.success) {
+                              await tripProvider.getUserTrip();
+                            }
+                          }
+
+                          provider.resetFields();
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                            //if (widget.isRestart!) Navigator.pop(context);
+                          }
+                        },
+                  child: const Text("Finish"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<ApiResponseWithData> getAllMarker() async {

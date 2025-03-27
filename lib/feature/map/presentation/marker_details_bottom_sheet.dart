@@ -24,8 +24,10 @@ class DurationPickerBottomSheet extends StatefulWidget {
 class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
   final TextEditingController _minuteController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _tripNameController = TextEditingController();
   String? _selectedWindDirection;
   bool _isFormValid = false;
+  bool isLoading = false;
 
   final List<String> _windDirections = [
     "North",
@@ -39,6 +41,7 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
   ];
 
   final FocusNode _nameFocusNode = FocusNode();
+  final FocusNode _tripNameFocusNode = FocusNode();
   final FocusNode _minuteFocusNode = FocusNode();
 
   @override
@@ -50,7 +53,6 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
     }
   }
 
-  bool isLoading = false;
   MarkerData? markerData;
 
   searchMarker(BuildContext context) {
@@ -84,6 +86,22 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
     super.dispose();
   }
 
+  String formatDuration(int totalMinutes) {
+    if (totalMinutes < 0) throw ArgumentError("Duration cannot be negative");
+
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+
+    final List<String> parts = [];
+
+    if (hours > 0) parts.add('${hours}h');
+    if (minutes > 0 || totalMinutes == 0) parts.add('${minutes}m');
+
+    return parts.join(' ');
+  }
+
+// Example usage:
+
   void _validateForm() {
     setState(() {
       _isFormValid =
@@ -105,18 +123,19 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
         maxChildSize: 0.85,
         expand: false,
         builder: (context, scrollController) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
-            ),
-            child: isLoading
-                ? const CircularProgressIndicator(
-                    color: Colors.black,
-                  )
-                : Column(
+          return mapProvider.isTripStart && !widget.isStop
+              ? Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 10)
+                    ],
+                  ),
+                  child: Column(
                     children: [
                       Container(
                         width: 60,
@@ -127,112 +146,260 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "Add Marker",
+                      const SizedBox(height: 16),
+                      Text(
+                        "Marker Details",
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey,
+                          color: Pallete.accentColor,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       Expanded(
                         child: SingleChildScrollView(
-                          controller: scrollController,
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
                           child: Column(
                             children: [
-                              BrandedTextField(
-                                controller: _nameController,
-                                focusNode: _nameFocusNode,
-                                labelText: "Enter marker name (Optional)",
-                                onTap: () {
-                                  scrollController.jumpTo(scrollController
-                                      .position.maxScrollExtent);
-                                },
+                              _buildDetailItem(
+                                icon: Icons.flag,
+                                title: "Marker Name",
+                                value: markerData?.title ?? "Unnamed Location",
                               ),
-                              const SizedBox(height: 16),
-                              BrandedTextField(
-                                controller: _minuteController,
-                                focusNode: _minuteFocusNode,
-                                labelText: "Enter time in minutes",
-                                keyboardType: TextInputType.number,
-                                onTap: () {
-                                  scrollController.jumpTo(scrollController
-                                      .position.maxScrollExtent);
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              const Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  "Wind Direction",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              Wrap(
-                                spacing: 10.0,
-                                runSpacing: 5.0,
-                                children: _windDirections.map((direction) {
-                                  return ChoiceChip(
-                                    label: Text(direction),
-                                    selected:
-                                        _selectedWindDirection == direction,
-                                    onSelected: (bool selected) {
-                                      setState(() {
-                                        _selectedWindDirection =
-                                            selected ? direction : null;
-                                        mapProvider.selectedWindDirection =
-                                            (selected ? direction : null)!;
-                                        _validateForm();
-                                      });
-                                    },
-                                    selectedColor: Pallete.accentColor,
-                                    labelStyle: TextStyle(
-                                      color: _selectedWindDirection == direction
-                                          ? Colors.white
-                                          : Colors.black,
-                                    ),
-                                  );
-                                }).toList(),
+                              _buildDetailItem(
+                                  icon: Icons.access_time,
+                                  title: "Duration",
+                                  value: formatDuration(markerData!.duration)
+                                  // "${markerData?.duration?.toString() ?? '0'} minutes",
+                                  ),
+                              _buildDetailItem(
+                                icon: Icons.air,
+                                title: "Wind Direction",
+                                value: markerData?.wind_direction ??
+                                    "Not specified",
                               ),
                               const SizedBox(height: 20),
+                              // Padding(
+                              //   padding: const EdgeInsets.symmetric(
+                              //       horizontal: 16.0),
+                              //   child: Row(
+                              //     mainAxisAlignment:
+                              //         MainAxisAlignment.spaceAround,
+                              //     children: [
+                              //       _buildAnimalStat(
+                              //         icon: Icons.visibility,
+                              //         count: markerData?.animalSeen ?? "0",
+                              //         label: "Animals Seen",
+                              //       ),
+                              //       _buildAnimalStat(
+                              //         icon: Icons.close,
+                              //         count: markerData?.animalKilled ?? "0",
+                              //         label: "Animals Harvested",
+                              //         isRed: true,
+                              //       ),
+                              //     ],
+                              //   ),
+                              // ),
+                              const SizedBox(height: 30),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20.0),
+                                child: BrandedPrimaryButton(
+                                  isEnabled: true,
+                                  name: "Close Details",
+                                  onPressed: () => Navigator.pop(context),
+                                  // color: Pallete.accentColor,
+                                  // textColor: Colors.white,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(
-                              child: BrandedPrimaryButton(
-                                  isEnabled: true,
-                                  isUnfocus: true,
-                                  name: "Cancel",
-                                  onPressed: () {
-                                    if (widget.mapMarker == null) {
-                                      mapProvider.points.removeLast();
-                                      mapProvider.path.removeLast();
-                                      mapProvider.markers.removeLast();
-                                    }
-
-                                    Navigator.of(context).pop();
-                                  })),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: BrandedPrimaryButton(
-                                isEnabled: _isFormValid,
-                                name: "Set",
-                                onPressed: _setMarker),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 50),
                     ],
                   ),
-          );
+                )
+              : Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 10)
+                    ],
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(
+                          color: Colors.black,
+                        )
+                      : Column(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 6,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[400],
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            widget.isStop
+                                ? const Text(
+                                    "Add Stop",
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blueGrey,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Add Marker",
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blueGrey,
+                                    ),
+                                  ),
+                            const SizedBox(height: 20),
+                            Expanded(
+                              child: SingleChildScrollView(
+                                controller: scrollController,
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
+                                child: Column(
+                                  children: [
+                                    if (mapProvider.tripName.isEmpty &&
+                                        !widget.isStop)
+                                      BrandedTextField(
+                                        controller: _tripNameController,
+                                        focusNode: _tripNameFocusNode,
+                                        labelText: "Enter Trip name ",
+                                        onChanged: (value) {
+                                          setState(() {});
+                                        },
+                                        onTap: () {
+                                          scrollController.jumpTo(
+                                              scrollController
+                                                  .position.maxScrollExtent);
+                                        },
+                                      ),
+                                    const SizedBox(height: 16),
+                                    BrandedTextField(
+                                      controller: _nameController,
+                                      focusNode: _nameFocusNode,
+                                      onChanged: (value) {},
+                                      labelText: "Enter marker name (Optional)",
+                                      onTap: () {
+                                        scrollController.jumpTo(scrollController
+                                            .position.maxScrollExtent);
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    BrandedTextField(
+                                      controller: _minuteController,
+                                      focusNode: _minuteFocusNode,
+                                      labelText: "Enter time in minutes",
+                                      keyboardType: TextInputType.number,
+                                      onTap: () {
+                                        scrollController.jumpTo(scrollController
+                                            .position.maxScrollExtent);
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        "Wind Direction",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    Wrap(
+                                      spacing: 10.0,
+                                      runSpacing: 5.0,
+                                      children:
+                                          _windDirections.map((direction) {
+                                        return ChoiceChip(
+                                          label: Text(direction),
+                                          selected: _selectedWindDirection ==
+                                              direction,
+                                          onSelected: (bool selected) {
+                                            setState(() {
+                                              _selectedWindDirection =
+                                                  selected ? direction : null;
+                                              mapProvider
+                                                      .selectedWindDirection =
+                                                  (selected
+                                                      ? direction
+                                                      : null)!;
+                                              _validateForm();
+                                            });
+                                          },
+                                          selectedColor: Pallete.accentColor,
+                                          labelStyle: TextStyle(
+                                            color: _selectedWindDirection ==
+                                                    direction
+                                                ? Colors.white
+                                                : Colors.black,
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(
+                                    child: isLoading
+                                        ? Center(
+                                            child: CircularProgressIndicator())
+                                        : BrandedPrimaryButton(
+                                            isEnabled: true,
+                                            isUnfocus: true,
+                                            name: "Cancel",
+                                            onPressed: () async {
+                                              if (mapProvider.markers.length ==
+                                                  1) {
+                                                mapProvider.tripName = '';
+                                              }
+
+                                              if (widget.mapMarker == null) {
+                                                mapProvider.points.removeLast();
+                                                mapProvider.path.removeLast();
+                                                mapProvider.markers
+                                                    .removeLast();
+                                              }
+                                              Navigator.of(context).pop();
+                                              await mapProvider
+                                                  .fetchRouteWithWaypoints(
+                                                      mapProvider.points,
+                                                      isRemove: true)
+                                                  .then((value) {});
+                                            })),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: BrandedPrimaryButton(
+                                      isEnabled: (_isFormValid ||
+                                              widget.mapMarker != null) &&
+                                          (widget.isStop ||
+                                              _tripNameController
+                                                  .text.isNotEmpty ||
+                                              mapProvider.tripName.isNotEmpty),
+                                      name: "Set",
+                                      onPressed: _setMarker),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 50),
+                          ],
+                        ),
+                );
         },
       ),
     );
@@ -240,23 +407,37 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
 
   Future<void> _setMarker() async {
     try {
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+
+      if (widget.isStop) {
+        mapProvider.stopName = _nameController.text;
+      }
       if (_minuteController.text.isNotEmpty && _selectedWindDirection != null) {
-        final mapProvider = Provider.of<MapProvider>(context, listen: false);
         if (widget.mapMarker != null) {
+          if (mapProvider.tripName.isEmpty) {
+            mapProvider.tripName = _tripNameController.text;
+          }
           markerData!.duration = int.parse(_minuteController.text);
           markerData!.title = _nameController.text;
           markerData!.wind_direction = _selectedWindDirection!;
+          markerData!.animalKilled = "0";
+          markerData!.animalSeen = "0";
           mapProvider.markers.add(markerData!);
           mapProvider.points.add(markerData!.position);
           mapProvider.path.add(markerData!.position);
-          if (mapProvider.markers.length >= 2)
+
+          if (mapProvider.markers.length >= 2) {
             mapProvider.fetchRouteWithWaypoints(mapProvider.path);
+          }
           mapProvider.isSave = true;
           Navigator.of(context).pop(true);
         } else {
           int minutes = int.parse(_minuteController.text);
           MapProvider mapProvider =
               Provider.of<MapProvider>(context, listen: false);
+          if (mapProvider.tripName.isEmpty) {
+            mapProvider.tripName = _tripNameController.text;
+          }
           await mapProvider.setTimeDuration(minutes, _nameController.text);
           Navigator.of(context).pop(true);
         }
@@ -269,5 +450,90 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
         ),
       );
     }
+  }
+
+  Widget _buildDetailItem(
+      {required IconData icon, required String title, required String value}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Pallete.accentColor, size: 28),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimalStat(
+      {required IconData icon,
+      required String count,
+      required String label,
+      bool isRed = false}) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color:
+                isRed ? Pallete.accentColor.withOpacity(0.1) : Colors.grey[100],
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon,
+              color: isRed ? Pallete.accentColor : Colors.grey[600], size: 32),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          count,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: isRed ? Pallete.accentColor : Colors.black87,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 }

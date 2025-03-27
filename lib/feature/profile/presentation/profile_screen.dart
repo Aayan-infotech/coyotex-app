@@ -12,6 +12,7 @@ import 'package:coyotex/feature/profile/presentation/change_password.dart';
 import 'package:coyotex/feature/profile/presentation/edit_profile.dart';
 import 'package:coyotex/feature/profile/presentation/linked_devices.dart';
 import 'package:coyotex/feature/profile/presentation/subscription_details_screen.dart';
+import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/utills/shared_pref.dart';
@@ -196,11 +197,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                _buildStatCard(
-                                    'Trips',
-                                    '${userViewModel.trips.length}',
-                                    '+${userViewModel.trips.length}',
-                                    Colors.orange),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) {
+                                      return TripsHistoryScreen();
+                                    }));
+                                  },
+                                  child: _buildStatCard(
+                                      'Trips',
+                                      '${userViewModel.trips.length}',
+                                      '+${userViewModel.trips.length}',
+                                      Colors.orange),
+                                ),
                                 _buildStatCard('Animal Seen',
                                     '${userViewModel.animalSeen}', null, null),
                                 _buildStatCard(

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/weather_state.dart';
 import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
 import 'package:coyotex/feature/trip/presentation/trip_details.dart';
 import 'package:coyotex/feature/trip/presentation/trip_history.dart';
@@ -112,59 +113,143 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.grey
+                              .shade900, // Darker background for better contrast
                           borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: Colors.red.shade700, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.shade900.withOpacity(0.5),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
-                        padding: EdgeInsets.all(10),
+                        padding: EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${mapProvider.weather.main.temp}°F (${capitalizeFirstLetter(mapProvider.weather.weather.first.description)})',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              children: [
+                                Icon(Icons.location_on,
+                                    color: Colors.red.shade500, size: 20),
+                                SizedBox(width: 4),
+                                Text(
+                                  '${mapProvider.weather.name}, ${mapProvider.weather.sys.country}',
+                                  style: TextStyle(
+                                    color: Colors
+                                        .white, // Brighter text for contrast
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              DateFormat('MMM dd, yyyy').format(
-                                  DateTime.now()), // Example: Dec 16, 2024
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  '${mapProvider.weather.name}, ${mapProvider.weather.sys.country}',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.thermostat,
+                                            color: Colors.red.shade500,
+                                            size: 28),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          '${mapProvider.weather.main.temp}°F',
+                                          style: TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors
+                                                .white, // Bright white for emphasis
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        capitalizeFirstLetter(mapProvider
+                                            .weather.weather.first.description),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors
+                                              .grey.shade400, // Softer contrast
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                        'Humidity: ${mapProvider.weather.main.humidity}%'),
+                                      DateFormat('MMM dd')
+                                          .format(DateTime.now()),
+                                      style: TextStyle(
+                                        color: Colors.white, // Brighter date
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                     Text(
-                                        'Wind: ${mapProvider.weather.wind.speed}mph'),
-                                    Text(
-                                        'BP: ${(mapProvider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg')
+                                      DateFormat('yyyy').format(DateTime.now()),
+                                      style: TextStyle(
+                                        color:
+                                            Colors.grey.shade400, // Subtle year
+                                        fontSize: 14,
+                                      ),
+                                    ),
                                   ],
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            Divider(color: Colors.red.shade800, height: 1),
+                            SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                WeatherStat(
+                                  icon: Icons.water_drop,
+                                  value:
+                                      '${mapProvider.weather.main.humidity}%',
+                                  label: 'Humidity',
+                                  color: Colors.red
+                                      .shade500, 
+                                ),
+                                WeatherStat(
+                                  icon: Icons.air,
+                                  value: '${mapProvider.weather.wind.speed}mph',
+                                  label: 'Wind',
+                                  color: Colors.red.shade500,
+                                ),
+                                WeatherStat(
+                                  icon: Icons.speed,
+                                  value:
+                                      '${(mapProvider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg',
+                                  label: 'Pressure',
+                                  color: Colors.red.shade500,
                                 ),
                               ],
                             ),
                           ],
                         ),
                       ),
+
+// Add this reusable widget class somewhere in your code
                       const SizedBox(height: 16),
 
                       // Trips Section
@@ -186,7 +271,7 @@ class _HomePageState extends State<HomePage> {
                                 return TripsHistoryScreen();
                               }));
                             },
-                            child: Text('See All',
+                            child: const Text('See All',
                                 style: TextStyle(color: Colors.orange)),
                           ),
                         ],

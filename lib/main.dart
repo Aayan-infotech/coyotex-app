@@ -4,6 +4,7 @@ import 'package:coyotex/core/utills/notification.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/splash_screen.dart';
+import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';
 import 'package:coyotex/feature/map/view_model/classes/location_provider.dart';
 import 'package:coyotex/feature/map/view_model/classes/route_provider.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
@@ -62,9 +63,14 @@ void main() async {
       await FirebaseMessaging.instance.getInitialMessage();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessginBackgroundHandler);
 
-  runApp(MyApp(
-    message: message,
-  ));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => IndexProvider(),
+      child: MyApp(
+        message: message,
+      ),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -93,6 +99,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => TripViewModel()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => RouteProvider()),
+        ChangeNotifierProvider(create: (_) => IndexProvider()),
       ],
       child: MaterialApp(
         title: 'Coyotex',

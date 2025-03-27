@@ -311,6 +311,8 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
             if (widget.isRestart!) {
               Navigator.of(context).pop(true);
               Navigator.of(context).pop(true);
+            } else {
+              Navigator.of(context).pop(true);
             }
           },
         );
@@ -376,16 +378,16 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
           : [
               Row(
                 children: [
-                  if (widget.markerData == null)
-                    Expanded(
-                      child: BrandedPrimaryButton(
-                          isEnabled: true,
-                          isUnfocus: true,
-                          name: "Finish",
-                          onPressed: () =>
-                              _showFinishWarningDialog(provider, context)),
-                    ),
-                  const SizedBox(width: 10),
+                  // if (widget.markerData == null)
+                  // Expanded(
+                  //   child: BrandedPrimaryButton(
+                  //       isEnabled: true,
+                  //       isUnfocus: true,
+                  //       name: "Finish",
+                  //       onPressed: () =>
+                  //           _showFinishWarningDialog(provider, context)),
+                  // ),
+
                   Expanded(
                     child: BrandedPrimaryButton(
                         isEnabled: _mediaFiles.isNotEmpty,

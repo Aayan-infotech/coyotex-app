@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
+import 'package:coyotex/feature/map/presentation/add_stop_map.dart';
 import 'package:coyotex/feature/map/presentation/marker_bottom_sheat.dart';
 import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
 import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
@@ -48,18 +49,128 @@ class _MapScreenState extends State<MapScreen> {
     icons['markerIcon'] = await _getIcon('assets/images/marker_icon.png', 200);
   }
 
-  // Future<void> _initCompass() async {
-  //   // Request permission for sensors (Android)
-  //   if (await Permission.sensors.request().isGranted) {
-  //     FlutterCompass.events?.listen((event) {
-  //       final provider = Provider.of<MapProvider>(context, listen: false);
-  //       if (provider.isTripStart && event.heading != null) {
-  //         setState(() => _compassHeading = event.heading);
-  //         _updateMapBearing(provider, event.heading!);
-  //       }
-  //     });
-  //   }
-  // }
+  MapType _currentMapType = MapType.hybrid;
+  void _showLayerDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).dialogBackgroundColor,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                height: 4,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Text(
+                      "Map Style",
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._buildLayerOptions(),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildLayerOptions() {
+    return [
+      _buildLayerOption("Normal", MapType.normal, Icons.map_outlined),
+      _buildLayerOption("Satellite", MapType.satellite, Icons.satellite_alt),
+      _buildLayerOption("Terrain", MapType.terrain, Icons.terrain),
+      _buildLayerOption("Hybrid", MapType.hybrid, Icons.layers),
+    ];
+  }
+
+  Widget _buildLayerOption(String title, MapType type, IconData icon) {
+    final isSelected = _currentMapType == type;
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _currentMapType = type;
+            Navigator.pop(context);
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color:
+                isSelected ? theme.colorScheme.primary.withOpacity(0.1) : null,
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected
+                ? Border.all(color: theme.colorScheme.primary.withOpacity(0.3))
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(icon,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface),
+              const SizedBox(width: 16),
+              Text(title,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                  )),
+              const Spacer(),
+              Radio<MapType>(
+                value: type,
+                groupValue: _currentMapType,
+                toggleable: true,
+                fillColor: MaterialStateProperty.resolveWith<Color>(
+                  (states) => isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _currentMapType = value!;
+                    Navigator.pop(context);
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _updateMapBearing(MapProvider provider, double heading) {
     if (provider.mapController != null) {
@@ -211,15 +322,6 @@ class _MapScreenState extends State<MapScreen> {
                 backgroundColor: Colors.white,
               ))
             : Scaffold(
-                // appBar: AppBar(
-                //   backgroundColor: Colors.black,
-                //   centerTitle: true,
-                //   title: Text(
-                //     "Map",
-                //     style: TextStyle(color: Colors.white),
-                //   ),
-                // ),
-
                 body: Stack(
                   children: [
                     Column(
@@ -228,19 +330,12 @@ class _MapScreenState extends State<MapScreen> {
                           child: Stack(
                             children: [
                               GoogleMap(
-                                // initialCameraPosition: CameraPosition(
-                                //   target: provider.mapMarkers.isNotEmpty
-                                //       ? provider.mapMarkers.last.position
-                                //       : provider.initialPosition,
-                                //   zoom: 12,
-                                // ),
                                 initialCameraPosition: CameraPosition(
                                   target: provider.initialPosition,
                                   zoom: 12,
                                 ),
-
                                 myLocationEnabled: true,
-                                mapType: MapType.normal,
+                                mapType: _currentMapType,
                                 compassEnabled: true,
                                 onCameraMove: (position) =>
                                     provider.onCameraMove(position),
@@ -251,6 +346,15 @@ class _MapScreenState extends State<MapScreen> {
                                 fortyFiveDegreeImageryEnabled: false,
                                 polylines: provider.polylines,
                                 markers: provider.mapMarkers,
+                                // onTap: (latLang) {
+                                //   if (provider.isAddStopButton) {
+                                //     provider.addStop(latLang);
+                                //   } else if (provider.isSavedTrip) {
+                                //     null;
+                                //   } else {
+                                //     provider.onMapTapped(latLang, context);
+                                //   }
+                                // },
                                 onTap: provider.isSavedTrip
                                     ? null
                                     : (latlang) async {
@@ -259,47 +363,16 @@ class _MapScreenState extends State<MapScreen> {
                                 zoomGesturesEnabled: true,
                                 onMapCreated: (controller) =>
                                     provider.onMapCreated(controller),
-                                // onMapCreated: (controller) {
-                                //   provider.mapController = controller;
-                                //   // if (widget.isRestart == true) {
-                                //   //   provider.mapController =
-                                //   //       widget.googleMapController;
-                                //   // } else {
-
-                                //   // }
-
-                                // },
                               ),
-                              //  if (provider.isTripStart)
-                              // Padding(
-                              //   padding:
-                              //       const EdgeInsets.only(top: 80, right: 10),
-                              //   child: Align(
-                              //     alignment: Alignment.topRight,
-                              //     child: FloatingActionButton(
-                              //       backgroundColor: Colors.white,
-                              //       onPressed: () async {
-                              //         final position =
-                              //             await Provider.of<MapProvider>(
-                              //                     context,
-                              //                     listen: false)
-                              //                 .getCurrentLocation(
-                              //                     isCurrentLocation: true);
-                              //         provider.mapController?.animateCamera(
-                              //           CameraUpdate.newCameraPosition(
-                              //             CameraPosition(
-                              //               target: LatLng(position.latitude,
-                              //                   position.longitude),
-                              //               zoom: 14,
-                              //             ),
-                              //           ),
-                              //         );
-                              //       },
-                              //       child: const Icon(Icons.my_location,
-                              //           color: Colors.blue),
-                              //     ),
-                              //   ),
-                              // ),
+                              Positioned(
+                                  top: provider.isTripStart ? 40 : 70,
+                                  right: 5,
+                                  child: IconButton(
+                                      onPressed: _showLayerDialog,
+                                      icon: const Icon(
+                                        Icons.layers,
+                                        color: Colors.red,
+                                      ))),
                             ],
                           ),
                         ),
@@ -344,7 +417,6 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                         if (provider.isTripStart)
                           SizedBox(
-                            height: widget.isRestart! ? 260 : 220,
                             child: Column(
                               children: [
                                 // Drag Handle
@@ -361,81 +433,7 @@ class _MapScreenState extends State<MapScreen> {
                                     ),
                                   ),
                                 ),
-                                // Horizontal Mode Selector
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0, vertical: 10),
-                                  child: Row(
-                                    children:
-                                        List.generate(modes.length, (index) {
-                                      final isSelected = selectedMode == index;
-                                      return GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            selectedMode =
-                                                index; // Update selectedMode first
-                                          });
 
-                                          String selectedTransport = modes[
-                                              index]; // Get the correct mode
-
-                                          if (selectedTransport == "Drive") {
-                                            provider.speed = 45;
-                                          } else if (selectedTransport ==
-                                              "Bike") {
-                                            provider.speed = 35;
-                                          } else if (selectedTransport ==
-                                              "Bus") {
-                                            provider.speed = 30;
-                                          } else if (selectedTransport ==
-                                              "Walk") {
-                                            provider.speed = 5;
-                                          } else {
-                                            provider.speed = 45;
-                                          }
-
-                                          provider.convertMinutesToHours(
-                                              provider.distance);
-                                        },
-                                        child: Container(
-                                          margin:
-                                              const EdgeInsets.only(right: 10),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 16.0, vertical: 8.0),
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? Colors.blue
-                                                : Colors.grey[200],
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                modeIcons[index],
-                                                color: isSelected
-                                                    ? Colors.white
-                                                    : Colors.black,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                modes[index],
-                                                style: TextStyle(
-                                                  color: isSelected
-                                                      ? Colors.white
-                                                      : Colors.black,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                  ),
-                                ),
-
-                                // Route Info
                                 const SizedBox(height: 10),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -445,22 +443,66 @@ class _MapScreenState extends State<MapScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        children: [
-                                          Icon(modeIcons[selectedMode],
-                                              size: 28, color: Colors.blue),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: Text(
-                                              provider.totalTravelTime,
-                                              style: const TextStyle(
-                                                fontSize: 20,
-                                                height: 1.5,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.green,
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: SizedBox(
+                                                height: 35,
+                                                child: BrandedPrimaryButton(
+                                                  isEnabled: true,
+                                                  isUnfocus: true,
+                                                  name: "Add Photos",
+                                                  onPressed: () {
+                                                    Navigator.of(context).push(
+                                                        MaterialPageRoute(
+                                                            builder: (context) {
+                                                      return AddPhotoScreen(
+                                                        isRestart:
+                                                            widget.isRestart!,
+                                                      );
+                                                    }));
+                                                  },
+                                                  borderRadius: 20,
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                            const SizedBox(
+                                              width: 10,
+                                            ),
+                                            Expanded(
+                                              child: SizedBox(
+                                                height: 35,
+                                                child: BrandedPrimaryButton(
+                                                  isEnabled: true,
+                                                  isUnfocus: false,
+                                                  name: "Finish Trip",
+                                                  onPressed: () {
+                                                    final tripProvider =
+                                                        Provider.of<
+                                                                TripViewModel>(
+                                                            context,
+                                                            listen: false);
+                                                    tripProvider
+                                                        .showFinishWarningDialog(
+                                                            provider, context);
+                                                  },
+                                                  borderRadius: 20,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: 20,
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
                                           GestureDetector(
                                             onTap: () {
                                               showCustomDialog(
@@ -472,12 +514,6 @@ class _MapScreenState extends State<MapScreen> {
                                                   fontWeight: FontWeight.bold),
                                             ),
                                           ),
-                                          IconButton(
-                                              onPressed: () {
-                                                provider.showRoutesBottomSheet(
-                                                    context);
-                                              },
-                                              icon: Icon(Icons.route)),
                                           GestureDetector(
                                             onTap: () {
                                               showCustomDialog(
@@ -502,67 +538,272 @@ class _MapScreenState extends State<MapScreen> {
                                               width: 30,
                                             ),
                                           ),
+                                          Column(
+                                            children: [
+                                              Text(
+                                                "Estimated Time: ",
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade600,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.timeline,
+                                                      color:
+                                                          Colors.blue.shade600,
+                                                      size: 16),
+                                                  SizedBox(width: 5),
+                                                  Text(
+                                                    DateFormat('h:mm a').format(
+                                                        provider.currentEstimate ??
+                                                            DateTime.now()),
+                                                    style: TextStyle(
+                                                      color:
+                                                          Colors.green.shade700,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  if (provider.currentEstimate !=
+                                                          null &&
+                                                      provider.originalEstimate !=
+                                                          null)
+                                                    Padding(
+                                                      padding: EdgeInsets.only(
+                                                          left: 8),
+                                                      child: Icon(
+                                                        provider.currentEstimate!
+                                                                .isBefore(provider
+                                                                    .originalEstimate!)
+                                                            ? Icons
+                                                                .arrow_downward
+                                                            : Icons
+                                                                .arrow_upward,
+                                                        color: provider
+                                                                .currentEstimate!
+                                                                .isBefore(provider
+                                                                    .originalEstimate!)
+                                                            ? Colors.green
+                                                            : Colors.red,
+                                                        size: 14,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          // Column(
+                                          //   children: [
+                                          //     Text(
+                                          //       "Estimated Time: ",
+                                          //       style: TextStyle(
+                                          //         color: Colors.grey.shade600,
+                                          //         fontSize: 14,
+                                          //       ),
+                                          //     ),
+                                          //     const SizedBox(width: 8),
+                                          //     Row(
+                                          //       children: [
+                                          //         Icon(Icons.timeline,
+                                          //             color:
+                                          //                 Colors.blue.shade600,
+                                          //             size: 16),
+                                          //         SizedBox(
+                                          //           width: 5,
+                                          //         ),
+                                          //         Text(
+                                          //           DateFormat('h:mm a').format(
+                                          //               provider
+                                          //                   .estimatedCompletionTime!),
+                                          //           style: TextStyle(
+                                          //             color:
+                                          //                 Colors.green.shade700,
+                                          //             fontSize: 14,
+                                          //             fontWeight:
+                                          //                 FontWeight.bold,
+                                          //           ),
+                                          //         ),
+                                          //       ],
+                                          //     ),
+                                          //   ],
+                                          // ),
                                         ],
                                       ),
-                                      Padding(
-                                          padding:
-                                              const EdgeInsets.only(left: 40),
-                                          child: Text(provider.formattedDistance
-                                              // "${provider.formatDistance(provider.distance, context)}",
-                                              )
-                                          // "${provider.distance.toStringAsFixed(2)} ${userProvider.user.userUnit}"),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const Row(
+                                                children: [
+                                                  Icon(Icons.access_time,
+                                                      color: Colors.blue,
+                                                      size: 20),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    "Trip Time",
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.blue,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                provider.totalTravelTime,
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.green.shade700,
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.place,
+                                                      color: Colors.blue,
+                                                      size: 18),
+                                                  SizedBox(width: 4),
+                                                  Text(
+                                                    provider.formattedDistance,
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      color:
+                                                          Colors.grey.shade700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              const Row(
+                                                children: [
+                                                  Icon(Icons.timer,
+                                                      color: Colors.blue,
+                                                      size: 20),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    "Total Time",
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.blue,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              // Column(c)
+                                              SizedBox(height: 4),
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    right: 8.0),
+                                                child: Text(
+                                                  provider
+                                                      .totalStopWithTravelTime,
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color:
+                                                        Colors.orange.shade700,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                            ],
                                           )
+                                        ],
+                                      )
                                     ],
                                   ),
                                 ),
                                 // Start Button
                                 const SizedBox(height: 20),
                                 Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 5),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 15),
                                   child: Row(
                                     children: [
-                                      Expanded(
-                                        child: BrandedPrimaryButton(
-                                          isEnabled: true,
-                                          isUnfocus: true,
-                                          name: "Add Photos",
-                                          onPressed: () {
-                                            Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                    builder: (context) {
-                                              return AddPhotoScreen(
-                                                isRestart: widget.isRestart!,
-                                              );
-                                            }));
-                                          },
-                                          borderRadius: 20,
+                                      Flexible(
+                                        flex: 3,
+                                        child: SizedBox(
+                                          height: 35,
+                                          child: BrandedPrimaryButton(
+                                            isEnabled: true,
+                                            isUnfocus: false,
+                                            name: provider.isStartavigation
+                                                ? "Stop Navigation"
+                                                : "Start Navigation",
+                                            onPressed: () {
+                                              if (provider.isStartavigation) {
+                                                provider.resetFields();
+                                                Navigator.of(context).pop();
+                                                Navigator.of(context).pop();
+                                              } else {
+                                                provider.launchGoogleMaps(
+                                                    provider.selectedTripModel);
+                                                provider.isStartavigation =
+                                                    true;
+                                              }
+                                            },
+                                            borderRadius: 20,
+                                          ),
                                         ),
                                       ),
-                                      const SizedBox(
-                                        width: 10,
+                                      SizedBox(
+                                        width: 5,
                                       ),
-                                      Expanded(
-                                        child: BrandedPrimaryButton(
-                                          isEnabled: true,
-                                          isUnfocus: false,
-                                          name: "Add Stop",
-                                          onPressed: () {
-                                            provider.addStop();
-                                          },
-                                          borderRadius: 20,
+                                      Flexible(
+                                        flex: 2,
+                                        child: SizedBox(
+                                          height: 35,
+                                          child: BrandedPrimaryButton(
+                                            isEnabled: true,
+                                            isUnfocus: false,
+                                            name: "Add Stop",
+                                            onPressed: () {
+                                              Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                      builder: (context) {
+                                                return AddStopMap();
+                                              })).then((onValue) {
+                                                provider.isStartavigation =
+                                                    false;
+                                                setState(() {});
+                                              });
+                                              // provider.addStop();
+                                            },
+                                            borderRadius: 20,
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
+
                                 if (widget.isRestart!)
-                                  SizedBox(
+                                  const SizedBox(
                                     height: 30,
                                   )
                               ],
                             ),
-                          )
+                          ),
+                        if (provider.isSave) tripCard(provider, context),
                       ],
                     ),
                     Positioned(
@@ -573,7 +814,8 @@ class _MapScreenState extends State<MapScreen> {
                         padding: const EdgeInsets.only(top: 80),
                         child: Column(
                           children: [
-                            if (!provider.onTapOnMap && !provider.isSavedTrip)
+                            if (!provider.onTapOnMap && !provider.isSavedTrip ||
+                                provider.markers.isEmpty)
                               Row(
                                 children: [
                                   Expanded(
@@ -813,109 +1055,6 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     ),
-                    // if (provider.trips.isNotEmpty && !provider.isTripStart)
-                    //   Positioned(
-                    //     top: MediaQuery.of(context).size.height * 0.6,
-                    //     left: 15,
-                    //     right: 10,
-                    //     bottom: 10,
-                    //     child: SingleChildScrollView(
-                    //       scrollDirection: Axis.horizontal,
-                    //       reverse: true,
-                    //       child: Row(
-                    //         children:
-                    //             List.generate(provider.trips.length, (index) {
-                    //           TripModel tripModel = TripModel(
-                    //             tripStatus: provider.trips[index].tripStatus,
-                    //             id: provider.trips[index].id,
-                    //             userId: provider.trips[index].userId,
-                    //             name: provider.trips[index].name,
-                    //             startLocation:
-                    //                 provider.trips[index].startLocation,
-                    //             destination: provider.trips[index].destination,
-                    //             waypoints: List.from(
-                    //                 provider.trips[index].waypoints), // Copy
-                    //             totalDistance:
-                    //                 provider.trips[index].totalDistance,
-                    //             createdAt: provider.trips[index].createdAt,
-                    //             routePoints: List.from(
-                    //                 provider.trips[index].routePoints), // Copy
-                    //             markers: List.from(
-                    //                 provider.trips[index].markers), // Copy
-                    //             weatherMarkers: List.from(provider
-                    //                 .trips[index].weatherMarkers), // Copy
-                    //             animalKilled:
-                    //                 provider.trips[index].animalKilled,
-                    //             animalSeen: provider.trips[index].animalSeen,
-                    //             images: List.from(
-                    //                 provider.trips[index].images), // Copy
-                    //           );
-
-                    //           return GestureDetector(
-                    //             onTap: () async {
-                    //               provider.isSavedTrip = true;
-                    //               provider.isSave = true;
-                    //               provider.markers = tripModel.markers;
-                    //               provider.distance = tripModel.totalDistance;
-                    //               provider.selectedTripModel = tripModel;
-                    //               provider.points = tripModel.routePoints;
-                    //               provider.providerLetsHuntButton = true;
-                    //               provider.path = tripModel.routePoints;
-                    //               await provider.fetchRouteWithWaypoints(
-                    //                 tripModel.routePoints,
-                    //               );
-                    //             },
-                    //             child: Card(
-                    //               color: const Color.fromRGBO(255, 255, 255, 1),
-                    //               child: SizedBox(
-                    //                 height: MediaQuery.of(context).size.height *
-                    //                     0.13, // Explicit height of the card
-                    //                 width: MediaQuery.of(context).size.width *
-                    //                     0.8, // Set the width for each card
-                    //                 child: Row(
-                    //                   children: [
-                    //                     const SizedBox(width: 10),
-                    //                     Expanded(
-                    //                       child: Padding(
-                    //                         padding: const EdgeInsets.all(12.0),
-                    //                         child: Column(
-                    //                           crossAxisAlignment:
-                    //                               CrossAxisAlignment.start,
-                    //                           children: [
-                    //                             Text(
-                    //                               tripModel.name,
-                    //                               style: const TextStyle(
-                    //                                   fontSize: 14,
-                    //                                   fontWeight:
-                    //                                       FontWeight.bold,
-                    //                                   color: Color.fromRGBO(
-                    //                                       44, 51, 62, 1)),
-                    //                               overflow:
-                    //                                   TextOverflow.ellipsis,
-                    //                             ),
-                    //                             Text(
-                    //                               tripModel.startLocation,
-                    //                               maxLines: 4,
-                    //                               overflow:
-                    //                                   TextOverflow.ellipsis,
-                    //                               style: const TextStyle(
-                    //                                   color: Colors.grey,
-                    //                                   fontSize: 12),
-                    //                             )
-                    //                           ],
-                    //                         ),
-                    //                       ),
-                    //                     ),
-                    //                   ],
-                    //                 ),
-                    //               ),
-                    //             ),
-                    //           );
-                    //         }),
-                    //       ),
-                    //     ),
-                    //   ),
-                    if (provider.isSave) tripCard(provider, context),
                   ],
                 ),
               );
@@ -923,151 +1062,423 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Positioned tripCard(
-    MapProvider provider,
-    BuildContext context,
-  ) {
-    return Positioned(
-      bottom: 20,
-      left: 10,
-      right: 10,
+  // Positioned tripCard(
+  //   MapProvider provider,
+  //   BuildContext context,
+  // ) {
+  //   return Positioned(
+  //     bottom: 20,
+  //     left: 10,
+  //     right: 10,
+  //     child: Container(
+  //       width: MediaQuery.of(context).size.width,
+  //       child: Card(
+  //         elevation: 4,
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(8.0),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Row(
+  //                 children: [
+  //                   Image.asset(
+  //                     "assets/images/logo.png",
+  //                     width: 50,
+  //                     height: 50,
+  //                   ),
+  //                   const SizedBox(width: 10),
+  //                   Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       const Text(
+  //                         "Distance",
+  //                         style: TextStyle(fontWeight: FontWeight.bold),
+  //                       ),
+  //                       Text(
+  //                           "${provider.formatDistance(provider.distance, context)}"
+  //                           //"${provider.distance.toStringAsFixed(2)} ${Provider.of<UserViewModel>(context, listen: false).user.userUnit}",
+  //                           ),
+  //                     ],
+  //                   ),
+  //                   const Spacer(),
+  //                   IconButton(
+  //                       onPressed: () {
+  //                         provider.resetFields();
+  //                       },
+  //                       icon: Icon(Icons.close)),
+  //                 ],
+  //               ),
+  //               Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                 children: [
+  //                   Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       Row(
+  //                         children: [
+  //                           Text(
+  //                             "${provider.weather.main.temp}\u00B0",
+  //                             style: TextStyle(fontSize: 22),
+  //                           ),
+  //                           SizedBox(width: 5),
+  //                           Text(
+  //                               "(${provider.weather.weather.first.description})"),
+  //                         ],
+  //                       ),
+  //                       Text(
+  //                         DateFormat('MMM d yyyy').format(DateTime.now()),
+  //                         style: const TextStyle(fontSize: 15),
+  //                       ),
+  //                       Row(
+  //                         children: [
+  //                           const Icon(Icons.location_on_outlined, size: 13),
+  //                           const SizedBox(width: 8),
+  //                           Text(
+  //                             provider.weather.base,
+  //                             style: const TextStyle(fontSize: 12),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.end,
+  //                     children: [
+  //                       Row(
+  //                         children: [
+  //                           GestureDetector(
+  //                             onTap: () {
+  //                               showCustomDialog(context, provider);
+  //                             },
+  //                             child: const Text(
+  //                               'Break Time',
+  //                               style: TextStyle(fontWeight: FontWeight.bold),
+  //                             ),
+  //                           ),
+  //                           SizedBox(width: 10),
+  //                           GestureDetector(
+  //                             onTap: () {
+  //                               distanceDialogue(context, provider,
+  //                                   isLocation: true);
+  //                             },
+  //                             child: Image.asset(
+  //                               "assets/images/distance.png",
+  //                               height: 30,
+  //                               width: 30,
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       SizedBox(height: 5),
+  //                       Column(
+  //                         crossAxisAlignment: CrossAxisAlignment.start,
+  //                         children: [
+  //                           Text(
+  //                               "Humidity: ${provider.weather.main.humidity}%"),
+  //                           Text(
+  //                               'BP: ${(provider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg')
+  //                         ],
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 10),
+  //               if (provider.providerLetsHuntButton)
+  //                 SizedBox(
+  //                   height: 35,
+  //                   child: BrandedPrimaryButton(
+  //                     isEnabled: true,
+  //                     name: "Let's Hunt",
+  //                     onPressed: () {
+  //                       provider.context = context;
+  //                       provider.letsHunt();
+  //                     },
+  //                   ),
+  //                 ),
+  //               const SizedBox(height: 10),
+  //               if (!provider.isSavedTrip)
+  //                 SizedBox(
+  //                   height: 35,
+  //                   child: BrandedPrimaryButton(
+  //                     isEnabled: true,
+  //                     isUnfocus: true,
+  //                     name: "Save Trip",
+  //                     onPressed: () {
+  //                       provider.saveTrip(context);
+  //                     },
+  //                   ),
+  //                 ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+  Widget tripCard(MapProvider provider, BuildContext context) {
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height * 0.34,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 8,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
       child: Card(
-        elevation: 4,
+        color: Colors.white,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Bottom sheet handle
+              // Center(
+              //   child: Container(
+              //     width: 40,
+              //     height: 4,
+              //     decoration: BoxDecoration(
+              //       color: Colors.grey.shade300,
+              //       borderRadius: BorderRadius.circular(2),
+              //     ),
+              //   ),
+              // ),
+              // const SizedBox(height: 8),
+
+              // Header Row
               Row(
                 children: [
-                  Image.asset("assets/images/distance_icons.png"),
-                  const SizedBox(width: 10),
+                  Icon(Icons.forest, color: Colors.red.shade700, size: 24),
+                  const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Distance",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      Text(
+                        "HUNTING TRIP",
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       Text(
-                          "${provider.formatDistance(provider.distance, context)}"
-                          //"${provider.distance.toStringAsFixed(2)} ${Provider.of<UserViewModel>(context, listen: false).user.userUnit}",
-                          ),
+                        provider.formatDistance(provider.distance, context),
+                        style: TextStyle(
+                          color: Colors.grey.shade900,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   const Spacer(),
-                  IconButton(
-                      onPressed: () {
-                        provider.resetFields();
-                      },
-                      icon: Icon(Icons.close)),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          distanceDialogue(context, provider, isLocation: true);
+                        },
+                        child: Image.asset(
+                          "assets/images/distance.png",
+                          height: 20,
+                          width: 20,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 5,
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close,
+                            color: Colors.grey.shade600, size: 20),
+                        padding: EdgeInsets.zero,
+                        onPressed: () => provider.resetFields(),
+                      ),
+                    ],
+                  ),
                 ],
               ),
+              const SizedBox(height: 12),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildTimeMetric(
+                    icon: Icons.access_time,
+                    label: "Trip Time",
+                    value: provider.totalTravelTime,
+                    color: Colors.green.shade600,
+                  ),
+                  _buildTimeMetric(
+                    icon: Icons.timer,
+                    label: "Total Time",
+                    value: provider.totalStopWithTravelTime,
+                    color: Colors.orange.shade600,
+                  ),
+                  GestureDetector(
+                    onTap: () => showCustomDialog(context, provider),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.timer_off,
+                              color: Colors.red.shade600, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            "Break Time",
+                            style: TextStyle(
+                              color: Colors.red.shade600,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Weather & Conditions
+              Divider(color: Colors.grey.shade300, height: 1),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            "${provider.weather.main.temp}\u00B0",
-                            style: TextStyle(fontSize: 22),
-                          ),
-                          SizedBox(width: 5),
-                          Text(
-                              "(${provider.weather.weather.first.description})"),
-                        ],
-                      ),
+                      Icon(Icons.thermostat,
+                          color: Colors.grey.shade600, size: 16),
+                      const SizedBox(width: 4),
                       Text(
-                        DateFormat('MMM d yyyy').format(DateTime.now()),
-                        style: const TextStyle(fontSize: 15),
-                      ),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on_outlined, size: 13),
-                          const SizedBox(width: 8),
-                          Text(
-                            provider.weather.base,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ],
+                        '${provider.weather.main.temp}°F',
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              showCustomDialog(context, provider);
-                            },
-                            child: const Text(
-                              'Break Time',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: () {
-                              distanceDialogue(context, provider,
-                                  isLocation: true);
-                            },
-                            child: Image.asset(
-                              "assets/images/distance.png",
-                              height: 30,
-                              width: 30,
-                            ),
-                          ),
-                        ],
+                      Icon(Icons.air),
+                      Text(
+                        '${provider.weather.wind.speed} mph',
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontSize: 12,
+                        ),
                       ),
-                      SizedBox(height: 5),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Humidity: ${provider.weather.main.humidity}%"),
-                          Text(
-                              'BP: ${(provider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg')
-                        ],
+                      SizedBox(
+                        width: 5,
+                      ),
+                      Icon(Icons.water_drop,
+                          color: Colors.grey.shade600, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${provider.weather.main.humidity}%',
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.speed, color: Colors.grey.shade600, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${(provider.weather.main.pressure * 0.02953).toStringAsFixed(2)} inHg',
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
+
+              // Action Buttons
               if (provider.providerLetsHuntButton)
                 SizedBox(
                   height: 35,
                   child: BrandedPrimaryButton(
                     isEnabled: true,
                     name: "Let's Hunt",
-                    onPressed: () {
-                      provider.context = context;
-                      provider.letsHunt();
-                    },
+                    onPressed: () => provider.letsHunt(),
                   ),
                 ),
-              const SizedBox(height: 10),
+
+              if (!provider.isSavedTrip) const SizedBox(height: 6),
+
               if (!provider.isSavedTrip)
                 SizedBox(
                   height: 35,
                   child: BrandedPrimaryButton(
                     isEnabled: true,
-                    isUnfocus: true,
                     name: "Save Trip",
-                    onPressed: () {
-                      provider.saveTrip(context);
-                    },
+                    onPressed: () => provider.saveTrip(context),
                   ),
                 ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTimeMetric({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey.shade400,
+              ),
+            ),
+            Row(
+              children: [
+                Icon(icon, color: color, size: 22),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        )
+      ],
     );
   }
 

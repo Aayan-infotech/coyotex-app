@@ -164,8 +164,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
     try {
       var response = await tripViewModel.searchTrip(
           query, 1, 20); // Example with page 1 and limit 20
-      if (response.success &&
-          response.data!["trips"] is List) {
+      if (response.success && response.data!["trips"] is List) {
         var tripList = response.data!["trips"] as List; // Explicit casting
         trips = tripList
             .map((e) => TripModel.fromJson(e as Map<String, dynamic>))
@@ -314,7 +313,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               ),
               child: Center(
                 child: Text(
-                  trip.startLocation,
+                  trip.name,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
