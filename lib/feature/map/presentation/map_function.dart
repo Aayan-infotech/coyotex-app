@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:uuid/uuid.dart';
 
 class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
   @override
   _MapScreenState createState() => _MapScreenState();
 }
@@ -12,7 +14,7 @@ class _MapScreenState extends State<MapScreen> {
   final TextEditingController _startController = TextEditingController();
   final List<TextEditingController> _destinationControllers = [];
   final Set<Polyline> _polylines = {};
-  final String _sessionToken = Uuid().v4();
+  final String _sessionToken = const Uuid().v4();
   final LatLng _initialPosition = const LatLng(37.7749, -122.4194);
   final List<LatLng> _points = [];
   GoogleMapController? _mapController;
@@ -153,7 +155,7 @@ class _MapScreenState extends State<MapScreen> {
                       const Icon(Icons.check, color: Colors.green, size: 20),
                       const Icon(Icons.drag_handle, size: 20, color: Colors.black),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),

@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class SignupScreen extends StatefulWidget {
-  SignupScreen({super.key});
+  const SignupScreen({super.key});
 
   @override
   _SignupScreenState createState() => _SignupScreenState();
@@ -24,33 +24,13 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _mobileNumberController = TextEditingController();
 
-  bool _isFormValid = false;
-
-  void _validateForm() {
-    setState(() {
-      _isFormValid = _formKey.currentState?.validate() ?? false;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Add listeners to each field to update form validity
-    _emailController.addListener(_validateForm);
-    _passwordController.addListener(_validateForm);
-    _confirmPasswordController.addListener(_validateForm);
-    _mobileNumberController.addListener(_validateForm);
-    _fullNameController.addListener(_validateForm);
-  }
-
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return "Email is required.";
     }
-    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[cC][oO][mM]$');
     if (!emailRegex.hasMatch(value)) {
-      return "Enter a valid email address.";
+      return "Enter a valid email address with .com domain.";
     }
     return null;
   }
@@ -135,7 +115,7 @@ class _SignupScreenState extends State<SignupScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
+        return SizedBox(
           width: double.infinity,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -183,7 +163,7 @@ class _SignupScreenState extends State<SignupScreen> {
       body: Consumer<UserViewModel>(
         builder: (context, authProvider, child) {
           return authProvider.isLoading
-              ? Center(
+              ? const Center(
                   child: CircularProgressIndicator.adaptive(
                   backgroundColor: Colors.white,
                 ))
@@ -192,6 +172,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Form(
                       key: _formKey,
+                      autovalidateMode: AutovalidateMode.disabled,
                       child: SingleChildScrollView(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -268,8 +249,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                             const SizedBox(height: 30),
                             BrandedPrimaryButton(
-                              isEnabled:
-                                  _isFormValid && !authProvider.isLoading,
+                              isEnabled: !authProvider.isLoading,
                               name: "Sign Up",
                               onPressed: () =>
                                   _onSignupPressed(context, authProvider),

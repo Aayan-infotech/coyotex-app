@@ -2,52 +2,48 @@ import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:flutter/material.dart';
 import 'package:high_chart/high_chart.dart';
 
-class TemperatureChart extends StatelessWidget {
+class HumidityChart extends StatelessWidget {
   final List<MarkerData> markers;
 
-  TemperatureChart({super.key, required this.markers});
+  HumidityChart({super.key, required this.markers});
 
-  final List<String> temperatureRanges = [
-    "-20 to -10",
-    "-10 to 0",
-    "0 to 10",
-    "10 to 20",
-    "20 to 30",
-    "30 to 40",
-    "40+"
+  final List<String> humidityRanges = [
+    "0 to 20",
+    "20 to 40",
+    "40 to 60",
+    "60 to 80",
+    "80 to 100"
   ];
 
-  String getTemperatureRange(double temperature) {
-    if (temperature < -10) return "-20 to -10";
-    if (temperature < 0) return "-10 to 0";
-    if (temperature < 10) return "0 to 10";
-    if (temperature < 20) return "10 to 20";
-    if (temperature < 30) return "20 to 30";
-    if (temperature < 40) return "30 to 40";
-    return "40+";
+  String getHumidityRange(int humidity) {
+    if (humidity < 20) return "0 to 20";
+    if (humidity < 40) return "20 to 40";
+    if (humidity < 60) return "40 to 60";
+    if (humidity < 80) return "60 to 80";
+    return "80 to 100";
   }
 
   @override
   Widget build(BuildContext context) {
-    final killedByTemp = {for (var range in temperatureRanges) range: 0.0};
-    final seenByTemp = {for (var range in temperatureRanges) range: 0.0};
+    final killedByHumidity = {for (var range in humidityRanges) range: 0.0};
+    final seenByHumidity = {for (var range in humidityRanges) range: 0.0};
 
     for (final marker in markers) {
-      String range = getTemperatureRange(marker.temperature);
+      String range = getHumidityRange(marker.humidity);
 
-      if (killedByTemp.containsKey(range)) {
-        killedByTemp[range] =
-            killedByTemp[range]! + double.parse(marker.animalKilled);
+      if (killedByHumidity.containsKey(range)) {
+        killedByHumidity[range] =
+            killedByHumidity[range]! + double.parse(marker.animalKilled);
       }
-      if (seenByTemp.containsKey(range)) {
-        seenByTemp[range] =
-            seenByTemp[range]! + double.parse(marker.animalSeen);
+      if (seenByHumidity.containsKey(range)) {
+        seenByHumidity[range] =
+            seenByHumidity[range]! + double.parse(marker.animalSeen);
       }
     }
 
-    final jsCategories = temperatureRanges.map((t) => "'$t'").join(',');
-    final killedData = temperatureRanges.map((t) => killedByTemp[t]).join(',');
-    final seenData = temperatureRanges.map((t) => seenByTemp[t]).join(',');
+    final jsCategories = humidityRanges.map((t) => "'$t'").join(',');
+    final killedData = humidityRanges.map((t) => killedByHumidity[t]).join(',');
+    final seenData = humidityRanges.map((t) => seenByHumidity[t]).join(',');
 
     final chartData = '''
     {
@@ -56,7 +52,7 @@ class TemperatureChart extends StatelessWidget {
         backgroundColor: 'transparent'
       },
       title: {
-        text: 'Animal Activity by Temperature Range',
+        text: 'Animal Activity by Humidity Range',
         style: {
           color: '#ffffff'
         }
@@ -64,7 +60,7 @@ class TemperatureChart extends StatelessWidget {
       xAxis: {
         categories: [$jsCategories],
         title: {
-          text: 'Temperature Range (°F)',
+          text: 'Humidity Range (%)',
           style: {
             color: '#ffffff'
           }

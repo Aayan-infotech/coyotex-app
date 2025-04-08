@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -18,18 +20,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final indexProvider = Provider.of<IndexProvider>(context);
 
-    List<Widget> _pages = [
-      HomePage(),
+    List<Widget> pages = [
+      const HomePage(),
       MapScreen(key: indexProvider.mapKey),
-      TripsHistoryScreen(),
-      ProfileScreen(),
+      const TripsHistoryScreen(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: IndexedStack(
         index: indexProvider.currentIndex,
-        children: _pages,
+        children: pages,
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(

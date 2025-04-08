@@ -1,9 +1,11 @@
 import 'package:coyotex/core/services/api_base.dart';
 import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/services/model/notification_model.dart';
+import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class LoginAPIs extends ApiBase {
   LoginAPIs() : super();
@@ -16,6 +18,21 @@ class LoginAPIs extends ApiBase {
     };
 
     return await CallHelper().postWithData('api/auth/login', data, {});
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> dayStatus(
+      LatLng latlang, WeatherResponse weather) async {
+    Map<String, dynamic> data = {
+      "latitude": latlang.latitude,
+      "longitude": latlang.longitude,
+      "windDirection": weather.wind.deg.toString(),
+      "temperature": weather.main.temp,
+      "humidity": weather.main.humidity,
+      "pressure": weather.main.pressure
+    };
+
+    return await CallHelper()
+        .postWithData('api/trips/animal-activity-prediction', data, {});
   }
 
   Future<ApiResponse> updateProfile(String name, String number, String userUnit,

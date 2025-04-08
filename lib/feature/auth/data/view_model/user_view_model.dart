@@ -9,7 +9,6 @@ import 'package:coyotex/core/utills/user_context_data.dart';
 import 'package:coyotex/feature/auth/data/model/plans.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/auth/data/model/user_model.dart';
-import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +21,7 @@ class UserViewModel extends ChangeNotifier {
   bool isLoading = false;
   String errorMessage = '';
   List<TripModel> trips = [];
-  TripAPIs _tripAPIs = TripAPIs();
+  final TripAPIs _tripAPIs = TripAPIs();
 
   Map<String, dynamic>? userData;
   List<Plan> lstPlan = [];

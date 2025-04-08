@@ -14,6 +14,8 @@ import '../../../../core/utills/notification.dart';
 import '../../../map/view_model/map_provider.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -42,6 +44,37 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  IconData _getStatusIcon(String prompt) {
+    switch (prompt) {
+      case "Poor Day for Hunting":
+        return Icons.sentiment_very_dissatisfied;
+      case "Average Day for Hunting":
+        return Icons.sentiment_neutral;
+      case "Good Day for Hunting":
+        return Icons.sentiment_satisfied;
+      case "Excellent Day for Hunting":
+        return Icons.emoji_events;
+      case "Lets Go Hunting":
+      default:
+        return Icons.location_on;
+    }
+  }
+
+  List<Color> _getStatusColors(String prompt) {
+    switch (prompt) {
+      case "Poor Day for Hunting":
+        return [Colors.redAccent, Colors.deepOrange];
+      case "Average Day for Hunting":
+        return [Colors.amber, Colors.orange];
+      case "Good Day for Hunting":
+        return [Colors.lightGreen, Colors.green];
+      case "Excellent Day for Hunting":
+        return [Colors.greenAccent, Colors.green];
+      default: // "Lets Go Hunting"
+        return [Colors.orange, Colors.deepOrange];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<MapProvider>(builder: (context, mapProvider, child) {
@@ -60,7 +93,9 @@ class _HomePageState extends State<HomePage> {
                       // Logo and Search Field
                       GestureDetector(
                         onTap: () {
-                          NotificationService.getDeviceToken();
+                          // NotificationService.getDeviceToken();
+                          mapProvider
+                              .getWeather(mapProvider.currentCameraTarget);
                         },
                         child: Padding(
                           padding: const EdgeInsets.only(
@@ -83,7 +118,7 @@ class _HomePageState extends State<HomePage> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              Spacer(),
+                              const Spacer(),
                               GestureDetector(
                                   onTap: () {
                                     Navigator.of(context).push(
@@ -104,7 +139,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
 
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       const Text(
                         "Stay on top of your hunting adventures with our all-in-one tracking app!",
                         style: TextStyle(
@@ -128,27 +163,73 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ],
                         ),
-                        padding: EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (mapProvider.prompt.isNotEmpty)
+                              Container(
+                                height: 55,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors:
+                                        _getStatusColors(mapProvider.prompt),
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _getStatusIcon(mapProvider.prompt),
+                                      color: Colors.white,
+                                      size: 30,
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Text(
+                                        mapProvider.prompt,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            SizedBox(
+                              height: 10,
+                            ),
                             Row(
                               children: [
                                 Icon(Icons.location_on,
                                     color: Colors.red.shade500, size: 20),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   '${mapProvider.weather.name}, ${mapProvider.weather.sys.country}',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors
                                         .white, // Brighter text for contrast
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                // Add this after the weather container (before the Trips section)
+                                const SizedBox(height: 16),
                               ],
                             ),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -160,10 +241,10 @@ class _HomePageState extends State<HomePage> {
                                         Icon(Icons.thermostat,
                                             color: Colors.red.shade500,
                                             size: 28),
-                                        SizedBox(width: 8),
+                                        const SizedBox(width: 8),
                                         Text(
                                           '${mapProvider.weather.main.temp}°F',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 28,
                                             fontWeight: FontWeight.bold,
                                             color: Colors
@@ -172,9 +253,9 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                       ],
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     Container(
-                                      padding: EdgeInsets.symmetric(
+                                      padding: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withOpacity(0.1),
@@ -198,7 +279,7 @@ class _HomePageState extends State<HomePage> {
                                     Text(
                                       DateFormat('MMM dd')
                                           .format(DateTime.now()),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: Colors.white, // Brighter date
                                         fontSize: 18,
                                         fontWeight: FontWeight.w500,
@@ -216,9 +297,9 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             Divider(color: Colors.red.shade800, height: 1),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
@@ -227,8 +308,7 @@ class _HomePageState extends State<HomePage> {
                                   value:
                                       '${mapProvider.weather.main.humidity}%',
                                   label: 'Humidity',
-                                  color: Colors.red
-                                      .shade500, 
+                                  color: Colors.red.shade500,
                                 ),
                                 WeatherStat(
                                   icon: Icons.air,
@@ -268,7 +348,7 @@ class _HomePageState extends State<HomePage> {
                             onPressed: () {
                               Navigator.of(context)
                                   .push(MaterialPageRoute(builder: (context) {
-                                return TripsHistoryScreen();
+                                return const TripsHistoryScreen();
                               }));
                             },
                             child: const Text('See All',
@@ -516,7 +596,7 @@ class _HomePageState extends State<HomePage> {
                               onPressed: () {
                                 Navigator.of(context)
                                     .push(MaterialPageRoute(builder: (context) {
-                                  return TripsHistoryScreen();
+                                  return const TripsHistoryScreen();
                                 }));
                               },
                               child: const Text('See All',
@@ -526,6 +606,7 @@ class _HomePageState extends State<HomePage> {
                         ),
 
                       ListView.builder(
+                        padding: EdgeInsets.zero,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: min(
@@ -545,16 +626,16 @@ class _HomePageState extends State<HomePage> {
                                 );
                               }));
                             },
-                            leading:
-                                Icon(Icons.location_pin, color: Colors.orange),
+                            leading: const Icon(Icons.location_pin,
+                                color: Colors.orange),
                             title: Text(trip.name,
-                                style: TextStyle(color: Colors.white)),
+                                style: const TextStyle(color: Colors.white)),
                             subtitle: Text(trip.startLocation,
                                 style: const TextStyle(color: Colors.white70)),
                             trailing: Text(
                                 mapProvider.formatDistance(
                                     trip.totalDistance, context),
-                                style: TextStyle(color: Colors.white)),
+                                style: const TextStyle(color: Colors.white)),
                           );
                         },
                       )

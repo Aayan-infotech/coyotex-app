@@ -2,13 +2,15 @@ import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:flutter/material.dart';
 
 class LinkedDevicesScreen extends StatelessWidget {
+  const LinkedDevicesScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
        
         title: const Text(
           'Linked Devices',
@@ -22,7 +24,7 @@ class LinkedDevicesScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             const Text(
               'Select Device and connect',
               style: TextStyle(
@@ -31,7 +33,7 @@ class LinkedDevicesScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             const Text(
               'Lorem ipsum dolor sit amet consectetur.',
               style: TextStyle(
@@ -40,7 +42,7 @@ class LinkedDevicesScreen extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             const Text(
               'Lorem ipsum dolor sit amet consectetur.',
               style: TextStyle(
@@ -49,20 +51,20 @@ class LinkedDevicesScreen extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Image.asset(
               'assets/images/devices.png', // Replace with your asset path
               height: 150,
               fit: BoxFit.contain,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Expanded(
               child: ListView(
                 children: [
                   _buildDeviceTile(Icons.phone_android, 'Lorem ipsum'),
-                  Divider(color: Colors.white24, thickness: 1),
+                  const Divider(color: Colors.white24, thickness: 1),
                   _buildDeviceTile(Icons.desktop_mac, 'Lorem ipsum'),
-                  Divider(color: Colors.white24, thickness: 1),
+                  const Divider(color: Colors.white24, thickness: 1),
                 ],
               ),
             ),
@@ -71,7 +73,7 @@ class LinkedDevicesScreen extends StatelessWidget {
               child: BrandedPrimaryButton(
                   isEnabled: true, name: "Save", onPressed: () {}),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
           ],
         ),
       ),

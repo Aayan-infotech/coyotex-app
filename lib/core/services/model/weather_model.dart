@@ -76,9 +76,9 @@ class Coord {
 
   factory Coord.fromJson(Map<String, dynamic> json) {
     return Coord(
-      lon: json['lon'],
-      lat: json['lat'],
-    );
+        lon: 28.0, //json['lon'],
+        lat: 28.0 //json['lat'],
+        );
   }
 
   Map<String, dynamic> toJson() {

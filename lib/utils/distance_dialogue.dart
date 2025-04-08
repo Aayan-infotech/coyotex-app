@@ -3,18 +3,16 @@ import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:geolocator/geolocator.dart';
-import 'package:provider/provider.dart';
 
 class DistanceDialogue extends StatefulWidget {
   final List<MarkerData> markers;
   MapProvider provider;
 
   DistanceDialogue({
-    Key? key,
+    super.key,
     required this.provider,
     required this.markers,
-  }) : super(key: key);
+  });
 
   @override
   _DistanceDialogueState createState() => _DistanceDialogueState();
@@ -98,7 +96,7 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
         ],
       ),
       child: isLoading
-          ? CircularProgressIndicator.adaptive()
+          ? const CircularProgressIndicator.adaptive()
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

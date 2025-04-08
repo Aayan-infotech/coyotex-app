@@ -1,17 +1,15 @@
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:coyotex/core/utills/media_widget.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/trip/presentation/add_photos.dart';
 import 'package:coyotex/feature/trip/presentation/media_details_screen.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 
 class MarkerMediaScreen extends StatefulWidget {
   TripModel tripModel;
 
-  MarkerMediaScreen({required this.tripModel});
+  MarkerMediaScreen({super.key, required this.tripModel});
 
   @override
   State<MarkerMediaScreen> createState() => _MarkerMediaScreenState();
@@ -49,14 +47,14 @@ class _MarkerMediaScreenState extends State<MarkerMediaScreen> {
           'Photos',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         forceMaterialTransparency: true,
         backgroundColor: Colors.black, // Set AppBar background to black
         elevation: 4.0,
       ),
       body: isLoading
-          ? Center(
+          ? const Center(
               child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
               ),
@@ -91,7 +89,7 @@ class _MarkerMediaScreenState extends State<MarkerMediaScreen> {
                                 ),
                           ),
                         ),
-                        Spacer(),
+                        const Spacer(),
                         if (marker.media!.length <= 3)
                           TextButton(
                             onPressed: () {

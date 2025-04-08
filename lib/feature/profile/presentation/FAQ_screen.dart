@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 class FAQScreen extends StatefulWidget {
+  const FAQScreen({super.key});
+
   @override
   _FAQScreenState createState() => _FAQScreenState();
 }
 
 class _FAQScreenState extends State<FAQScreen> {
   // Track the expanded state of each question
-  Map<int, bool> _expanded = {};
+  final Map<int, bool> _expanded = {};
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +22,7 @@ class _FAQScreenState extends State<FAQScreen> {
         title: const Text('FAQ', style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
-            icon: Icon(Icons.search, color: Colors.white),
+            icon: const Icon(Icons.search, color: Colors.white),
             onPressed: () {
               // Add search functionality here
             },
@@ -45,12 +47,12 @@ class _FAQScreenState extends State<FAQScreen> {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     TextField(
                       decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
                         hintText: 'Enter your keyword',
-                        hintStyle: TextStyle(color: Colors.grey),
+                        hintStyle: const TextStyle(color: Colors.grey),
                         filled: true,
                         fillColor: Colors.grey[900],
                         border: OutlineInputBorder(
@@ -59,7 +61,7 @@ class _FAQScreenState extends State<FAQScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -100,7 +102,7 @@ class _FAQScreenState extends State<FAQScreen> {
   Widget _buildCategoryCard(String title, IconData icon, Color color) {
     return Container(
       width: 100,
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(16),
@@ -109,11 +111,11 @@ class _FAQScreenState extends State<FAQScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: 30, color: Colors.black),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black, fontSize: 14),
+            style: const TextStyle(color: Colors.black, fontSize: 14),
           ),
         ],
       ),
@@ -133,7 +135,7 @@ class _FAQScreenState extends State<FAQScreen> {
         },
         title: Text(
           question,
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         children: answer != null
             ? [
@@ -141,7 +143,7 @@ class _FAQScreenState extends State<FAQScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     answer,
-                    style: TextStyle(color: Colors.white70),
+                    style: const TextStyle(color: Colors.white70),
                   ),
                 ),
               ]

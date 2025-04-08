@@ -3,17 +3,19 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
   late GoogleMapController _mapController;
-  LatLng _currentPosition = LatLng(37.7749, -122.4194); // Default to San Francisco
+  LatLng _currentPosition = const LatLng(37.7749, -122.4194); // Default to San Francisco
   late Marker _userMarker;
 
   @override
@@ -52,7 +54,7 @@ class _MyAppState extends State<MyApp> {
 
   void _updateMarker() {
     _userMarker = Marker(
-      markerId: MarkerId("user_location"),
+      markerId: const MarkerId("user_location"),
       position: _currentPosition,
       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
     );
@@ -62,7 +64,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: Text("Google Map Moving Pointer")),
+        appBar: AppBar(title: const Text("Google Map Moving Pointer")),
         body: GoogleMap(
           initialCameraPosition: CameraPosition(
             target: _currentPosition,

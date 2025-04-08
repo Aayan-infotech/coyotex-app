@@ -2,25 +2,24 @@ import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
-import 'package:coyotex/utils/app_dialogue_box.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class DataPointsScreen extends StatefulWidget {
   String id;
-  DataPointsScreen({required this.id, Key? key}) : super(key: key);
+  DataPointsScreen({required this.id, super.key});
 
   @override
   State<DataPointsScreen> createState() => _DataPointsScreenState();
 }
 
 class _DataPointsScreenState extends State<DataPointsScreen> {
-  TextEditingController _shwNumberController = TextEditingController();
+  final TextEditingController _shwNumberController = TextEditingController();
 
-  TextEditingController _numberOfKilledController = TextEditingController();
+  final TextEditingController _numberOfKilledController = TextEditingController();
   bool isLoading = false;
-  TripAPIs _tripAPIs = TripAPIs();
+  final TripAPIs _tripAPIs = TripAPIs();
 
   Future<void> addAnimalSeenAndKilled() async {
     setState(() {
@@ -71,7 +70,7 @@ class _DataPointsScreenState extends State<DataPointsScreen> {
         elevation: 0,
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: ListView(

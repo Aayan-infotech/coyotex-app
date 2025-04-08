@@ -2,14 +2,13 @@ import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:flutter/material.dart';
 import 'package:high_chart/high_chart.dart';
 
-class TemperatureChart extends StatelessWidget {
+class WindSpeedChart extends StatelessWidget {
   final List<MarkerData> markers;
 
-  TemperatureChart({super.key, required this.markers});
+  WindSpeedChart({super.key, required this.markers});
 
-  final List<String> temperatureRanges = [
-    "-20 to -10",
-    "-10 to 0",
+  // Define fixed wind speed ranges
+  final List<String> windSpeedRanges = [
     "0 to 10",
     "10 to 20",
     "20 to 30",
@@ -17,37 +16,40 @@ class TemperatureChart extends StatelessWidget {
     "40+"
   ];
 
-  String getTemperatureRange(double temperature) {
-    if (temperature < -10) return "-20 to -10";
-    if (temperature < 0) return "-10 to 0";
-    if (temperature < 10) return "0 to 10";
-    if (temperature < 20) return "10 to 20";
-    if (temperature < 30) return "20 to 30";
-    if (temperature < 40) return "30 to 40";
+  // Function to get the range a wind speed value falls into
+  String getWindSpeedRange(double windSpeed) {
+    if (windSpeed < 10) return "0 to 10";
+    if (windSpeed < 20) return "10 to 20";
+    if (windSpeed < 30) return "20 to 30";
+    if (windSpeed < 40) return "30 to 40";
     return "40+";
   }
 
   @override
   Widget build(BuildContext context) {
-    final killedByTemp = {for (var range in temperatureRanges) range: 0.0};
-    final seenByTemp = {for (var range in temperatureRanges) range: 0.0};
+    // Initialize maps with all wind speed ranges
+    final killedByWindSpeed = {for (var range in windSpeedRanges) range: 0.0};
+    final seenByWindSpeed = {for (var range in windSpeedRanges) range: 0.0};
 
+    // Aggregate data based on wind speed ranges
     for (final marker in markers) {
-      String range = getTemperatureRange(marker.temperature);
+      String range = getWindSpeedRange(marker.windSpeed);
 
-      if (killedByTemp.containsKey(range)) {
-        killedByTemp[range] =
-            killedByTemp[range]! + double.parse(marker.animalKilled);
+      if (killedByWindSpeed.containsKey(range)) {
+        killedByWindSpeed[range] =
+            killedByWindSpeed[range]! + double.parse(marker.animalKilled);
       }
-      if (seenByTemp.containsKey(range)) {
-        seenByTemp[range] =
-            seenByTemp[range]! + double.parse(marker.animalSeen);
+      if (seenByWindSpeed.containsKey(range)) {
+        seenByWindSpeed[range] =
+            seenByWindSpeed[range]! + double.parse(marker.animalSeen);
       }
     }
 
-    final jsCategories = temperatureRanges.map((t) => "'$t'").join(',');
-    final killedData = temperatureRanges.map((t) => killedByTemp[t]).join(',');
-    final seenData = temperatureRanges.map((t) => seenByTemp[t]).join(',');
+    // Convert to JavaScript-compatible format
+    final jsCategories = windSpeedRanges.map((t) => "'$t'").join(',');
+    final killedData =
+        windSpeedRanges.map((t) => killedByWindSpeed[t]).join(',');
+    final seenData = windSpeedRanges.map((t) => seenByWindSpeed[t]).join(',');
 
     final chartData = '''
     {
@@ -56,7 +58,7 @@ class TemperatureChart extends StatelessWidget {
         backgroundColor: 'transparent'
       },
       title: {
-        text: 'Animal Activity by Temperature Range',
+        text: 'Animal Activity by Wind Speed Range',
         style: {
           color: '#ffffff'
         }
@@ -64,7 +66,7 @@ class TemperatureChart extends StatelessWidget {
       xAxis: {
         categories: [$jsCategories],
         title: {
-          text: 'Temperature Range (°F)',
+          text: 'Wind Speed Range (mph)',
           style: {
             color: '#ffffff'
           }
@@ -106,11 +108,11 @@ class TemperatureChart extends StatelessWidget {
       series: [{
         name: 'Killed',
         data: [$killedData],
-        color: '#FF0000'
+        color: '#FF0000' // Explicitly setting red for killed
       }, {
         name: 'Seen',
         data: [$seenData],
-        color: '#00FF00'
+        color: '#00FF00' // Explicitly setting green for seen
       }]
     }
     ''';

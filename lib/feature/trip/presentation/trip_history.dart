@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 class TripsHistoryScreen extends StatefulWidget {
+  const TripsHistoryScreen({super.key});
+
   @override
   _TripsHistoryScreenState createState() => _TripsHistoryScreenState();
 }
@@ -42,7 +44,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
           appBar: AppBar(
             backgroundColor: Colors.black,
             elevation: 0,
-            iconTheme: IconThemeData(color: Colors.white),
+            iconTheme: const IconThemeData(color: Colors.white),
             title: const Text(
               'Your Trips',
               style:
@@ -67,7 +69,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                   )),
             ],
             bottom: PreferredSize(
-              preferredSize: Size.fromHeight(60),
+              preferredSize: const Size.fromHeight(60),
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -75,22 +77,22 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                   controller: searchController,
                   decoration: InputDecoration(
                     hintText: 'Search trips...',
-                    hintStyle: TextStyle(color: Colors.white70),
+                    hintStyle: const TextStyle(color: Colors.white70),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.white),
+                      borderSide: const BorderSide(color: Colors.white),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.white),
+                      borderSide: const BorderSide(color: Colors.white),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.white),
+                      borderSide: const BorderSide(color: Colors.white),
                     ),
-                    prefixIcon: Icon(Icons.search, color: Colors.white70),
+                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
                     suffixIcon: IconButton(
-                      icon: Icon(Icons.clear, color: Colors.white70),
+                      icon: const Icon(Icons.clear, color: Colors.white70),
                       onPressed: () {
                         setState(() {
                           searchController.clear();
@@ -101,7 +103,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                     filled: true,
                     fillColor: Colors.grey[850],
                   ),
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                   onChanged: (value) {
                     setState(() {
                       searchQuery = value;
@@ -116,15 +118,15 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 const Text(
                   'Stay on top of your hunting adventures with our all-in-one tracking app!',
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 _buildTabBar(),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -137,7 +139,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
                     ),
                     itemCount: trips.length,
                     itemBuilder: (context, index) {
-                      final trip = trips[index];
+                      final trip = trips[trips.length - 1 - index];
                       return GestureDetector(
                         onTap: () {
                           mapProvider.selectedTripModel = trip;
@@ -164,8 +166,8 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
     try {
       var response = await tripViewModel.searchTrip(
           query, 1, 20); // Example with page 1 and limit 20
-      if (response.success && response.data!["trips"] is List) {
-        var tripList = response.data!["trips"] as List; // Explicit casting
+      if (response.success && response.data["trips"] is List) {
+        var tripList = response.data["trips"] as List; // Explicit casting
         trips = tripList
             .map((e) => TripModel.fromJson(e as Map<String, dynamic>))
             .toList();
@@ -176,9 +178,8 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
           trips = [];
         });
       }
-    } catch (e, stackTrace) {
-      print("Error searching trips: $e");
-      print(stackTrace);
+    } catch (e) {
+    
       setState(() {
         trips = [];
       });
@@ -205,8 +206,8 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
         });
       },
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 8),
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.black,
           borderRadius: BorderRadius.circular(16),
@@ -233,16 +234,16 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
     return trips.where((trip) {
       if (selectedTab == 0) {
         return trip.createdAt
-                .isAfter(startOfWeek.subtract(Duration(days: 1))) &&
-            trip.createdAt.isBefore(now.add(Duration(days: 1)));
+                .isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
+            trip.createdAt.isBefore(now.add(const Duration(days: 1)));
       } else if (selectedTab == 1) {
         return trip.createdAt
-                .isAfter(startOfMonth.subtract(Duration(days: 1))) &&
-            trip.createdAt.isBefore(now.add(Duration(days: 1)));
+                .isAfter(startOfMonth.subtract(const Duration(days: 1))) &&
+            trip.createdAt.isBefore(now.add(const Duration(days: 1)));
       } else if (selectedTab == 2) {
         return trip.createdAt
-                .isAfter(startOfYear.subtract(Duration(days: 1))) &&
-            trip.createdAt.isBefore(now.add(Duration(days: 1)));
+                .isAfter(startOfYear.subtract(const Duration(days: 1))) &&
+            trip.createdAt.isBefore(now.add(const Duration(days: 1)));
       }
       return false;
     }).toList();
@@ -284,21 +285,7 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
               ),
             ),
           ),
-          // Padding(
-          //   padding: const EdgeInsets.only(bottom: 35, left: 5, right: 5),
-          //   child: Align(
-          //     alignment: Alignment.bottomCenter,
-          //     child: Text(
-          //       trip.markers.isNotEmpty ? trip.markers.first.snippet : 'Trip',
-          //       style: const TextStyle(
-          //         color: Colors.white,
-          //         fontSize: 14,
-          //         fontWeight: FontWeight.bold,
-          //       ),
-          //       textAlign: TextAlign.center,
-          //     ),
-          //   ),
-          // ),
+        
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(

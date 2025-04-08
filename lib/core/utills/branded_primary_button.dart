@@ -54,7 +54,7 @@ class BrandedPrimaryButton extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 color: isUnfocus ? Pallete.primaryColor : Colors.white,
                 fontWeight: FontWeight.w600,
-                fontSize: (MediaQuery.of(context).size.width < 380) ? 14 : 20,
+                fontSize: (MediaQuery.of(context).size.width < 380) ? 14 : 16,
               ),
         ),
         if (suffixIcon != null) ...[

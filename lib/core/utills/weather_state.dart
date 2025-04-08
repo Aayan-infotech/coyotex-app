@@ -6,7 +6,7 @@ class WeatherStat extends StatelessWidget {
   final String label;
   final Color color;
 
-  const WeatherStat({
+  const WeatherStat({super.key, 
     required this.icon,
     required this.value,
     required this.label,
@@ -18,7 +18,7 @@ class WeatherStat extends StatelessWidget {
     return Column(
       children: [
         Icon(icon, color: color, size: 22),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(value, 
           style: TextStyle(
             fontSize: 14,

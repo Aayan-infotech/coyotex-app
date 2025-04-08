@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
-import 'package:coyotex/feature/map/data/trip_model.dart';
+import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';
 import 'package:coyotex/feature/map/presentation/add_stop_map.dart';
 import 'package:coyotex/feature/map/presentation/marker_bottom_sheat.dart';
-import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
 import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
 import 'package:coyotex/feature/map/presentation/show_duration_and_animal_details_sheet.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
@@ -18,17 +16,14 @@ import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../trip/presentation/add_photos.dart';
-import '../../../core/utills/app_colors.dart';
 import '../../../core/utills/branded_primary_button.dart';
 import '../../../core/utills/branded_text_filed.dart';
 import 'dart:ui' as ui;
-import 'package:permission_handler/permission_handler.dart';
 
 class MapScreen extends StatefulWidget {
   bool? isRestart;
   GoogleMapController? googleMapController;
-  MapScreen({this.googleMapController, this.isRestart = false, Key? key})
-      : super(key: key);
+  MapScreen({this.googleMapController, this.isRestart = false, super.key});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -153,7 +148,7 @@ class _MapScreenState extends State<MapScreen> {
                 value: type,
                 groupValue: _currentMapType,
                 toggleable: true,
-                fillColor: MaterialStateProperty.resolveWith<Color>(
+                fillColor: WidgetStateProperty.resolveWith<Color>(
                   (states) => isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.onSurface,
@@ -321,743 +316,806 @@ class _MapScreenState extends State<MapScreen> {
                 child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
               ))
-            : Scaffold(
-                body: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              GoogleMap(
-                                initialCameraPosition: CameraPosition(
-                                  target: provider.initialPosition,
-                                  zoom: 12,
-                                ),
-                                myLocationEnabled: true,
-                                mapType: _currentMapType,
-                                compassEnabled: true,
-                                onCameraMove: (position) =>
-                                    provider.onCameraMove(position),
-                                myLocationButtonEnabled:
-                                    provider.isTripStart ? true : false,
-                                buildingsEnabled: true,
-                                mapToolbarEnabled: false,
-                                fortyFiveDegreeImageryEnabled: false,
-                                polylines: provider.polylines,
-                                markers: provider.mapMarkers,
-                                // onTap: (latLang) {
-                                //   if (provider.isAddStopButton) {
-                                //     provider.addStop(latLang);
-                                //   } else if (provider.isSavedTrip) {
-                                //     null;
-                                //   } else {
-                                //     provider.onMapTapped(latLang, context);
-                                //   }
-                                // },
-                                onTap: provider.isSavedTrip
-                                    ? null
-                                    : (latlang) async {
-                                        provider.onMapTapped(latlang, context);
-                                      },
-                                zoomGesturesEnabled: true,
-                                onMapCreated: (controller) =>
-                                    provider.onMapCreated(controller),
-                              ),
-                              Positioned(
-                                  top: provider.isTripStart ? 40 : 70,
-                                  right: 5,
-                                  child: IconButton(
-                                      onPressed: _showLayerDialog,
-                                      icon: const Icon(
-                                        Icons.layers,
-                                        color: Colors.red,
-                                      ))),
-                            ],
+            : WillPopScope(
+                onWillPop: () async {
+                  if (provider.isTripStart) {
+                    // Show a warning dialog when trying to pop during an active trip
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Trip in Progress'),
+                        content: const Text(
+                            'You must finish the trip before going back.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('OK'),
                           ),
-                        ),
-                        if (provider.remainingStopTime > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 16, horizontal: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 4),
+                        ],
+                      ),
+                    );
+                    return false; // Prevent navigation
+                  }
+                  return true; //
+                },
+                child: Scaffold(
+                  body: Stack(
+                    children: [
+                      Column(
+                        children: [
+                          Expanded(
+                            child: Stack(
+                              children: [
+                                GoogleMap(
+                                  initialCameraPosition: CameraPosition(
+                                    target: provider.initialPosition,
+                                    zoom: 12,
+                                  ),
+                                  myLocationEnabled: true,
+                                  mapType: _currentMapType,
+                                  compassEnabled: true,
+                                  // onCameraMove: (position) =>
+                                  //     provider.onCameraMove(position),
+                                  myLocationButtonEnabled:
+                                      provider.isTripStart ? true : false,
+                                  buildingsEnabled: true,
+                                  mapToolbarEnabled: false,
+                                  fortyFiveDegreeImageryEnabled: false,
+                                  polylines: provider.polylines,
+                                  markers: provider.mapMarkers,
+                                  // onTap: (latLang) {
+                                  //   if (provider.isAddStopButton) {
+                                  //     provider.addStop(latLang);
+                                  //   } else if (provider.isSavedTrip) {
+                                  //     null;
+                                  //   } else {
+                                  //     provider.onMapTapped(latLang, context);
+                                  //   }
+                                  // },
+                                  onTap: provider.isSavedTrip
+                                      ? null
+                                      : (latlang) async {
+                                          provider.onMapTapped(
+                                              latlang, context);
+                                        },
+                                  zoomGesturesEnabled: true,
+                                  onMapCreated: (controller) =>
+                                      provider.onMapCreated(controller),
                                 ),
+                                Positioned(
+                                    top: provider.isTripStart ? 40 : 70,
+                                    right: 5,
+                                    child: IconButton(
+                                        onPressed: _showLayerDialog,
+                                        icon: const Icon(
+                                          Icons.layers,
+                                          color: Colors.red,
+                                        ))),
                               ],
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.access_time_filled_rounded,
-                                  color: provider.isRedText
-                                      ? Colors.red
-                                      : Colors.blueAccent,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Departing in: ${_formatTime(provider.remainingStopTime)}',
-                                  style: TextStyle(
+                          ),
+                          if (provider.remainingStopTime > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 16, horizontal: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.access_time_filled_rounded,
                                     color: provider.isRedText
                                         ? Colors.red
-                                        : Colors.black87,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                        : Colors.blueAccent,
+                                    size: 20,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        if (provider.isTripStart)
-                          SizedBox(
-                            child: Column(
-                              children: [
-                                // Drag Handle
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Center(
-                                    child: Container(
-                                      width: 40,
-                                      height: 5,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[400],
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 10),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 5),
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 35,
-                                                child: BrandedPrimaryButton(
-                                                  isEnabled: true,
-                                                  isUnfocus: true,
-                                                  name: "Add Photos",
-                                                  onPressed: () {
-                                                    Navigator.of(context).push(
-                                                        MaterialPageRoute(
-                                                            builder: (context) {
-                                                      return AddPhotoScreen(
-                                                        isRestart:
-                                                            widget.isRestart!,
-                                                      );
-                                                    }));
-                                                  },
-                                                  borderRadius: 20,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              width: 10,
-                                            ),
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 35,
-                                                child: BrandedPrimaryButton(
-                                                  isEnabled: true,
-                                                  isUnfocus: false,
-                                                  name: "Finish Trip",
-                                                  onPressed: () {
-                                                    final tripProvider =
-                                                        Provider.of<
-                                                                TripViewModel>(
-                                                            context,
-                                                            listen: false);
-                                                    tripProvider
-                                                        .showFinishWarningDialog(
-                                                            provider, context);
-                                                  },
-                                                  borderRadius: 20,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 20,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              showCustomDialog(
-                                                  context, provider);
-                                            },
-                                            child: const Text(
-                                              "Break Time ",
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              showCustomDialog(
-                                                  context, provider,
-                                                  isLocation: true);
-                                            },
-                                            child: Image.asset(
-                                              "assets/images/location.png",
-                                              height: 30,
-                                              width: 30,
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              distanceDialogue(
-                                                  context, provider,
-                                                  isLocation: true);
-                                            },
-                                            child: Image.asset(
-                                              "assets/images/distance.png",
-                                              height: 30,
-                                              width: 30,
-                                            ),
-                                          ),
-                                          Column(
-                                            children: [
-                                              Text(
-                                                "Estimated Time: ",
-                                                style: TextStyle(
-                                                  color: Colors.grey.shade600,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.timeline,
-                                                      color:
-                                                          Colors.blue.shade600,
-                                                      size: 16),
-                                                  SizedBox(width: 5),
-                                                  Text(
-                                                    DateFormat('h:mm a').format(
-                                                        provider.currentEstimate ??
-                                                            DateTime.now()),
-                                                    style: TextStyle(
-                                                      color:
-                                                          Colors.green.shade700,
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  if (provider.currentEstimate !=
-                                                          null &&
-                                                      provider.originalEstimate !=
-                                                          null)
-                                                    Padding(
-                                                      padding: EdgeInsets.only(
-                                                          left: 8),
-                                                      child: Icon(
-                                                        provider.currentEstimate!
-                                                                .isBefore(provider
-                                                                    .originalEstimate!)
-                                                            ? Icons
-                                                                .arrow_downward
-                                                            : Icons
-                                                                .arrow_upward,
-                                                        color: provider
-                                                                .currentEstimate!
-                                                                .isBefore(provider
-                                                                    .originalEstimate!)
-                                                            ? Colors.green
-                                                            : Colors.red,
-                                                        size: 14,
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                          // Column(
-                                          //   children: [
-                                          //     Text(
-                                          //       "Estimated Time: ",
-                                          //       style: TextStyle(
-                                          //         color: Colors.grey.shade600,
-                                          //         fontSize: 14,
-                                          //       ),
-                                          //     ),
-                                          //     const SizedBox(width: 8),
-                                          //     Row(
-                                          //       children: [
-                                          //         Icon(Icons.timeline,
-                                          //             color:
-                                          //                 Colors.blue.shade600,
-                                          //             size: 16),
-                                          //         SizedBox(
-                                          //           width: 5,
-                                          //         ),
-                                          //         Text(
-                                          //           DateFormat('h:mm a').format(
-                                          //               provider
-                                          //                   .estimatedCompletionTime!),
-                                          //           style: TextStyle(
-                                          //             color:
-                                          //                 Colors.green.shade700,
-                                          //             fontSize: 14,
-                                          //             fontWeight:
-                                          //                 FontWeight.bold,
-                                          //           ),
-                                          //         ),
-                                          //       ],
-                                          //     ),
-                                          //   ],
-                                          // ),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const Row(
-                                                children: [
-                                                  Icon(Icons.access_time,
-                                                      color: Colors.blue,
-                                                      size: 20),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    "Trip Time",
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.blue,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
-                                                provider.totalTravelTime,
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.green.shade700,
-                                                ),
-                                              ),
-                                              SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.place,
-                                                      color: Colors.blue,
-                                                      size: 18),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    provider.formattedDistance,
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color:
-                                                          Colors.grey.shade700,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: [
-                                              const Row(
-                                                children: [
-                                                  Icon(Icons.timer,
-                                                      color: Colors.blue,
-                                                      size: 20),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    "Total Time",
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.blue,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              // Column(c)
-                                              SizedBox(height: 4),
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    right: 8.0),
-                                                child: Text(
-                                                  provider
-                                                      .totalStopWithTravelTime,
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    color:
-                                                        Colors.orange.shade700,
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 10),
-                                            ],
-                                          )
-                                        ],
-                                      )
-                                    ],
-                                  ),
-                                ),
-                                // Start Button
-                                const SizedBox(height: 20),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 15),
-                                  child: Row(
-                                    children: [
-                                      Flexible(
-                                        flex: 3,
-                                        child: SizedBox(
-                                          height: 35,
-                                          child: BrandedPrimaryButton(
-                                            isEnabled: true,
-                                            isUnfocus: false,
-                                            name: provider.isStartavigation
-                                                ? "Stop Navigation"
-                                                : "Start Navigation",
-                                            onPressed: () {
-                                              if (provider.isStartavigation) {
-                                                provider.resetFields();
-                                                Navigator.of(context).pop();
-                                                Navigator.of(context).pop();
-                                              } else {
-                                                provider.launchGoogleMaps(
-                                                    provider.selectedTripModel);
-                                                provider.isStartavigation =
-                                                    true;
-                                              }
-                                            },
-                                            borderRadius: 20,
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 5,
-                                      ),
-                                      Flexible(
-                                        flex: 2,
-                                        child: SizedBox(
-                                          height: 35,
-                                          child: BrandedPrimaryButton(
-                                            isEnabled: true,
-                                            isUnfocus: false,
-                                            name: "Add Stop",
-                                            onPressed: () {
-                                              Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                      builder: (context) {
-                                                return AddStopMap();
-                                              })).then((onValue) {
-                                                provider.isStartavigation =
-                                                    false;
-                                                setState(() {});
-                                              });
-                                              // provider.addStop();
-                                            },
-                                            borderRadius: 20,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                if (widget.isRestart!)
-                                  const SizedBox(
-                                    height: 30,
-                                  )
-                              ],
-                            ),
-                          ),
-                        if (provider.isSave) tripCard(provider, context),
-                      ],
-                    ),
-                    Positioned(
-                      top: -45,
-                      left: 10,
-                      right: 10,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 80),
-                        child: Column(
-                          children: [
-                            if (!provider.onTapOnMap && !provider.isSavedTrip ||
-                                provider.markers.isEmpty)
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: BrandedTextField(
-                                      height: 40,
-                                      controller: provider.startController,
-                                      labelText: "Search here",
-                                      onTap: () {
-                                        provider.resetFields();
-
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return SearchLocationScreen(
-                                            controller:
-                                                provider.startController,
-                                            isStart: true,
-                                          );
-                                        })).then((value) async {
-                                          Map<String, dynamic> data =
-                                              jsonDecode(value);
-
-                                          await provider.onSuggestionSelected(
-                                              data['placeId'],
-                                              data["isStart"],
-                                              provider.startController,
-                                              // data["controller"],
-                                              context);
-                                          // provider.showDurationPicker(context);
-                                        });
-                                      },
-                                      prefix: Icon(Icons.location_on),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  GestureDetector(
-                                    onTap: () async {
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => FilterDialog(
-                                          windDirections: _windDirections,
-                                          selectedDirections:
-                                              _selectedDirections,
-                                          onApply: (selected) {
-                                            setState(() =>
-                                                _selectedDirections = selected);
-
-                                            final tripProvider =
-                                                Provider.of<TripViewModel>(
-                                                    context,
-                                                    listen: false);
-                                            final mapProvider =
-                                                Provider.of<MapProvider>(
-                                                    context,
-                                                    listen: false);
-
-                                            // Filter markers based on selected wind directions
-                                            final filtered = tripProvider
-                                                .lstMarker
-                                                .where((marker) {
-                                              if (selected.isEmpty) return true;
-                                              return selected.any((dir) =>
-                                                  marker.wind_direction
-                                                      .contains(dir));
-                                            }).toList();
-                                            // provider.liveTripMarker = filtered;
-                                            mapProvider.updateMapMarkers(
-                                                filtered); // Update map with filtered markers
-                                          },
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                            color: Colors.red, width: 2),
-                                      ),
-                                      child: const Icon(
-                                        Icons.filter_alt,
-                                        color: Colors.red,
-                                      ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Departing in: ${_formatTime(provider.remainingStopTime)}',
+                                    style: TextStyle(
+                                      color: provider.isRedText
+                                          ? Colors.red
+                                          : Colors.black87,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
                               ),
-                            const SizedBox(
-                              height: 10,
                             ),
-                            if (provider.markers.length >= 2 &&
-                                !provider.isSavedTrip &&
-                                provider.onTapOnMap)
-                              GestureDetector(
-                                onTap: () {
-                                  showMarkersBottomSheet(context, provider);
-                                },
-                                child: Container(
-                                  height: 50,
-                                  width: MediaQuery.of(context).size.width,
-                                  padding: const EdgeInsets.all(12),
-                                  // margin: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 6,
-                                        spreadRadius: 2,
-                                        offset: Offset(0, 4),
+                          if (provider.isTripStart)
+                            SizedBox(
+                              child: Column(
+                                children: [
+                                  // Drag Handle
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Center(
+                                      child: Container(
+                                        width: 40,
+                                        height: 5,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[400],
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
                                       ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    provider.mapMarkers.last.infoWindow.snippet
-                                        .toString(),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
                                     ),
-                                    textAlign: TextAlign.center,
                                   ),
-                                ),
+
+                                  const SizedBox(height: 10),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16.0,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 5),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: SizedBox(
+                                                  height: 35,
+                                                  child: BrandedPrimaryButton(
+                                                    isEnabled: true,
+                                                    isUnfocus: true,
+                                                    name: "Add Photos",
+                                                    onPressed: () {
+                                                      Navigator.of(context).push(
+                                                          MaterialPageRoute(
+                                                              builder:
+                                                                  (context) {
+                                                        return AddPhotoScreen(
+                                                          isRestart:
+                                                              widget.isRestart!,
+                                                        );
+                                                      }));
+                                                    },
+                                                    borderRadius: 20,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                width: 10,
+                                              ),
+                                              Expanded(
+                                                child: SizedBox(
+                                                  height: 35,
+                                                  child: BrandedPrimaryButton(
+                                                    isEnabled: true,
+                                                    isUnfocus: false,
+                                                    name: "Finish Trip",
+                                                    onPressed: () {
+                                                      final tripProvider =
+                                                          Provider.of<
+                                                                  TripViewModel>(
+                                                              context,
+                                                              listen: false);
+                                                      tripProvider
+                                                          .showFinishWarningDialog(
+                                                              provider,
+                                                              context);
+                                                    },
+                                                    borderRadius: 20,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 20,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                showCustomDialog(
+                                                    context, provider);
+                                              },
+                                              child: const Text(
+                                                "Break Time ",
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ),
+                                            GestureDetector(
+                                                onTap: () {
+                                                  showCustomDialog(
+                                                      context, provider,
+                                                      isLocation: true);
+                                                },
+                                                child: Image.asset(
+                                                    width: 30,
+                                                    height: 30,
+                                                    "assets/images/achievement.png")),
+
+                                            GestureDetector(
+                                              onTap: () {
+                                                distanceDialogue(
+                                                    context, provider,
+                                                    isLocation: true);
+                                              },
+                                              child: Image.asset(
+                                                "assets/images/distance.png",
+                                                height: 30,
+                                                width: 30,
+                                              ),
+                                            ),
+                                            Column(
+                                              children: [
+                                                Text(
+                                                  "Estimated Time: ",
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Icon(Icons.timeline,
+                                                        color: Colors
+                                                            .blue.shade600,
+                                                        size: 16),
+                                                    const SizedBox(width: 5),
+                                                    Text(
+                                                      DateFormat('h:mm a')
+                                                          .format(provider
+                                                                  .currentEstimate ??
+                                                              DateTime.now()),
+                                                      style: TextStyle(
+                                                        color: Colors
+                                                            .green.shade700,
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    if (provider.currentEstimate != null &&
+                                                        provider.originalEstimate !=
+                                                            null &&
+                                                        provider.currentEstimate !=
+                                                            provider
+                                                                .originalEstimate)
+                                                      Row(
+                                                        children: [
+                                                          const SizedBox(
+                                                              width: 5),
+                                                          Icon(
+                                                            provider.currentEstimate!
+                                                                    .isAfter(
+                                                                        provider
+                                                                            .originalEstimate!)
+                                                                ? Icons
+                                                                    .arrow_upward // Show upward arrow if increased
+                                                                : Icons
+                                                                    .arrow_downward, // Show downward arrow if decreased
+                                                            color: provider
+                                                                    .currentEstimate!
+                                                                    .isAfter(
+                                                                        provider
+                                                                            .originalEstimate!)
+                                                                ? Colors.red
+                                                                    .shade600 // Red for increased time
+                                                                : Colors.green
+                                                                    .shade600, // Green for decreased time
+                                                            size: 16,
+                                                          ),
+                                                        ],
+                                                      ),
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                            // Column(
+                                            //   children: [
+                                            //     Text(
+                                            //       "Estimated Time: ",
+                                            //       style: TextStyle(
+                                            //         color: Colors.grey.shade600,
+                                            //         fontSize: 14,
+                                            //       ),
+                                            //     ),
+                                            //     const SizedBox(width: 8),
+                                            //     Row(
+                                            //       children: [
+                                            //         Icon(Icons.timeline,
+                                            //             color:
+                                            //                 Colors.blue.shade600,
+                                            //             size: 16),
+                                            //         SizedBox(
+                                            //           width: 5,
+                                            //         ),
+                                            //         Text(
+                                            //           DateFormat('h:mm a').format(
+                                            //               provider
+                                            //                   .estimatedCompletionTime!),
+                                            //           style: TextStyle(
+                                            //             color:
+                                            //                 Colors.green.shade700,
+                                            //             fontSize: 14,
+                                            //             fontWeight:
+                                            //                 FontWeight.bold,
+                                            //           ),
+                                            //         ),
+                                            //       ],
+                                            //     ),
+                                            //   ],
+                                            // ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                const Row(
+                                                  children: [
+                                                    Icon(Icons.access_time,
+                                                        color: Colors.blue,
+                                                        size: 20),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      "Trip Time",
+                                                      style: TextStyle(
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.blue,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  provider.totalTravelTime,
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color:
+                                                        Colors.green.shade700,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Row(
+                                                  children: [
+                                                    const Icon(Icons.place,
+                                                        color: Colors.blue,
+                                                        size: 18),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      provider
+                                                          .formattedDistance,
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors
+                                                            .grey.shade700,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                const Row(
+                                                  children: [
+                                                    Icon(Icons.timer,
+                                                        color: Colors.blue,
+                                                        size: 20),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      "Total Time",
+                                                      style: TextStyle(
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.blue,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                // Column(c)
+                                                const SizedBox(height: 4),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          right: 8.0),
+                                                  child: Text(
+                                                    provider
+                                                        .totalStopWithTravelTime,
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors
+                                                          .orange.shade700,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 10),
+                                              ],
+                                            )
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  // Start Button
+                                  const SizedBox(height: 20),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 15),
+                                    child: Row(
+                                      children: [
+                                        Flexible(
+                                          flex: 3,
+                                          child: SizedBox(
+                                            height: 35,
+                                            child: BrandedPrimaryButton(
+                                              isEnabled: true,
+                                              isUnfocus: false,
+                                              name: provider.isStartavigation
+                                                  ? "Restart Navigation"
+                                                  : "Start Navigation",
+                                              onPressed: () {
+                                                provider.launchGoogleMaps(
+                                                    provider.selectedTripModel);
+                                                provider.isStartavigation =
+                                                    true;
+                                                // if (provider.isStartavigation) {
+                                                //   provider.resetFields();
+                                                //   Navigator.of(context).pop();
+                                                //   Navigator.of(context).pop();
+                                                // } else {
+
+                                                // }
+                                              },
+                                              borderRadius: 20,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          width: 5,
+                                        ),
+                                        Flexible(
+                                          flex: 2,
+                                          child: SizedBox(
+                                            height: 35,
+                                            child: BrandedPrimaryButton(
+                                              isEnabled: true,
+                                              isUnfocus: false,
+                                              name: "Add Stop",
+                                              onPressed: () {
+                                                Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                        builder: (context) {
+                                                  return const AddStopMap();
+                                                })).then((onValue) {
+                                                  provider.isStartavigation =
+                                                      false;
+                                                  setState(() {});
+                                                });
+                                                provider.startTripTimer();
+                                                // provider.addStop();
+                                              },
+                                              borderRadius: 20,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  if (widget.isRestart!)
+                                    const SizedBox(
+                                      height: 30,
+                                    )
+                                ],
                               ),
-                            if (provider.startController.text.isNotEmpty &&
-                                provider.trips.isEmpty)
+                            ),
+                          if (provider.isSave) tripCard(provider, context),
+                        ],
+                      ),
+                      Positioned(
+                        top: -45,
+                        left: 10,
+                        right: 10,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 80),
+                          child: Column(
+                            children: [
+                              if (!provider.onTapOnMap &&
+                                      !provider.isSavedTrip ||
+                                  provider.markers.isEmpty)
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        Provider.of<IndexProvider>(context,
+                                                listen: false)
+                                            .updateIndex(0);
+                                      },
+                                      child: Icon(
+                                        Icons.arrow_back_ios,
+                                        color: Colors.white,
+                                        size: 25,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: BrandedTextField(
+                                        height: 40,
+                                        controller: provider.startController,
+                                        labelText: "Search here",
+                                        onTap: () {
+                                          provider.resetFields();
+
+                                          Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                  builder: (context) {
+                                            return SearchLocationScreen(
+                                              controller:
+                                                  provider.startController,
+                                              isStart: true,
+                                            );
+                                          })).then((value) async {
+                                            Map<String, dynamic> data =
+                                                jsonDecode(value);
+
+                                            await provider.onSuggestionSelected(
+                                                data['placeId'],
+                                                data["isStart"],
+                                                provider.startController,
+                                                // data["controller"],
+                                                context);
+                                            // provider.showDurationPicker(context);
+                                          });
+                                        },
+                                        prefix: const Icon(Icons.location_on),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => FilterDialog(
+                                            windDirections: _windDirections,
+                                            selectedDirections:
+                                                _selectedDirections,
+                                            onApply: (selected) {
+                                              setState(() =>
+                                                  _selectedDirections =
+                                                      selected);
+
+                                              final tripProvider =
+                                                  Provider.of<TripViewModel>(
+                                                      context,
+                                                      listen: false);
+                                              final mapProvider =
+                                                  Provider.of<MapProvider>(
+                                                      context,
+                                                      listen: false);
+
+                                              // Filter markers based on selected wind directions
+                                              final filtered = tripProvider
+                                                  .lstMarker
+                                                  .where((marker) {
+                                                if (selected.isEmpty)
+                                                  return true;
+                                                return selected.any((dir) =>
+                                                    marker.wind_direction
+                                                        .contains(dir));
+                                              }).toList();
+                                              // provider.liveTripMarker = filtered;
+                                              mapProvider.updateMapMarkers(
+                                                  filtered); // Update map with filtered markers
+                                            },
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          border: Border.all(
+                                              color: Colors.red, width: 2),
+                                        ),
+                                        child: const Icon(
+                                          Icons.filter_alt,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               const SizedBox(
                                 height: 10,
                               ),
-                            if (provider.startController.text.isNotEmpty &&
-                                !provider.onTapOnMap)
-                              Container(
-                                height: (provider.destinationCount + 1) *
-                                            (40 + 10) >
-                                        MediaQuery.of(context).size.height * 0.3
-                                    ? MediaQuery.of(context).size.height * 0.3
-                                    : (provider.destinationCount + 1) *
-                                        (40 + 10), // Item height + spacing
-                                padding: const EdgeInsets.all(0),
-                                child: ListView.builder(
-                                  padding: EdgeInsets.all(0),
-                                  itemCount: provider.destinationCount,
-                                  itemBuilder: (context, index) {
-                                    TextEditingController controller = provider
-                                            .destinationControllers.isNotEmpty
-                                        ? provider.destinationControllers[index]
-                                        : TextEditingController();
-
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 5),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: BrandedTextField(
-                                              height: 40,
-                                              controller: controller,
-                                              labelText: "Destination",
-                                              onTap: () {
-                                                Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                    builder: (context) {
-                                                      return SearchLocationScreen(
-                                                        controller: controller,
-                                                        isStart: false,
-                                                      );
-                                                    },
-                                                  ),
-                                                ).then((value) async {
-                                                  Map<String, dynamic> data =
-                                                      jsonDecode(value);
-                                                  await provider
-                                                      .onSuggestionSelected(
-                                                          data['placeId'],
-                                                          data["isStart"],
-                                                          controller,
-                                                          context);
-                                                });
-                                              },
-                                              prefix: Icon(Icons.location_on),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          if (index ==
-                                              provider.destinationCount - 1)
-                                            GestureDetector(
-                                              onTap: () {
-                                                provider.increaseCount();
-                                              },
-                                              child: Container(
-                                                width: 40,
-                                                height: 40,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  border: Border.all(
-                                                      color: Colors.white,
-                                                      width: 2),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.add,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            )
-                                          else
-                                            GestureDetector(
-                                              onTap: () {
-                                                // provider.onRemove(_marker.position);
-                                              },
-                                              child: Container(
-                                                width: 40,
-                                                height: 40,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  border: Border.all(
-                                                      color: Colors.white,
-                                                      width: 2),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.close,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    );
+                              if (provider.markers.length >= 2 &&
+                                  !provider.isSavedTrip &&
+                                  provider.onTapOnMap)
+                                GestureDetector(
+                                  onTap: () {
+                                    showMarkersBottomSheet(context, provider);
                                   },
+                                  child: Container(
+                                    height: 45,
+                                    width: MediaQuery.of(context).size.width,
+                                    padding: const EdgeInsets.all(12),
+                                    // margin: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 6,
+                                          spreadRadius: 2,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      provider.markers.last.snippet.toString(),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                          ],
+                              if (provider.startController.text.isNotEmpty &&
+                                  provider.trips.isEmpty)
+                                const SizedBox(
+                                  height: 10,
+                                ),
+                              if (provider.startController.text.isNotEmpty &&
+                                  !provider.onTapOnMap)
+                                Container(
+                                  height: (provider.destinationCount + 1) *
+                                              (40 + 10) >
+                                          MediaQuery.of(context).size.height *
+                                              0.3
+                                      ? MediaQuery.of(context).size.height * 0.3
+                                      : (provider.destinationCount + 1) *
+                                          (40 + 10), // Item height + spacing
+                                  padding: const EdgeInsets.all(0),
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.all(0),
+                                    itemCount: provider.destinationCount,
+                                    itemBuilder: (context, index) {
+                                      TextEditingController controller =
+                                          provider.destinationControllers
+                                                  .isNotEmpty
+                                              ? provider
+                                                  .destinationControllers[index]
+                                              : TextEditingController();
+
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 5),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: BrandedTextField(
+                                                height: 40,
+                                                controller: controller,
+                                                labelText: "Destination",
+                                                onTap: () {
+                                                  Navigator.of(context).push(
+                                                    MaterialPageRoute(
+                                                      builder: (context) {
+                                                        return SearchLocationScreen(
+                                                          controller:
+                                                              controller,
+                                                          isStart: false,
+                                                        );
+                                                      },
+                                                    ),
+                                                  ).then((value) async {
+                                                    Map<String, dynamic> data =
+                                                        jsonDecode(value);
+                                                    await provider
+                                                        .onSuggestionSelected(
+                                                            data['placeId'],
+                                                            data["isStart"],
+                                                            controller,
+                                                            context);
+                                                  });
+                                                },
+                                                prefix: const Icon(
+                                                    Icons.location_on),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            if (index ==
+                                                provider.destinationCount - 1)
+                                              GestureDetector(
+                                                onTap: () {
+                                                  provider.increaseCount();
+                                                },
+                                                child: Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            6),
+                                                    border: Border.all(
+                                                        color: Colors.white,
+                                                        width: 2),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.add,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              )
+                                            else
+                                              GestureDetector(
+                                                onTap: () {
+                                                  // provider.onRemove(_marker.position);
+                                                },
+                                                child: Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            6),
+                                                    border: Border.all(
+                                                        color: Colors.white,
+                                                        width: 2),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.drag_handle,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
+                    ],
+                  ),
+                ));
       },
     );
   }
@@ -1221,8 +1279,8 @@ class _MapScreenState extends State<MapScreen> {
     return Container(
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height * 0.34,
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [
           BoxShadow(
             color: Colors.black26,
@@ -1235,8 +1293,8 @@ class _MapScreenState extends State<MapScreen> {
         color: Colors.white,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -1296,7 +1354,7 @@ class _MapScreenState extends State<MapScreen> {
                           width: 20,
                         ),
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 5,
                       ),
                       IconButton(
@@ -1329,7 +1387,8 @@ class _MapScreenState extends State<MapScreen> {
                   GestureDetector(
                     onTap: () => showCustomDialog(context, provider),
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.red.shade100,
                         borderRadius: BorderRadius.circular(6),
@@ -1380,7 +1439,7 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   Row(
                     children: [
-                      Icon(Icons.air),
+                      const Icon(Icons.air),
                       Text(
                         '${provider.weather.wind.speed} mph',
                         style: TextStyle(
@@ -1388,7 +1447,7 @@ class _MapScreenState extends State<MapScreen> {
                           fontSize: 12,
                         ),
                       ),
-                      SizedBox(
+                      const SizedBox(
                         width: 5,
                       ),
                       Icon(Icons.water_drop,
@@ -1428,7 +1487,7 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
 
-              if (!provider.isSavedTrip) const SizedBox(height: 6),
+              if (!provider.isSavedTrip) const SizedBox(height: 15),
 
               if (!provider.isSavedTrip)
                 SizedBox(

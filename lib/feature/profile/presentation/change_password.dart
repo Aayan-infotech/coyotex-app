@@ -2,7 +2,6 @@ import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
-import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/login_screen.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:coyotex/utils/validation.dart';
@@ -72,7 +71,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       backgroundColor: Colors.black,
       body: Consumer<UserViewModel>(
@@ -153,7 +152,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                     Navigator.pushAndRemoveUntil(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => LoginScreen()),
+                                          builder: (context) => const LoginScreen()),
                                       (route) => false,
                                     );
                                   });

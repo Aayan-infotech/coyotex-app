@@ -30,9 +30,9 @@ class _OtpScreenState extends State<OtpScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
+        return const SizedBox(
           width: double.infinity,
-          child: const Padding(
+          child: Padding(
             padding: EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -65,12 +65,12 @@ class _OtpScreenState extends State<OtpScreen> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Consumer<UserViewModel>(
         builder: (context, authProvider, child) {
           return authProvider.isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -91,7 +91,7 @@ class _OtpScreenState extends State<OtpScreen> {
                                 fontWeight: FontWeight.w700),
                           ),
                           const Text(
-                            "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                            "Stay on top of your hunting adventures with our all-in-one tracking app!",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 color: Colors.white,

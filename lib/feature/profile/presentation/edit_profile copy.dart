@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:coyotex/core/services/call_halper.dart';
-import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/core/utills/constant.dart';
@@ -11,10 +9,7 @@ import 'package:coyotex/feature/auth/data/model/user_model.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path;
 
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';

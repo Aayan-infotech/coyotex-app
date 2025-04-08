@@ -1,4 +1,3 @@
-import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:flutter/material.dart';
@@ -105,8 +104,8 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
       backgroundColor: Colors.black, // Set background color to black
       appBar: AppBar(
         title: Text(
-          "${widget.tripModel.name}",
-          style: TextStyle(
+          widget.tripModel.name,
+          style: const TextStyle(
             color:
                 Colors.white, // Change text color to white for better contrast
             fontSize: 24,
@@ -115,14 +114,14 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
         ),
         backgroundColor: Colors.black, // Set AppBar color to black
         iconTheme:
-            IconThemeData(color: Colors.white), // Change back button color
+            const IconThemeData(color: Colors.white), // Change back button color
       ),
       body: Column(
         children: [
           Center(
             child: _isVideo
                 ? _controller == null || !_controller!.value.isInitialized
-                    ? Center(child: CircularProgressIndicator.adaptive())
+                    ? const Center(child: CircularProgressIndicator.adaptive())
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Stack(
@@ -140,7 +139,7 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
                               child: GestureDetector(
                                 onTap: _togglePlayPause,
                                 child: Container(
-                                  decoration: BoxDecoration(
+                                  decoration: const BoxDecoration(
                                     color: Colors.black54,
                                     shape: BoxShape.circle,
                                   ),
@@ -201,12 +200,12 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
                     ],
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 20,
                 ),
                 Column(
                   children: [
-                    Text(
+                    const Text(
                       "Total Time",
                       style: TextStyle(
                         color: Colors.white, // Change text color
@@ -216,7 +215,7 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
                     ),
                     Text(
                       totalTime,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white70, // Adjust text color
                         fontSize: 12,
                       ),
@@ -226,7 +225,7 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
               ],
             ),
           ),
-          SizedBox(
+          const SizedBox(
             height: 30,
           ),
           Card(
@@ -246,13 +245,13 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
                     children: [
                       Text(
                         widget.tripModel.name,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Colors.white, // Change text color
                         ),
                       ),
-                      Row(
+                      const Row(
                         children: [
                           Icon(Icons.location_on, color: Colors.white70),
                           SizedBox(width: 5),
@@ -267,11 +266,11 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   // Description
                   Text(
                     "${widget.tripModel.startLocation} to ${widget.tripModel.destination} - $tripStatus",
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Colors.white70, // Adjust text color
                       decorationColor: Colors.white54, // Adjust underline color
