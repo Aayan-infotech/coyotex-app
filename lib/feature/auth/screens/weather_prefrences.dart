@@ -11,7 +11,7 @@ class WeatherPreferenceScreen extends StatefulWidget {
   final bool? isProfile;
   final UserPreferences? userPreferences;
 
-  WeatherPreferenceScreen(
+  const WeatherPreferenceScreen(
       {this.userPreferences, this.isProfile = false, super.key});
 
   @override
@@ -162,7 +162,7 @@ class _WeatherPreferenceScreenState extends State<WeatherPreferenceScreen> {
                                       Navigator.of(context).push(
                                           MaterialPageRoute(
                                               builder: (context) =>
-                                                  HomeScreen()));
+                                                  const HomeScreen()));
                                     } else {
                                       AppDialog.showErrorDialog(
                                           context,
@@ -190,7 +190,7 @@ class _WeatherPreferenceScreenState extends State<WeatherPreferenceScreen> {
                                     Navigator.of(context).push(
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                HomeScreen()));
+                                                const HomeScreen()));
                                   } else {
                                     AppDialog.showErrorDialog(
                                         context,

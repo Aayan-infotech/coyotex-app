@@ -74,10 +74,10 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
           child: CachedNetworkImage(
             imageUrl: widget.url,
             fit: BoxFit.cover,
-            placeholder: (context, url) => Center(
+            placeholder: (context, url) => const Center(
               child: CircularProgressIndicator(),
             ),
-            errorWidget: (context, url, error) => Icon(
+            errorWidget: (context, url, error) => const Icon(
               Icons.error,
               color: Colors.red,
             ),
@@ -115,7 +115,7 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
                     color: Colors.black54,
                     shape: BoxShape.circle,
                   ),
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
                     _isPlaying ? Icons.pause : Icons.play_arrow,
                     color: Colors.white,

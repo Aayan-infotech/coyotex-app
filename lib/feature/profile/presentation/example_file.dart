@@ -199,9 +199,11 @@ import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-void main() => runApp(MaterialApp(home: MapScreen()));
+void main() => runApp(const MaterialApp(home: MapScreen()));
 
 class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
   @override
   _MapScreenState createState() => _MapScreenState();
 }
@@ -390,7 +392,7 @@ class _MapScreenState extends State<MapScreen> {
   Future<LatLng> _geocode(String address) async {
     final locations = await locationFromAddress(address);
     if (locations.isEmpty) throw Exception('Location not found');
-    return LatLng(locations.first.latitude!, locations.first.longitude!);
+    return LatLng(locations.first.latitude, locations.first.longitude);
   }
 
   Future<List<RouteModel>> _fetchRoutes(
@@ -406,8 +408,9 @@ class _MapScreenState extends State<MapScreen> {
     final response = await http.get(url);
     final data = json.decode(response.body);
 
-    if (data['status'] != 'OK')
+    if (data['status'] != 'OK') {
       throw Exception(data['error_message'] ?? 'Failed to fetch routes');
+    }
 
     return (data['routes'] as List).map((route) {
       final points = _decodePolyline(route['overview_polyline']['points']);

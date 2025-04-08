@@ -137,6 +137,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: _passwordController,
                               isPassword: true,
                               labelText: "Password",
+                              onChanged: (value) {
+                                if (value.length >= 5) setState(() {});
+                              },
                               validator: (value) => validatePassword(value),
                             ),
                             const SizedBox(height: 5),
@@ -158,7 +161,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 30),
                             BrandedPrimaryButton(
-                              isEnabled: true,
+                              isEnabled: _nameController.text.isNotEmpty &&
+                                  _passwordController.text.isNotEmpty,
                               name: "Login",
                               onPressed: () async {
                                 setState(() {
@@ -176,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Navigator.pushAndRemoveUntil(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => HomeScreen()),
+                                          builder: (context) => const HomeScreen()),
                                       (route) => false,
                                     );
                                   } else {
@@ -199,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               onPressed: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(builder: (context) {
-                                    return SignupScreen();
+                                    return const SignupScreen();
                                   }),
                                 );
                               },

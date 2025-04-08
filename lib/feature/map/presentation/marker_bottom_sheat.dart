@@ -7,8 +7,7 @@ import 'package:provider/provider.dart';
 class MarkersBottomSheet extends StatefulWidget {
   final MapProvider provider;
 
-  const MarkersBottomSheet({Key? key, required this.provider})
-      : super(key: key);
+  const MarkersBottomSheet({super.key, required this.provider});
 
   @override
   _MarkersBottomSheetState createState() => _MarkersBottomSheetState();
@@ -48,7 +47,7 @@ class _MarkersBottomSheetState extends State<MarkersBottomSheet> {
                     padding: EdgeInsets.zero,
                     itemCount: widget.provider.markers.length,
                     itemBuilder: (context, index) {
-                      MarkerData _marker = widget.provider.markers[index];
+                      MarkerData marker = widget.provider.markers[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Card(
@@ -63,9 +62,8 @@ class _MarkersBottomSheetState extends State<MarkersBottomSheet> {
                               vertical: 12,
                             ),
                             title: Text(
-                              (_marker.snippet != null &&
-                                      _marker.snippet!.length > 1)
-                                  ? _marker.snippet!.substring(0)
+                              (marker.snippet.length > 1)
+                                  ? marker.snippet.substring(0)
                                   : "Unnamed Marker",
                               style: const TextStyle(
                                 fontSize: 18,
@@ -74,10 +72,10 @@ class _MarkersBottomSheetState extends State<MarkersBottomSheet> {
                               ),
                             ),
                             trailing: IconButton(
-                              icon: Icon(Icons.close, color: Colors.blueAccent),
+                              icon: const Icon(Icons.close, color: Colors.blueAccent),
                               onPressed: () {
                                 setState(() {
-                                  widget.provider.onRemove(_marker.position);
+                                  widget.provider.onRemove(marker.position);
                                 });
                               },
                             ),
@@ -97,7 +95,7 @@ void showMarkersBottomSheet(BuildContext context, MapProvider provider) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    shape: RoundedRectangleBorder(
+    shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     backgroundColor: Colors.white,

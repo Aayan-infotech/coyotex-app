@@ -5,7 +5,6 @@ import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/weather_prefrences.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 class PrefernceDistanceScreen extends StatefulWidget {
@@ -26,7 +25,7 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
   void initState() {
     super.initState();
     final userViewModel = Provider.of<UserViewModel>(context, listen: false);
-    _selectedDistance = userViewModel.user.userUnit!;
+    _selectedDistance = userViewModel.user.userUnit;
   }
 
   @override

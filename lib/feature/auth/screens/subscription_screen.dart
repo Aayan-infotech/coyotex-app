@@ -257,7 +257,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    "\$${price}", //price,
+                    "\$$price", //price,
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.black,
                       fontSize: 24,

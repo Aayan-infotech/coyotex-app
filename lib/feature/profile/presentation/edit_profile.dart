@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:coyotex/core/services/call_halper.dart';
-import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/core/utills/constant.dart';
@@ -11,10 +10,7 @@ import 'package:coyotex/feature/auth/data/model/user_model.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path;
 
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -132,8 +128,8 @@ class _EditProfileState extends State<EditProfile> {
 
         // Send request with Dio
         final response = await Dio().post(
-          // 'http://54.236.98.193:5647/api/users/update-profile-picture',
-          'http://54.236.98.193:5647/api/users/update-profile-picture',
+        
+          '${CallHelper.baseUrl}api/users/update-profile-picture',
           data: formData,
           options: Options(
             headers: {
@@ -144,7 +140,7 @@ class _EditProfileState extends State<EditProfile> {
         );
 
         if (response.statusCode == 200) {
-          userProvider.getUser();
+        await  userProvider.getUser();
           print('Upload successful! Response: ${response.data}');
         } else {
           print('Upload failed with status: ${response.statusCode}');
@@ -152,9 +148,10 @@ class _EditProfileState extends State<EditProfile> {
         setState(() {
           _isUploading = false;
         });
-        // Rest of the upload code...
+      
+      // ignore: empty_catches
       } catch (e) {
-        // Handle error...
+       
       }
     }
   }

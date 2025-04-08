@@ -12,8 +12,7 @@ class DurationPickerBottomSheet extends StatefulWidget {
   final bool isStop;
   Marker? mapMarker;
 
-  DurationPickerBottomSheet({this.mapMarker, Key? key, this.isStop = false})
-      : super(key: key);
+  DurationPickerBottomSheet({this.mapMarker, super.key, this.isStop = false});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -28,6 +27,7 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
   String? _selectedWindDirection;
   bool _isFormValid = false;
   bool isLoading = false;
+  bool isMarkerDeletable = false;
 
   final List<String> _windDirections = [
     "North",
@@ -61,13 +61,20 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
     });
     final tripProvider = Provider.of<TripViewModel>(context, listen: false);
     MapProvider mapProvider = Provider.of<MapProvider>(context, listen: false);
+    if (widget.mapMarker!.markerId.value.isEmpty) {
+    } else {}
+
+    if (mapProvider.isTripStart && !widget.isStop) {
+      isMarkerDeletable = mapProvider.selectedTripModel.markers
+          .any((element) => element.position == widget.mapMarker!.position);
+    }
 
     markerData = tripProvider.lstMarker.firstWhere(
       (i) => i.id == widget.mapMarker!.markerId.value,
       // ignore: cast_from_null_always_fails
       orElse: () => null as MarkerData, // hacky way, not recommended
     );
-    mapProvider.selectedOldMarker = markerData;
+    // mapProvider.selectedOldMarker = markerData;
     _minuteController.text = markerData!.duration.toString();
     _nameController.text = markerData!.title;
     _selectedWindDirection = markerData!.wind_direction;
@@ -125,6 +132,7 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
         builder: (context, scrollController) {
           return mapProvider.isTripStart && !widget.isStop
               ? Container(
+                  width: MediaQuery.of(context).size.width,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   decoration: const BoxDecoration(
@@ -135,88 +143,141 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                       BoxShadow(color: Colors.black26, blurRadius: 10)
                     ],
                   ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 6,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[400],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Marker Details",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Pallete.accentColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              _buildDetailItem(
-                                icon: Icons.flag,
-                                title: "Marker Name",
-                                value: markerData?.title ?? "Unnamed Location",
+                  child: isLoading
+                      ? const CircularProgressIndicator.adaptive(
+                          backgroundColor: Colors.black,
+                        )
+                      : Column(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 6,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[400],
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              _buildDetailItem(
-                                  icon: Icons.access_time,
-                                  title: "Duration",
-                                  value: formatDuration(markerData!.duration)
-                                  // "${markerData?.duration?.toString() ?? '0'} minutes",
-                                  ),
-                              _buildDetailItem(
-                                icon: Icons.air,
-                                title: "Wind Direction",
-                                value: markerData?.wind_direction ??
-                                    "Not specified",
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              "Marker Details",
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Pallete.accentColor,
                               ),
-                              const SizedBox(height: 20),
-                              // Padding(
-                              //   padding: const EdgeInsets.symmetric(
-                              //       horizontal: 16.0),
-                              //   child: Row(
-                              //     mainAxisAlignment:
-                              //         MainAxisAlignment.spaceAround,
-                              //     children: [
-                              //       _buildAnimalStat(
-                              //         icon: Icons.visibility,
-                              //         count: markerData?.animalSeen ?? "0",
-                              //         label: "Animals Seen",
-                              //       ),
-                              //       _buildAnimalStat(
-                              //         icon: Icons.close,
-                              //         count: markerData?.animalKilled ?? "0",
-                              //         label: "Animals Harvested",
-                              //         isRed: true,
-                              //       ),
-                              //     ],
-                              //   ),
-                              // ),
-                              const SizedBox(height: 30),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20.0),
-                                child: BrandedPrimaryButton(
-                                  isEnabled: true,
-                                  name: "Close Details",
-                                  onPressed: () => Navigator.pop(context),
-                                  // color: Pallete.accentColor,
-                                  // textColor: Colors.white,
+                            ),
+                            const SizedBox(height: 24),
+                            Expanded(
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  children: [
+                                    _buildDetailItem(
+                                      icon: Icons.flag,
+                                      title: "Marker Name",
+                                      value: markerData?.title ??
+                                          "Unnamed Location",
+                                    ),
+                                    _buildDetailItem(
+                                      icon: Icons.access_time,
+                                      title: "Duration",
+                                      value:
+                                          formatDuration(markerData!.duration),
+                                    ),
+                                    _buildDetailItem(
+                                      icon: Icons.air,
+                                      title: "Wind Direction",
+                                      value: markerData?.wind_direction ??
+                                          "Not specified",
+                                    ),
+                                    const SizedBox(height: 30),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10.0),
+                                      child: !isMarkerDeletable
+                                          ? Expanded(
+                                              child: BrandedPrimaryButton(
+                                                isEnabled: true,
+                                                name: "Close",
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                              ),
+                                            )
+                                          : Row(
+                                              children: [
+                                                Expanded(
+                                                  child: BrandedPrimaryButton(
+                                                    isUnfocus: true,
+                                                    isEnabled: true,
+                                                    name: "Delete",
+                                                    onPressed: () async {
+                                                      setState(() {
+                                                        isLoading = true;
+                                                      });
+                                                      final tripProvider =
+                                                          Provider.of<
+                                                                  TripViewModel>(
+                                                              context,
+                                                              listen: false);
+                                                      final mapProvider =
+                                                          Provider.of<
+                                                                  MapProvider>(
+                                                              context,
+                                                              listen: false);
+                                                      var response = await tripProvider
+                                                          .deleteMarker(
+                                                              widget
+                                                                  .mapMarker!
+                                                                  .markerId
+                                                                  .value,
+                                                              mapProvider
+                                                                  .selectedTripModel
+                                                                  .id);
+                                                      response = await tripProvider
+                                                          .deleteWayPoints(
+                                                              widget.mapMarker!
+                                                                  .position,
+                                                              mapProvider
+                                                                  .selectedTripModel
+                                                                  .id);
+                                                      tripProvider
+                                                          .getAllMarker();
+                                                      if (response.success) {
+                                                        await mapProvider
+                                                            .removeMarker(
+                                                                widget
+                                                                    .mapMarker!,
+                                                                context);
+                                                      }
+
+                                                      setState(() {
+                                                        isLoading = false;
+                                                      });
+                                                      Navigator.pop(context);
+                                                    },
+                                                    // color: Colors.red,
+                                                    // textColor: Colors.white,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Expanded(
+                                                  child: BrandedPrimaryButton(
+                                                    isEnabled: true,
+                                                    name: "Close",
+                                                    onPressed: () =>
+                                                        Navigator.pop(context),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 )
               : Container(
                   padding:
@@ -357,7 +418,7 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                               children: [
                                 Expanded(
                                     child: isLoading
-                                        ? Center(
+                                        ? const Center(
                                             child: CircularProgressIndicator())
                                         : BrandedPrimaryButton(
                                             isEnabled: true,
@@ -375,10 +436,12 @@ class _DurationPickerBottomSheetState extends State<DurationPickerBottomSheet> {
                                                 mapProvider.markers
                                                     .removeLast();
                                               }
+                                              List<LatLng> locations =
+                                                  List.from(mapProvider.points);
                                               Navigator.of(context).pop();
                                               await mapProvider
                                                   .fetchRouteWithWaypoints(
-                                                      mapProvider.points,
+                                                      locations,
                                                       isRemove: true)
                                                   .then((value) {});
                                             })),

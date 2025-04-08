@@ -10,7 +10,6 @@ import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:dio/dio.dart';
@@ -20,8 +19,7 @@ import 'package:http_parser/http_parser.dart';
 class AddPhotoScreen extends StatefulWidget {
   MarkerData? markerData;
   bool? isRestart;
-  AddPhotoScreen({this.isRestart = false, this.markerData, Key? key})
-      : super(key: key);
+  AddPhotoScreen({this.isRestart = false, this.markerData, super.key});
 
   @override
   State<AddPhotoScreen> createState() => _AddPhotoScreenState();
@@ -29,7 +27,7 @@ class AddPhotoScreen extends StatefulWidget {
 
 class _AddPhotoScreenState extends State<AddPhotoScreen> {
   final ImagePicker _picker = ImagePicker();
-  List<File> _mediaFiles = [];
+  final List<File> _mediaFiles = [];
   bool _isUploading = false;
   bool _isInitializingVideo = false;
   VideoPlayerController? _controller;
@@ -190,7 +188,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   }
 
   // Add this variable at the top of the _AddPhotoScreenState class
-  double _uploadProgress = 0.0;
+  final double _uploadProgress = 0.0;
 
 // Modify the _uploadMedia function
   // Future<void> _uploadMedia(BuildContext context) async {
@@ -643,7 +641,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                                       image: FileImage(_mediaFiles[index]),
                                       fit: BoxFit.cover)),
                           child: isVideoFile
-                              ? Center(child: Icon(Icons.videocam, size: 40))
+                              ? const Center(child: Icon(Icons.videocam, size: 40))
                               : null,
                         ),
                         Padding(

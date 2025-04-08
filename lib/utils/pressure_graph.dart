@@ -2,52 +2,43 @@ import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:flutter/material.dart';
 import 'package:high_chart/high_chart.dart';
 
-class TemperatureChart extends StatelessWidget {
+class PressureChart extends StatelessWidget {
   final List<MarkerData> markers;
 
-  TemperatureChart({super.key, required this.markers});
+  PressureChart({super.key, required this.markers});
 
-  final List<String> temperatureRanges = [
-    "-20 to -10",
-    "-10 to 0",
-    "0 to 10",
-    "10 to 20",
-    "20 to 30",
-    "30 to 40",
-    "40+"
+  final List<String> pressureRanges = [
+    "28.0 to 29.0",
+    "29.0 to 30.0",
+    "30.0 to 31.0",
+    "31.0 to 32.0",
+    "32.0+"
   ];
 
-  String getTemperatureRange(double temperature) {
-    if (temperature < -10) return "-20 to -10";
-    if (temperature < 0) return "-10 to 0";
-    if (temperature < 10) return "0 to 10";
-    if (temperature < 20) return "10 to 20";
-    if (temperature < 30) return "20 to 30";
-    if (temperature < 40) return "30 to 40";
-    return "40+";
+  String getPressureRange(double pressure) {
+    if (pressure < 29.0) return "28.0 to 29.0";
+    if (pressure < 30.0) return "29.0 to 30.0";
+    if (pressure < 31.0) return "30.0 to 31.0";
+    if (pressure < 32.0) return "31.0 to 32.0";
+    return "32.0+";
   }
 
   @override
   Widget build(BuildContext context) {
-    final killedByTemp = {for (var range in temperatureRanges) range: 0.0};
-    final seenByTemp = {for (var range in temperatureRanges) range: 0.0};
+    final killedByPressure = {for (var range in pressureRanges) range: 0.0};
+    final seenByPressure = {for (var range in pressureRanges) range: 0.0};
 
     for (final marker in markers) {
-      String range = getTemperatureRange(marker.temperature);
-
-      if (killedByTemp.containsKey(range)) {
-        killedByTemp[range] =
-            killedByTemp[range]! + double.parse(marker.animalKilled);
-      }
-      if (seenByTemp.containsKey(range)) {
-        seenByTemp[range] =
-            seenByTemp[range]! + double.parse(marker.animalSeen);
-      }
+      String range = getPressureRange(marker.pressure);
+      killedByPressure[range] =
+          killedByPressure[range]! + double.parse(marker.animalKilled);
+      seenByPressure[range] =
+          seenByPressure[range]! + double.parse(marker.animalSeen);
     }
 
-    final jsCategories = temperatureRanges.map((t) => "'$t'").join(',');
-    final killedData = temperatureRanges.map((t) => killedByTemp[t]).join(',');
-    final seenData = temperatureRanges.map((t) => seenByTemp[t]).join(',');
+    final jsCategories = pressureRanges.map((t) => "'$t'").join(',');
+    final killedData = pressureRanges.map((t) => killedByPressure[t]).join(',');
+    final seenData = pressureRanges.map((t) => seenByPressure[t]).join(',');
 
     final chartData = '''
     {
@@ -56,7 +47,7 @@ class TemperatureChart extends StatelessWidget {
         backgroundColor: 'transparent'
       },
       title: {
-        text: 'Animal Activity by Temperature Range',
+        text: 'Animal Activity by Pressure Range',
         style: {
           color: '#ffffff'
         }
@@ -64,7 +55,7 @@ class TemperatureChart extends StatelessWidget {
       xAxis: {
         categories: [$jsCategories],
         title: {
-          text: 'Temperature Range (°F)',
+          text: 'Pressure Range (inHg)',
           style: {
             color: '#ffffff'
           }

@@ -2,7 +2,7 @@ import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:flutter/material.dart';
 
 class GoogleMapsBottomSheet extends StatefulWidget {
-  const GoogleMapsBottomSheet({Key? key}) : super(key: key);
+  const GoogleMapsBottomSheet({super.key});
 
   @override
   State<GoogleMapsBottomSheet> createState() => _GoogleMapsBottomSheetState();
@@ -90,7 +90,7 @@ class _GoogleMapsBottomSheetState extends State<GoogleMapsBottomSheet> {
                 ),
               ),
               // Route Info
-              SizedBox(
+              const SizedBox(
                 height: 20,
               ),
               Padding(
@@ -99,7 +99,7 @@ class _GoogleMapsBottomSheetState extends State<GoogleMapsBottomSheet> {
                   children: [
                     Icon(modeIcons[selectedMode], size: 28, color: Colors.blue),
                     const SizedBox(width: 10),
-                     Expanded(
+                     const Expanded(
                       child: Text(
                         "4 hr 57 min (257 km)\n₹370.00 | Saves 14% petrol",
                         style: TextStyle(fontSize: 16, height: 1.5),
@@ -109,7 +109,7 @@ class _GoogleMapsBottomSheetState extends State<GoogleMapsBottomSheet> {
                 ),
               ),
               // Start Button
-              SizedBox(
+              const SizedBox(
                 height: 30,
               ),
               Padding(
@@ -124,7 +124,7 @@ class _GoogleMapsBottomSheetState extends State<GoogleMapsBottomSheet> {
                         borderRadius: 20,
                       ),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       width: 10,
                     ),
                     Expanded(

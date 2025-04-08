@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:coyotex/core/services/model/notification_model.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
@@ -7,9 +5,9 @@ import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
-import 'package:coyotex/core/services/api_base.dart'; // Ensure required imports
+// Ensure required imports
 import 'package:coyotex/core/services/call_halper.dart';
-import 'package:coyotex/core/utills/constant.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
@@ -74,6 +72,7 @@ class TripViewModel extends ChangeNotifier {
                           if (context.mounted) {
                             Navigator.pop(context);
                             Navigator.pop(context);
+                            Navigator.pop(context);
                             //if (widget.isRestart!) Navigator.pop(context);
                           }
                         },
@@ -134,6 +133,14 @@ class TripViewModel extends ChangeNotifier {
     return await _tripAPIs.addAnimalSeenAndKilled(markerData, tripId);
   }
 
+  Future<ApiResponse> deleteMarker(String markerId, String tripId) async {
+    return await _tripAPIs.deleteMarker(markerId, tripId);
+  }
+
+  Future<ApiResponse> deleteWayPoints(LatLng latLang, String tripId) async {
+    return await _tripAPIs.deleteWayPoints(latLang, tripId);
+  }
+
   Future<ApiResponseWithData<Map<String, dynamic>>> addPoint(
       String id, List<Map<String, dynamic>> points) async {
     return await _tripAPIs.addPoint(id, points);
@@ -164,6 +171,10 @@ class TripViewModel extends ChangeNotifier {
 
   Future<Map<String, dynamic>> getWeather(double lat, double lon) async {
     return await _tripAPIs.getWeather(lat, lon);
+  }
+
+  Future<ApiResponseWithData> generateGpxUrl(String tripId) async {
+    return await _tripAPIs.generateGpx(tripId);
   }
 
   Future<ApiResponse> updateProfile(String name, String number, String userUnit,

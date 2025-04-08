@@ -1,7 +1,5 @@
-import 'package:coyotex/core/navigation/routes.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/notification.dart';
-import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/splash_screen.dart';
 import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';

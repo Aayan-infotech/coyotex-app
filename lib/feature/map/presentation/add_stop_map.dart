@@ -123,16 +123,16 @@ class _AddStopMapState extends State<AddStopMap> {
                 value: type,
                 groupValue: _currentMapType,
                 toggleable: true,
-                fillColor: MaterialStateProperty.resolveWith<Color>(
+                fillColor: WidgetStateProperty.resolveWith<Color>(
                   (states) => isSelected
                       ? theme.colorScheme.primary
                       : theme.colorScheme.onSurface,
                 ),
                 onChanged: (value) {
-                  setState(() {
-                    _currentMapType = value!;
-                    Navigator.pop(context);
-                  });
+                  // setState(() {
+                  _currentMapType = value!;
+                  Navigator.pop(context);
+                  //    });
                 },
               ),
             ],
@@ -173,13 +173,13 @@ class _AddStopMapState extends State<AddStopMap> {
         body: Consumer<MapProvider>(
           builder: (context, mapProvider, child) {
             return mapProvider.isLoading
-                ? Center(child: CircularProgressIndicator.adaptive())
+                ? const Center(child: CircularProgressIndicator.adaptive())
                 : Stack(
                     children: [
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            GoogleMap(
+                      Stack(
+                        children: [
+                          Positioned.fill(
+                            child: GoogleMap(
                               initialCameraPosition: CameraPosition(
                                 target: mapProvider.initialPosition,
                                 zoom: 12,
@@ -197,69 +197,67 @@ class _AddStopMapState extends State<AddStopMap> {
                               buildingsEnabled: true,
                               mapType: _currentMapType,
                             ),
-                            if (mapProvider.startSuggestions.isNotEmpty)
-                              AnimatedPositioned(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                                top: _searchFocusNode.hasFocus ? 80 : -300,
-                                left: 10,
-                                right: 10,
-                                child: Material(
-                                  elevation: 8,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    height: 250,
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border:
-                                          Border.all(color: Colors.red[100]!),
-                                    ),
-                                    child: ListView.builder(
-                                      itemCount:
-                                          mapProvider.startSuggestions.length,
-                                      itemBuilder: (context, index) {
-                                        final suggestion =
-                                            mapProvider.startSuggestions[index];
-                                        return InkWell(
-                                          onTap: () async {
-                                            await onSuggestionSelected(
-                                                suggestion['place_id'],
-                                                context,
-                                                mapProvider);
-                                          },
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              border: Border(
-                                                bottom: BorderSide(
-                                                    color: Colors.red[50]!),
-                                              ),
-                                            ),
-                                            child: ListTile(
-                                              leading: Icon(Icons.location_on,
-                                                  color: Colors.red[700]),
-                                              title: Text(
-                                                suggestion['description'],
-                                                style: TextStyle(
-                                                    color: Colors.grey[800],
-                                                    fontWeight:
-                                                        FontWeight.w500),
-                                              ),
-                                              trailing: Icon(
-                                                  Icons.arrow_forward_ios,
-                                                  size: 16,
-                                                  color: Colors.red[300]),
+                          ),
+                          if (mapProvider.startSuggestions.isNotEmpty)
+                            AnimatedPositioned(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              top: _searchFocusNode.hasFocus ? 80 : -300,
+                              left: 10,
+                              right: 10,
+                              child: Material(
+                                elevation: 8,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  height: 250,
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.red[100]!),
+                                  ),
+                                  child: ListView.builder(
+                                    itemCount:
+                                        mapProvider.startSuggestions.length,
+                                    itemBuilder: (context, index) {
+                                      final suggestion =
+                                          mapProvider.startSuggestions[index];
+                                      return InkWell(
+                                        onTap: () async {
+                                          await onSuggestionSelected(
+                                              suggestion['place_id'],
+                                              context,
+                                              mapProvider);
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border(
+                                              bottom: BorderSide(
+                                                  color: Colors.red[50]!),
                                             ),
                                           ),
-                                        );
-                                      },
-                                    ),
+                                          child: ListTile(
+                                            leading: Icon(Icons.location_on,
+                                                color: Colors.red[700]),
+                                            title: Text(
+                                              suggestion['description'],
+                                              style: TextStyle(
+                                                  color: Colors.grey[800],
+                                                  fontWeight: FontWeight.w500),
+                                            ),
+                                            trailing: Icon(
+                                                Icons.arrow_forward_ios,
+                                                size: 16,
+                                                color: Colors.red[300]),
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
                       Material(
                         elevation: 4,

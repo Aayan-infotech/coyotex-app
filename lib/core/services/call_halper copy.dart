@@ -1,9 +1,3 @@
-import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
-import 'package:coyotex/core/utills/constant.dart';
-import 'package:coyotex/core/utills/shared_pref.dart';
 
 // class ApiResponse {
 //   final String message;

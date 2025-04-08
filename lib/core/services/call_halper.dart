@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 
@@ -42,7 +41,7 @@ class CallHelper {
           Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
       final response = await http
           .get(uri, headers: await getHeaders())
-          .timeout(Duration(seconds: timeoutInSeconds));
+          .timeout(const Duration(seconds: timeoutInSeconds));
       return _processResponse(
           response, () => get(urlSuffix, queryParams: queryParams));
     });
@@ -53,27 +52,30 @@ class CallHelper {
     return _performRequest(() async {
       Uri uri =
           Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
-          print(uri);
+      print(uri);
       final response = await http
           .get(uri, headers: await getHeaders())
-          .timeout(Duration(seconds: timeoutInSeconds));
+          .timeout(const Duration(seconds: timeoutInSeconds));
       return _processResponseWithData(response, defaultData,
           () => getWithData(urlSuffix, defaultData, queryParams: queryParams));
     });
   }
-  Future<ApiResponse> delete(String urlSuffix, {Map<String, dynamic>? queryParams}) async {
-  return _performRequest(() async {
-    Uri uri = Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
-    final response = await http
-        .delete(
-          uri,
-          headers: await getHeaders(),
-        )
-        .timeout(Duration(seconds: timeoutInSeconds));
-    return _processResponse(response, () => delete(urlSuffix, queryParams: queryParams));
-  });
-}
 
+  Future<ApiResponse> delete(String urlSuffix,
+      {Map<String, dynamic>? queryParams}) async {
+    return _performRequest(() async {
+      Uri uri =
+          Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
+      final response = await http
+          .delete(
+            uri,
+            headers: await getHeaders(),
+          )
+          .timeout(const Duration(seconds: timeoutInSeconds));
+      return _processResponse(
+          response, () => delete(urlSuffix, queryParams: queryParams));
+    });
+  }
 
   Future<ApiResponse> post(String urlSuffix, Map<String, dynamic> body) async {
     return _performRequest(() async {
@@ -83,7 +85,7 @@ class CallHelper {
             headers: await getHeaders(),
             body: jsonEncode(body),
           )
-          .timeout(Duration(seconds: timeoutInSeconds));
+          .timeout(const Duration(seconds: timeoutInSeconds));
       return _processResponse(response, () => post(urlSuffix, body));
     });
   }
@@ -97,9 +99,24 @@ class CallHelper {
             headers: await getHeaders(),
             body: jsonEncode(body),
           )
-          .timeout(Duration(seconds: timeoutInSeconds));
+          .timeout(const Duration(seconds: timeoutInSeconds));
       return _processResponseWithData(response, defaultData,
           () => postWithData(urlSuffix, body, defaultData));
+    });
+  }
+
+  Future<ApiResponse> deleteWithBody(
+      String urlSuffix, Map<String, dynamic> body) async {
+    return _performRequest(() async {
+      Uri uri = Uri.parse('$baseUrl$urlSuffix');
+      final response = await http
+          .delete(
+            uri,
+            headers: await getHeaders(),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: timeoutInSeconds));
+      return _processResponse(response, () => deleteWithBody(urlSuffix, body));
     });
   }
 
@@ -114,7 +131,7 @@ class CallHelper {
             headers: await getHeaders(),
             body: jsonEncode(body),
           )
-          .timeout(Duration(seconds: timeoutInSeconds));
+          .timeout(const Duration(seconds: timeoutInSeconds));
       return _processResponse(
           response,
           () => patch(

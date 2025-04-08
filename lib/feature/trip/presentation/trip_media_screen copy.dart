@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class TripMediaScreen extends StatelessWidget {
   final List<MarkerData> markerData;
 
-  TripMediaScreen({required this.markerData});
+  const TripMediaScreen({super.key, required this.markerData});
 
   @override
   Widget build(BuildContext context) {
@@ -56,12 +56,12 @@ class TripMediaScreen extends StatelessWidget {
                       return Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12.0),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
                               color: Colors.black26,
                               blurRadius: 8.0,
                               spreadRadius: 2.0,
-                              offset: const Offset(2, 4),
+                              offset: Offset(2, 4),
                             ),
                           ],
                         ),

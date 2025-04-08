@@ -9,6 +9,7 @@
 // import 'package:coyotex/core/utills/constant.dart';
 // import 'package:coyotex/core/utills/shared_pref.dart';
 // import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
+// import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';
 // import 'package:coyotex/feature/map/presentation/marker_details_bottom_sheet.dart';
 // import 'package:coyotex/feature/map/presentation/start_trip_bootom_sheat.dart';
 // import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
@@ -26,6 +27,7 @@
 // import 'dart:ui' as ui;
 
 // import 'package:geocoding/geocoding.dart';
+// import 'package:url_launcher/url_launcher.dart';
 
 // class RouteSegment {
 //   final List<LatLng> points;
@@ -90,15 +92,20 @@
 //   List<LatLng> points = [];
 //   List<LatLng> path = [];
 //   late TripModel selectedTripModel;
+//   String tripName = '';
+//   // bool isNavigationStarted = false;
 //   bool providerLetsHuntButton = false;
 //   String selectedWindDirection = 'North';
 //   List<Map<String, dynamic>> routeDetails = [];
 //   final String sessionToken = const Uuid().v4();
 //   //"AIzaSyDg2wdDb3SFR1V_3DO2mNVvc01Dh6vR5Mc";
+//   bool isAddStopButton = false;
+
 //   String markerId = '';
 //   List<dynamic> startSuggestions = [];
 //   List<dynamic> destinationSuggestions = [];
 //   GoogleMapController? mapController;
+//   double totalTravilMinutsWithStop = 0;
 //   LatLng initialPosition = const LatLng(26.862421770613125, 80.99804357972356);
 //   int timeDurations = 0;
 
@@ -113,14 +120,15 @@
 //   bool isSavedTrip = false;
 //   bool isKeyDataPoint = false;
 //   bool isStartSuggestions = false;
-//   double speed = 45;
+//   double speed = 40;
 //   bool isRestart = false;
-//   TripAPIs _tripAPIs = TripAPIs();
+//   final TripAPIs _tripAPIs = TripAPIs();
 //   late WeatherResponse weather = defaultWeatherResponse;
 
 //   int totalTime = 0;
+//   int stopTime = 0;
 //   String totalTravelTime = "";
-//   String totalStopTime = "";
+//   String totalStopWithTravelTime = "";
 //   List<MarkerData> liveTripMarker = [];
 //   Marker currentLocationMarker = const Marker(
 //     markerId: MarkerId("currentLocation"),
@@ -129,6 +137,121 @@
 //   MarkerData? selectedOldMarker;
 //   bool isStartavigation = false;
 //   List<MarkerData> lstTripMarkerData = [];
+//   // In MapProvider class
+//   DateTime? _tripStartTime;
+//   DateTime? _estimatedCompletionTime;
+
+//   DateTime? get estimatedCompletionTime => _estimatedCompletionTime;
+//   // In MapProvider class
+//   Timer? _etaUpdateTimer;
+
+//   DateTime? originalEstimate;
+//   DateTime? currentEstimate;
+//   String? timeChangeNotification;
+
+// // Add these getters
+//   // DateTime? get currentEstimate => _currentEstimate;
+
+//   void startTripTimer(int totalMinutes) {
+//     _tripStartTime = DateTime.now();
+//     double totalMinutes = double.parse(totalTravilMinutsWithStop.toString());
+//     int roundedMinutes = totalMinutes.round();
+
+//     originalEstimate = _tripStartTime!.add(Duration(minutes: roundedMinutes));
+//     currentEstimate = originalEstimate;
+
+//     // Start periodic updates every 30 seconds
+//     _etaUpdateTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
+//       _recalculateETA();
+//     });
+
+//     notifyListeners();
+//   }
+
+//   void _recalculateETA() async {
+//     if (_tripStartTime == null) return;
+//     final elapsedMinutes = DateTime.now().difference(_tripStartTime!).inMinutes;
+
+//     // Remaining minutes to complete the trip
+//     final remaining = totalTravilMinutsWithStop - elapsedMinutes;
+
+//     // Calculate remaining time based on current progress
+//     double remainingMinutes = remaining.toDouble();
+//     DateTime newEst =
+//         DateTime.now().add(Duration(minutes: remainingMinutes.round()));
+
+//     // Check for significant changes (e.g., +/- 20 minutes)
+//     final diff = originalEstimate!.difference(newEst);
+//     if (diff.inMinutes.abs() >= 20) {
+//       _sendChangeNotification(diff);
+//       currentEstimate = newEst;
+//     } else {
+//       //scurrentEstimate = newEst;
+//     }
+
+//     notifyListeners();
+//   }
+
+//   // points.add(currentLocationMarker.position);
+//   // double distanceTravelled = await calculateTotalDistanceForMap(points);
+//   // double timeRemaing = distanceTravelled * 60 / speed;
+
+//   void _sendChangeNotification(Duration difference) {
+//     final direction = difference.isNegative ? 'earlier' : 'delay';
+//     final minutes = difference.inMinutes.abs();
+
+//     timeChangeNotification = 'Estimated arrival time changed by '
+//         '${formatDuration(minutes)} minutes $direction';
+//     final userProvider = Provider.of<UserViewModel>(context, listen: false);
+//     userProvider.sendNotifications(
+//       "Trip Update",
+//       timeChangeNotification!, // "Arrived at stop ${currentMarkerIndex + 1}",
+//       NotificationType.tripUpdate,
+//       selectedTripModel.id,
+//     );
+
+//     notifyListeners();
+
+//     // // Clear notification after 10 seconds
+//     // Future.delayed(Duration(seconds: 10), () {
+//     //   _timeChangeNotification = null;
+//     //   notifyListeners();
+//     // });
+//   }
+
+//   String formatDuration(int totalMinutes) {
+//     if (totalMinutes < 0) throw ArgumentError("Duration cannot be negative");
+
+//     final hours = totalMinutes ~/ 60;
+//     final minutes = totalMinutes % 60;
+
+//     final List<String> parts = [];
+
+//     if (hours > 0) parts.add('${hours}h');
+//     if (minutes > 0 || totalMinutes == 0) parts.add('${minutes}m');
+
+//     return parts.join(' ');
+//   }
+
+//   // void startTripTimer() {
+//   //   try {
+//   //     _tripStartTime = DateTime.now();
+
+//   //     // Convert to double first, then round to nearest integer
+//   //     double totalMinutes = double.parse(totalTravilMinutsWithStop.toString());
+//   //     int roundedMinutes = totalMinutes.round();
+
+//   //     _estimatedCompletionTime = _tripStartTime!.add(
+//   //       Duration(minutes: roundedMinutes),
+//   //     );
+
+//   //     print(_estimatedCompletionTime);
+//   //     notifyListeners();
+//   //   } catch (e) {
+//   //     print('Error in startTripTimer: $e');
+//   //   }
+//   // }
+
 //   getTrips() async {
 //     isLoading = true;
 //     notifyListeners();
@@ -160,22 +283,47 @@
 
 //   void onMapCreated(GoogleMapController controller) {
 //     mapController = controller;
-
-//     if (routeList.isNotEmpty) {
-//       final points = routeList[selectedRouteIndex]['polyPoints'];
-//       LatLngBounds bounds = _getLatLngBounds(points);
-//       controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 10));
-//     } else if (points.isNotEmpty) {
-//       adjustCameraBounds();
-//     } else {
-//       // Set zoom level to 0 (or minimum possible zoom)
+//     if (isRemoveRoute) {
 //       controller.animateCamera(CameraUpdate.newLatLngZoom(
 //           LatLng(initialPosition.latitude, initialPosition.longitude), 10));
+//     } else {
+//       if (routeList.isNotEmpty) {
+//         final points = routeList[selectedRouteIndex]['polyPoints'];
+//         LatLngBounds bounds = _getLatLngBounds(points);
+//         controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 10));
+//       } else if (points.isNotEmpty) {
+//         adjustCameraBounds();
+//       } else {
+//         // Set zoom level to 0 (or minimum possible zoom)
+//         controller.animateCamera(CameraUpdate.newLatLngZoom(
+//             LatLng(initialPosition.latitude, initialPosition.longitude), 10));
+//       }
 //     }
 
 //     setMarkersWithOnTap(context);
 //     notifyListeners();
 //   }
+
+//   // void onMapStopCreated(GoogleMapController controller) {
+//   //   mapController = controller;
+
+//   //   if (routeList.isNotEmpty) {
+//   //     controller.animateCamera(CameraUpdate.newLatLngZoom(
+//   //         LatLng(initialPosition.latitude, initialPosition.longitude), 10));
+//   //     // final points = routeList[selectedRouteIndex]['polyPoints'];
+//   //     // LatLngBounds bounds = _getLatLngBounds(points);
+//   //     // controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 10));
+//   //   } else if (points.isNotEmpty) {
+//   //     adjustCameraBounds();
+//   //   } else {
+//   //     // Set zoom level to 0 (or minimum possible zoom)
+//   //     controller.animateCamera(CameraUpdate.newLatLngZoom(
+//   //         LatLng(initialPosition.latitude, initialPosition.longitude), 10));
+//   //   }
+
+//   //   setMarkersWithOnTap(context);
+//   //   notifyListeners();
+//   // }
 
 //   void adjustCameraBounds() {
 //     if (points.isNotEmpty && mapController != null) {
@@ -206,6 +354,100 @@
 //       notifyListeners();
 //     } catch (error) {
 //       print("Error in updateCameraPosition: $error");
+//     }
+//   }
+
+//   // void launchGoogleMaps(TripModel tripModel) async {
+//   //   String baseUrl = "https://www.google.com/maps/dir/?api=1";
+
+//   //   String destination;
+//   //   LatLng destinationLatLng;
+//   //   List<String> waypointStrings = [];
+
+//   //   if (tripModel.markers.isNotEmpty) {
+//   //     destinationLatLng = tripModel.markers.last.position;
+//   //     destination =
+//   //         "${destinationLatLng.latitude},${destinationLatLng.longitude}";
+//   //     waypointStrings = tripModel.markers
+//   //         .sublist(0, tripModel.markers.length - 1)
+//   //         .map((m) => "${m.position.latitude},${m.position.longitude}")
+//   //         .toList();
+//   //   } else if (tripModel.routePoints.isNotEmpty) {
+//   //     destinationLatLng = tripModel.routePoints.last;
+//   //     destination =
+//   //         "${destinationLatLng.latitude},${destinationLatLng.longitude}";
+//   //     waypointStrings = tripModel.routePoints
+//   //         .sublist(0, tripModel.routePoints.length - 1)
+//   //         .map((wp) => "${wp.latitude},${wp.longitude}")
+//   //         .toList();
+//   //   } else {
+//   //     throw "No valid markers or route points found!";
+//   //   }
+
+//   //   String waypointsParam = waypointStrings.isNotEmpty
+//   //       ? "&waypoints=${waypointStrings.join('|')}"
+//   //       : "";
+
+//   //   // Build final URL without origin parameter
+//   //   String finalUrl =
+//   //       "$baseUrl&destination=$destination$waypointsParam&travelmode=driving&dir_action=navigate";
+
+//   //   if (await canLaunch(finalUrl)) {
+//   //     await launch(
+//   //       finalUrl,
+//   //       forceSafariVC: false,
+//   //       forceWebView: false,
+//   //     );
+//   //   } else {
+//   //     throw "Could not launch $finalUrl";
+//   //   }
+//   // }
+//   void launchGoogleMaps(TripModel tripModel) async {
+//     String baseUrl = "https://www.google.com/maps/dir/?api=1";
+
+//     String destination;
+//     LatLng destinationLatLng;
+//     List<String> waypointStrings = [];
+
+//     if (tripModel.markers.isNotEmpty) {
+//       destinationLatLng = tripModel.markers.last.position;
+//       destination =
+//           "${destinationLatLng.latitude},${destinationLatLng.longitude}";
+//       waypointStrings = tripModel.markers
+//           .sublist(0, tripModel.markers.length - 1)
+//           .map((m) => "${m.position.latitude},${m.position.longitude}")
+//           .toList();
+//     } else if (tripModel.routePoints.isNotEmpty) {
+//       destinationLatLng = tripModel.routePoints.last;
+//       destination =
+//           "${destinationLatLng.latitude},${destinationLatLng.longitude}";
+//       waypointStrings = tripModel.routePoints
+//           .sublist(0, tripModel.routePoints.length - 1)
+//           .map((wp) => "${wp.latitude},${wp.longitude}")
+//           .toList();
+//     } else {
+//       throw "No valid markers or route points found!";
+//     }
+
+//     String waypointsParam = waypointStrings.isNotEmpty
+//         ? "&waypoints=${waypointStrings.join('|')}"
+//         : "";
+
+//     // Add units parameter (metric or imperial)
+//     String unitsParam = "&units=imperial"; // or "imperial"
+
+//     // Final URL with units
+//     String finalUrl =
+//         "$baseUrl&destination=$destination$waypointsParam&travelmode=driving$unitsParam&dir_action=navigate";
+
+//     if (await canLaunch(finalUrl)) {
+//       await launch(
+//         finalUrl,
+//         forceSafariVC: false,
+//         forceWebView: false,
+//       );
+//     } else {
+//       throw "Could not launch $finalUrl";
 //     }
 //   }
 
@@ -242,6 +484,21 @@
 //   void setMarkersWithOnTap(
 //     BuildContext context,
 //   ) {
+//     mapMarkers = mapMarkers.map((item) {
+//       return item.copyWith(
+//         onTapParam: () {
+//           onTapOnMap = true;
+//           showDurationPicker(context, marker: item);
+//         },
+//       );
+//     }).toSet();
+//     notifyListeners();
+//   }
+
+//   void setStopMarkersWithOnTap(
+//     BuildContext context,
+//   ) {
+//     // final tripProvider=Provider.of<MapProvider>(context,listen: )
 //     mapMarkers = mapMarkers.map((item) {
 //       return item.copyWith(
 //         onTapParam: () {
@@ -317,7 +574,7 @@
 //     notifyListeners();
 //   }
 
-//   // String convertMinutesToHours(double distance, {bool isTotal = true, bool}) {
+//   // String convertMinutesToHours(double distance, {bool isTotal = true}) {
 //   //   double minutes = isTotal
 //   //       ? (totalTime + ((distance / 1000) / speed) * 60)
 //   //       : ((distance) / speed) * 60;
@@ -328,33 +585,54 @@
 
 //   //   String hourText = hours > 0 ? "$hours hr" : "";
 //   //   String minuteText = remainingMinutes > 0 ? "$remainingMinutes min" : "";
+
+//   //   // Assign "4 min" if both hourText and minuteText are empty
+//   //   if (hourText.isEmpty && minuteText.isEmpty) {
+//   //     minuteText = "4 min";
+//   //   }
+
 //   //   totalTravelTime =
 //   //       [hourText, minuteText].where((element) => element.isNotEmpty).join(" ");
 //   //   notifyListeners();
 
-//   //   return [hourText, minuteText]
-//   //       .where((element) => element.isNotEmpty)
-//   //       .join(" ");
+//   //   return totalTravelTime;
 //   // }
-//   String convertMinutesToHours(double distance, {bool isTotal = true}) {
-//     double minutes = isTotal
-//         ? (totalTime + ((distance / 1000) / speed) * 60)
-//         : ((distance) / speed) * 60;
+//   String convertMinutesToHours(double distance) {
+//     stopTime = 0;
+//     for (var item in selectedTripModel.markers) {
+//       stopTime += item.duration;
+//     }
+
+//     double minutes = (stopTime + ((distance / 1000) / speed) * 60);
+//     double travelMinutes = ((distance / 1000) / speed) * 60;
+//     totalTravilMinutsWithStop = travelMinutes;
 
 //     int hours = minutes ~/ 60;
-//     int remainingMinutes =
-//         (minutes % 60).truncate(); // Ensures an integer value
+//     int remainingMinutes = (minutes % 60).truncate();
+
+//     int travelHours = travelMinutes ~/ 60;
+//     int travelRemainingMinutes = (travelMinutes % 60).truncate();
 
 //     String hourText = hours > 0 ? "$hours hr" : "";
 //     String minuteText = remainingMinutes > 0 ? "$remainingMinutes min" : "";
 
-//     // Assign "4 min" if both hourText and minuteText are empty
+//     String travelHourText = travelHours > 0 ? "$travelHours hr" : "";
+//     String travelMinuteText =
+//         travelRemainingMinutes > 0 ? "$travelRemainingMinutes min" : "";
+
 //     if (hourText.isEmpty && minuteText.isEmpty) {
 //       minuteText = "4 min";
 //     }
 
+//     if (travelHourText.isEmpty && travelMinuteText.isEmpty) {
+//       travelMinuteText = "4 min";
+//     }
+
+//     totalStopWithTravelTime =
+//         [hourText, minuteText].where((e) => e.isNotEmpty).join(" ");
 //     totalTravelTime =
-//         [hourText, minuteText].where((element) => element.isNotEmpty).join(" ");
+//         [travelHourText, travelMinuteText].where((e) => e.isNotEmpty).join(" ");
+
 //     notifyListeners();
 
 //     return totalTravelTime;
@@ -362,8 +640,8 @@
 
 //   void increaseCount() {
 //     destinationCount += 1;
-//     TextEditingController _textController = TextEditingController();
-//     destinationControllers.add(_textController);
+//     TextEditingController textController = TextEditingController();
+//     destinationControllers.add(textController);
 //     notifyListeners();
 //   }
 
@@ -409,12 +687,6 @@
 
 //   int shortestRouteIndex = 0;
 //   bool showAllRoutes = true;
-//   // void selectRoute(int index) {
-//   //   selectedRouteIndex = index;
-//   //   distance = routeList[index]['distance'];
-//   //   _updatePolylines();
-//   //   notifyListeners();
-//   // }
 
 //   void selectRoute(int index) {
 //     selectedRouteIndex = index;
@@ -522,17 +794,20 @@
 
 //   bool isRedText = false;
 //   bool hasSent2MinNotification = false;
+
 //   void letsHunt() async {
+//     isRemoveRoute = false;
 //     isTripStart = true;
 //     isSave = false;
 //     isLoading = true;
 //     onTapOnMap = false;
 //     currentMarkerIndex = 0;
+//     tripName = 'not';
 //     hasSentArrivalNotification = false;
 //     isAtStop = false;
 //     stayTimer?.cancel();
 //     stayTimer = null;
-
+//     isStartavigation = false;
 //     notifyListeners();
 //     late LatLng startTripLatLang;
 
@@ -570,8 +845,8 @@
 //       await fetchRouteWithWaypoints(path, isPathShow: true);
 
 //       isLoading = false;
-//       // formattedDistance = formatDistance(distance, context);
-//       // notifyListeners();
+
+//       startTripTimer(totalTravilMinutsWithStop.round());
 
 //       positionStream = Geolocator.getPositionStream(
 //         locationSettings: const LocationSettings(
@@ -580,6 +855,9 @@
 //         ),
 //       ).listen((Position position) async {
 //         LatLng currentLatLng = LatLng(position.latitude, position.longitude);
+//         if (position.speed >= 5) {
+//           speed = position.speed * 3.6; // Convert m/s to km/h
+//         }
 
 //         // Update current location marker
 //         currentLocationMarker = Marker(
@@ -658,7 +936,7 @@
 //             //     },
 //             //   );
 //             // }
-//             countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+//             countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
 //               if (remainingStopTime > 0) {
 //                 remainingStopTime--;
 
@@ -701,7 +979,7 @@
 //             );
 //             WeatherResponse currentWeather =
 //                 await getCurrentWeather(currentMarker.position);
-//             WeatherMarker _weatherMarker = WeatherMarker(
+//             WeatherMarker weatherMarker = WeatherMarker(
 //                 location: Weatherlocation(
 //                   timezone: currentWeather.timezone,
 //                   name: currentWeather.name,
@@ -729,7 +1007,7 @@
 //                     sunset: currentWeather.sys.sunset,
 //                     recordedAt: currentWeather.timezone));
 //             await _tripAPIs.addWeatherMarker(
-//                 selectedTripModel.id, _weatherMarker);
+//                 selectedTripModel.id, weatherMarker);
 //           } else {
 //             // Calculate ETA if possible
 //             double speed = position.speed ?? 0;
@@ -750,13 +1028,13 @@
 //           }
 //         }
 //         // final closestIndex = _findClosestPointIndex(currentLatLng);
-//         double? travelledDistance = await getDistance(
-//             origin: startTripLatLang, destination: currentLatLng);
-//         final remainingDistance = cumulativeDistances.last - travelledDistance!;
+//         // double? travelledDistance = await getDistance(
+//         //     origin: startTripLatLang, destination: currentLatLng);
+//         // final remainingDistance = cumulativeDistances.last - travelledDistance!;
 
-//         distance = remainingDistance > 0 ? remainingDistance : 0;
-//         formattedDistance = formatDistance(remainingDistance, context);
-//         convertMinutesToHours(distance);
+//         // distance = remainingDistance > 0 ? remainingDistance : 0;
+//         // formattedDistance = formatDistance(remainingDistance, context);
+//         // convertMinutesToHours(distance);
 //         // }
 
 //         // updateCameraPosition(initialLatLng);
@@ -803,7 +1081,7 @@
 //     return false; // No points found within the radius
 //   }
 
-//   void addStop(LatLng positionasync {
+//   void addStop(LatLng currentStop) async {
 //     try {
 //       isLoading = true;
 //       isHurryUp = false;
@@ -811,29 +1089,29 @@
 //       isTripStart = true;
 
 //       notifyListeners();
-//       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-//       if (!serviceEnabled) {
-//         throw Exception('Location services are disabled.');
-//       }
+//       // bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+//       // if (!serviceEnabled) {
+//       //   throw Exception('Location services are disabled.');
+//       // }
 
-//       // Check and request location permission
-//       LocationPermission permission = await Geolocator.checkPermission();
-//       if (permission == LocationPermission.denied) {
-//         permission = await Geolocator.requestPermission();
-//         if (permission == LocationPermission.denied) {
-//           throw Exception('Location permissions are denied.');
-//         }
-//       }
+//       // // Check and request location permission
+//       // LocationPermission permission = await Geolocator.checkPermission();
+//       // if (permission == LocationPermission.denied) {
+//       //   permission = await Geolocator.requestPermission();
+//       //   if (permission == LocationPermission.denied) {
+//       //     throw Exception('Location permissions are denied.');
+//       //   }
+//       // }
 
-//       if (permission == LocationPermission.deniedForever) {
-//         throw Exception('Location permissions are permanently denied.');
-//       }
+//       // if (permission == LocationPermission.deniedForever) {
+//       //   throw Exception('Location permissions are permanently denied.');
+//       // }
 
-//       Position currentPosition = await Geolocator.getCurrentPosition(
-//         desiredAccuracy: LocationAccuracy.high,
-//       );
-//       LatLng currentStop =
-//           LatLng(currentPosition.latitude, currentPosition.longitude);
+//       // Position currentPosition = await Geolocator.getCurrentPosition(
+//       //   desiredAccuracy: LocationAccuracy.high,
+//       // );
+//       // LatLng currentStop =
+//       //     LatLng(currentPosition.latitude, currentPosition.longitude);
 
 //       points.add(currentStop);
 //       path.add(currentStop);
@@ -859,10 +1137,12 @@
 //       // Fetch and redraw the updated route
 //       await fetchRouteWithWaypoints(path);
 
-//       // Recalculate the total distance
-//       distance = calculateTotalDistance();
+//       distance = await calculateTotalDistanceForMap(path);
 //       notifyListeners();
-//       await showDurationPicker(context).then((value) async {
+//       await showDurationPicker(isStop: true, context).then((value) async {
+//         isLoading = true;
+//         notifyListeners();
+
 //         var response = await _tripAPIs.addStop(
 //           MarkerData(
 //             animalSeen: '0',
@@ -872,7 +1152,7 @@
 //             id: uniqueId,
 //             position: currentStop,
 //             icon: "markerIcon",
-//             title: "Stop",
+//             title: stopName,
 //             snippet: locationName,
 //             duration: timeDurations,
 //             markerType: "inbetween",
@@ -895,7 +1175,13 @@
 //           selectedTripModel.id,
 //           waypoint,
 //         );
+//         final tripProvider = Provider.of<TripViewModel>(context, listen: false);
+//         await getTrips();
+//         if (response.success) {
+//           Navigator.of(context).pop();
+//         }
 //       });
+
 //       isSave = false;
 //     } catch (e) {
 //       debugPrint("Error while adding a stop: $e");
@@ -928,7 +1214,7 @@
 //         id: const Uuid().v4(),
 //         animalSeen: 0,
 //         animalKilled: 0,
-//         name: 'Trip ${trips.length + 1}',
+//         name: tripName,
 //         startLocation: startController.text.isNotEmpty
 //             ? startController.text
 //             : "Location 1",
@@ -950,6 +1236,8 @@
 //       await tripProvidr.getAllMarker();
 
 //       resetFields();
+//       Provider.of<IndexProvider>(context, listen: false).updateIndex(0);
+//       // Navigator.pop(context);
 //     } else {
 //       AppDialog.showErrorDialog(context, res.message, () {
 //         Navigator.of(context).pop();
@@ -961,7 +1249,7 @@
 
 //   late BuildContext context;
 //   Future<void> onSuggestionSelected(String placeId, bool isStartField,
-//       TextEditingController _controller, BuildContext buildContext) async {
+//       TextEditingController controller, BuildContext buildContext) async {
 //     isLoading = true;
 //     final url =
 //         'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$kGoogleApiKey';
@@ -973,12 +1261,12 @@
 //       if (data['status'] == 'OK') {
 //         final location = data['result']['geometry']['location'];
 //         final latAndLng = LatLng(location['lat'], location['lng']);
-//         _controller.text = data['result']['formatted_address'];
+//         controller.text = data['result']['formatted_address'];
 //         if (isStartField) {
 //           startController.text = data['result']['formatted_address'];
 
-//           TextEditingController _1stController = TextEditingController();
-//           destinationControllers.add((_1stController));
+//           TextEditingController 1stController = TextEditingController();
+//           destinationControllers.add((1stController));
 //           // pointA = latAndLng;
 //           // markerId = 'start';
 //         } else {
@@ -1045,7 +1333,7 @@
 //     if (isProcessingTap) return; // Prevent multiple taps
 //     isProcessingTap = true;
 
-//     notifyListeners();
+//     // notifyListeners();
 
 //     points.add(position);
 //     path.add(position);
@@ -1092,7 +1380,7 @@
 
 //     isLoading = false;
 
-//     Future.delayed(Duration(seconds: 0)).then((value) {
+//     Future.delayed(const Duration(seconds: 0)).then((value) {
 //       showDurationPicker(buildContext);
 //     });
 //     setMarkersWithOnTap(context);
@@ -1140,6 +1428,7 @@
 //     isProcessingTap = false;
 
 //     isStartavigation = false;
+//     tripName = '';
 //     startController.clear();
 
 //     if (countdownTimer != null) {
@@ -1166,6 +1455,11 @@
 //     totalTime = 0;
 //     destinationCount = 1;
 //     timeDurations = 0;
+//     _etaUpdateTimer?.cancel();
+//     _tripStartTime = null;
+//     originalEstimate = null;
+//     currentEstimate = null;
+//     timeChangeNotification = null;
 
 //     if (positionStream != null) {
 //       positionStream!.cancel();
@@ -1175,6 +1469,7 @@
 //     updateMapMarkers(tripProvider.lstMarker);
 //   }
 
+//   String stopName = '';
 //   Future<void> setTimeDuration(int duration, String name,
 //       {bool isStop = false}) async {
 //     // final provider = Provider.of<TripViewModel>(context, listen: false);
@@ -1192,7 +1487,7 @@
 //         provider.lstMarker.add(markers.last);
 //         updateMapMarkers(provider.lstMarker);
 //       }
-//     }
+//     } else {}
 
 //     notifyListeners();
 //   }
@@ -1295,7 +1590,7 @@
 //         width: 10,
 //       ));
 //       polylines.add(Polyline(
-//         polylineId: PolylineId('route_selected_inner'),
+//         polylineId: const PolylineId('route_selected_inner'),
 //         points: points,
 //         color: Colors.blue,
 //         width: 6,
@@ -1383,122 +1678,22 @@
 //     }
 //   }
 
-//   // Future<void> fetchRouteWithWaypoints(
-//   //   List<LatLng> locations, {
-//   //   bool isRemove = false,
-//   //   bool isPathShow = false,
-//   // }) async {
-//   //   // if (locations.isEmpty || (locations.length < 2 && !isRemove)) {
-//   //   //   debugPrint("At least two locations are required.");
-//   //   //   return;
-//   //   // }
-//   //   if (isRemove) {
-//   //     locations.add(locations.first);
-//   //   }
-
-//   //   isLoading = true;
-//   //   // notifyListeners();
-//   //   routeList = [];
-//   //   distanceOfSegments = []; // Reset distances
-
-//   //   try {
-//   //     List<String> placeNames = await Future.wait(locations.map(getPlaceName));
-//   //     List<List<RouteSegment>> allSegments = [];
-
-//   //     for (int i = 0; i < locations.length - 1; i++) {
-//   //       String origin = placeNames[i];
-//   //       String destination = placeNames[i + 1];
-//   //       final url = 'https://maps.googleapis.com/maps/api/directions/json?'
-//   //           'origin=$origin&destination=$destination&mode=driving&'
-//   //           'alternatives=true&key=$kGoogleApiKey';
-
-//   //       final response = await http.get(Uri.parse(url));
-//   //       final data = jsonDecode(response.body);
-
-//   //       if (data['status'] == 'OK') {
-//   //         List<RouteSegment> segmentRoutes = [];
-
-//   //         for (var route in data['routes']) {
-//   //           final encodedPolyline = route['overview_polyline']['points'];
-
-//   //           final polylinePoints = _decodePolyline(encodedPolyline);
-//   //           // routePolylinePoints =
-//   //           //     polylinePoints; //routeList[index]['polyPoints'];
-//   //           // cumulativeDistances =
-//   //           //     _computeCumulativeDistances(routePolylinePoints);
-//   //           double distance = route['legs'][0]['distance']['value'].toDouble();
-//   //           int duration = route['legs'][0]['duration']['value'];
-
-//   //           segmentRoutes.add(RouteSegment(
-//   //             points: polylinePoints,
-//   //             distance: distance,
-//   //             duration: duration,
-//   //             summary: route['summary'],
-//   //           ));
-
-//   //           //  Store the distance in the list
-//   //           distanceOfSegments.add({
-//   //             "$origin to $destination": "${(distance).toStringAsFixed(2)}"
-//   //           });
-//   //         }
-
-//   //         allSegments.add(segmentRoutes);
-//   //       } else {
-//   //         debugPrint("Error in segment $i: ${data['status']}");
-//   //         return;
-//   //       }
-//   //     }
-
-//   //     routeList = _combineRouteSegments(allSegments);
-//   //     if (routeList.length > 3) {
-//   //       routeList = routeList.sublist(0, 3);
-//   //     }
-
-//   //     if (routeList.isNotEmpty) {
-//   //       selectedRouteIndex = 0;
-//   //       double shortestDistance = routeList.first['distance'];
-//   //       for (int i = 1; i < routeList.length; i++) {
-//   //         if (routeList[i]['distance'] < shortestDistance) {
-//   //           shortestDistance = routeList[i]['distance'];
-//   //           // distance = shortestDistance;
-//   //           selectedRouteIndex = i;
-//   //         } else {
-//   //           //distance = shortestDistance;
-//   //         }
-//   //       }
-//   //       if (locations.length >= 2) {
-//   //         distance = await calculateTotalDistanceForMap(locations);
-//   //       }
-
-//   //       _updatePolylines();
-//   //       // if (polylines.isNotEmpty && mapController != null) {
-//   //       //   LatLngBounds bounds = _getLatLngBounds(polylines.first.points);
-//   //       //   mapController
-//   //       //       ?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-//   //       // }
-//   //     }
-
-//   //     if (isPathShow) showRoutesBottomSheet(context);
-
-//   //     debugPrint("Distance of Segments: $distanceOfSegments");
-//   //   } catch (e) {
-//   //     debugPrint("Error fetching routes: $e");
-//   //   } finally {
-//   //     isLoading = false;
-//   //     notifyListeners();
-//   //   }
-//   // }
-//   // logic to get only one route
+//   bool isRemoveRoute = false;
 //   Future<void> fetchRouteWithWaypoints(
 //     List<LatLng> locations, {
 //     bool isRemove = false,
 //     bool isPathShow = false,
 //   }) async {
-//     if (locations.length < 2) {
+//     if (locations.length < 2 && !isRemove) {
 //       debugPrint("At least two locations are required.");
 //       return;
 //     }
-
+//     if (isRemove) {
+//       isRemoveRoute = true;
+//       locations.add(locations.first);
+//       routeList.clear();
+//       resetFields();
+//     }
 //     isLoading = true;
 //     notifyListeners();
 //     routeList = [];
@@ -1512,11 +1707,8 @@
 //       // Build waypoints parameter if intermediate points exist
 //       String waypoints = "";
 //       if (locations.length > 2) {
-//         waypoints = "&waypoints=" +
-//             locations
-//                 .sublist(1, locations.length - 1)
-//                 .map((latLng) => "${latLng.latitude},${latLng.longitude}")
-//                 .join("|");
+//         waypoints =
+//             "&waypoints=${locations.sublist(1, locations.length - 1).map((latLng) => "${latLng.latitude},${latLng.longitude}").join("|")}";
 //       }
 
 //       // Single API call with all waypoints
@@ -1572,7 +1764,9 @@
 //         }
 //         if (locations.length >= 2) {
 //           distance = await calculateTotalDistanceForMap(locations);
-//           selectRoute(0);
+//           formattedDistance = formatDistance(distance, context);
+//           convertMinutesToHours(distance);
+//           // selectRoute(0);
 
 //           // notifyListeners();
 //         }
@@ -1732,21 +1926,6 @@
 //     );
 //   }
 
-//   // String formatDistance(double meters, BuildContext context) {
-//   //   final userProvider = Provider.of<UserViewModel>(context, listen: false);
-
-//   //   if (userProvider.user.userUnit == "Miles") {
-//   //     double miles = meters / 1609.34; // Convert meters to miles
-//   //     return miles > 0.1
-//   //         ? '${miles.toStringAsFixed(1)} mi'
-//   //         : '${(miles * 5280).toStringAsFixed(0)} ft';
-//   //   } else {
-//   //     double km = meters / 1000;
-
-//   //     return km > 1 ? '${km.toStringAsFixed(1)} km' : '$meters m';
-//   //   }
-//   // }
-
 //   String _formatDuration(int seconds) {
 //     final hours = seconds ~/ 3600;
 //     final minutes = (seconds % 3600) ~/ 60;
@@ -1776,11 +1955,10 @@
 //       // Add intermediate waypoints (if any)
 //       String waypoints = "";
 //       if (points.length > 2) {
-//         waypoints = "&waypoints=" +
-//             points
+//         waypoints = "&waypoints=${points
 //                 .sublist(1, points.length - 1) // Exclude first and last points
 //                 .map((point) => "${point.latitude},${point.longitude}")
-//                 .join("|");
+//                 .join("|")}";
 //       }
 
 //       // Construct the API URL

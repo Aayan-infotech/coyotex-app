@@ -4,6 +4,7 @@ import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 
 import 'package:coyotex/feature/map/data/trip_model.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -14,8 +15,8 @@ class TripAPIs extends ApiBase {
   TripAPIs() : super();
   final String apiKey = '7a698daa9a39296bb22dfac21380b303';
   Future<ApiResponseWithData<Map<String, dynamic>>> addTrip(
-      TripModel trip_model) async {
-    Map<String, dynamic> data = trip_model.toJson();
+      TripModel tripModel) async {
+    Map<String, dynamic> data = tripModel.toJson();
 
     return await CallHelper().postWithData('api/trips/', data, {});
   }
@@ -25,7 +26,7 @@ class TripAPIs extends ApiBase {
     Map<String, dynamic> data = markerData.toJson();
 
     return await CallHelper()
-        .postWithData('api/trips/${id}/add-marker', data, {});
+        .postWithData('api/trips/$id/add-marker', data, {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> updateTrip(
@@ -38,7 +39,7 @@ class TripAPIs extends ApiBase {
 
   Future<ApiResponse> deleteTrip(String id) async {
     return await CallHelper().delete(
-      'api/trips/${id}',
+      'api/trips/$id',
     );
   }
 
@@ -47,7 +48,7 @@ class TripAPIs extends ApiBase {
     Map<String, dynamic> data = {"waypoints": lstWayPoints};
 
     return await CallHelper()
-        .postWithData('api/trips/${id}/add-waypoint', data, {});
+        .postWithData('api/trips/$id/add-waypoint', data, {});
   }
 
   Future<ApiResponse> addAnimalSeenAndKilled(
@@ -60,6 +61,36 @@ class TripAPIs extends ApiBase {
       "wind_speed": '',
       "wind_degree": markerData.wind_degree,
       "wind_direction": markerData.wind_direction
+    };
+    return await CallHelper().patch(
+      'api/trips/update-animals',
+      data,
+    );
+  }
+
+  Future<ApiResponse> deleteMarker(String markerId, String tripId) async {
+    return await CallHelper().delete(
+      'api/trips/delete-marker/$tripId/$markerId',
+    );
+  }
+
+  Future<ApiResponse> deleteWayPoints(LatLng latLang, String tripId) async {
+    Map<String, dynamic> data = {
+      "latitude": latLang.latitude,
+      "longitude": latLang.longitude
+    };
+    return await CallHelper()
+        .deleteWithBody('api/trips/$tripId/remove-route-point', data);
+  }
+
+  Future<ApiResponse> isVisited(
+    String tripId,
+    String markerId,
+  ) async {
+    Map<String, dynamic> data = {
+      "tripId": tripId,
+      "markerId": markerId,
+      "is_visited": true
     };
     return await CallHelper().patch(
       'api/trips/update-animals',
@@ -99,23 +130,28 @@ class TripAPIs extends ApiBase {
     Map<String, dynamic> data = {"routePoints": points};
 
     return await CallHelper()
-        .postWithData('api/trips/${id}/add-route-point', data, {});
+        .postWithData('api/trips/$id/add-route-point', data, {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> addWeatherMarker(
-      String id, WeatherMarker weather_marker) async {
-    Map<String, dynamic> data = weather_marker.toJson();
+      String id, WeatherMarker weatherMarker) async {
+    Map<String, dynamic> data = weatherMarker.toJson();
 
     return await CallHelper()
-        .postWithData('api/trips/${id}/add-weather-marker', data, {});
+        .postWithData('api/trips/$id/add-weather-marker', data, {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> getUserTrip() async {
     return await CallHelper().getWithData('api/trips/', {});
   }
 
+  Future<ApiResponseWithData<Map<String, dynamic>>> generateGpx(
+      String tripId) async {
+    return await CallHelper().getWithData('api/trips/${tripId}/gpx', {});
+  }
+
   Future<ApiResponseWithData<Map<String, dynamic>>> getTripId(String id) async {
-    return await CallHelper().getWithData('api/trips/${id}', {});
+    return await CallHelper().getWithData('api/trips/$id', {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> getAllMarker() async {
