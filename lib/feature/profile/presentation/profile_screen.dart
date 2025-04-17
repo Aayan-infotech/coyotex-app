@@ -1,5 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
+import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/login_screen.dart';
 import 'package:coyotex/feature/auth/screens/prefrence_dstance_screen.dart';
@@ -12,14 +14,18 @@ import 'package:coyotex/feature/profile/presentation/change_password.dart';
 import 'package:coyotex/feature/profile/presentation/edit_profile.dart';
 import 'package:coyotex/feature/profile/presentation/linked_devices.dart';
 import 'package:coyotex/feature/profile/presentation/subscription_details_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:coyotex/feature/trip/presentation/trip_history.dart';
+import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 
+import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import '../../../core/utills/shared_pref.dart';
-import '../../auth/screens/passowrd_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  ProfileScreen({super.key});
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -44,11 +50,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.didChangeDependencies();
   }
 
+  bool isLoading = false;
+  void _handleGpxFile(String filePath) async {
+    setState(() {
+      isLoading = true;
+    });
+    String fileName = filePath.split('/').last;
+    // Retrieve authorization token
+    String? token = SharedPrefUtil.getValue(accessTokenPref, "") as String;
+    ;
+    if (token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Authorization token not found. Please log in again.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    var uri = Uri.parse('${CallHelper.baseUrl}gpxapi/upload-gpx');
+    var request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    try {
+      var multipartFile = await http.MultipartFile.fromPath('file', filePath);
+      request.files.add(multipartFile);
+
+      var response = await request.send();
+      final respStr = await response.stream.bytesToString();
+
+      if (response.statusCode == 201) {
+        final tripProvider = Provider.of<TripViewModel>(context, listen: false);
+        await tripProvider.getAllMarker();
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$fileName uploaded successfully!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Failed to upload $fileName: ${response.reasonPhrase}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading $fileName: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<UserViewModel>(
       builder: (context, userViewModel, child) {
-        return userViewModel.isLoading
+        return userViewModel.isLoading || isLoading
             ? const Center(
                 child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
@@ -63,21 +140,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Colors.white, fontWeight: FontWeight.w700),
                   ),
                   actions: [
+                    // Added Upload Marker Icon
                     GestureDetector(
-                        onTap: () {
-                          Navigator.of(context)
-                              .push(MaterialPageRoute(builder: (context) {
-                            return const NotificationScreen();
-                          }));
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.only(right: 10),
-                          child: Icon(
-                            Icons.notifications,
-                            color: Colors.red,
-                            size: 25,
-                          ),
-                        )),
+                      onTap: () async {
+                        final status = await Permission.storage.request();
+                        if (status.isGranted) {
+                          // Proceed with file picking
+                          final result = await FilePicker.platform.pickFiles(
+                            type: FileType.any,
+                            //allowedExtensions: ,
+                            allowMultiple: false,
+                            dialogTitle: 'Select GPX File',
+                            allowCompression: true,
+
+                            withData: false,
+                            withReadStream: true,
+                            lockParentWindow: true,
+                            // iOS-specific UTIs for GPX files
+                            onFileLoading: (FilePickerStatus status) =>
+                                print(status),
+                          );
+
+                          if (result != null && result.files.isNotEmpty) {
+                            final file = result.files.first;
+                            if (file.path != null) {
+                              _handleGpxFile(file.path!);
+                            }
+                          }
+                        } else {
+                          // Handle permission denial
+                          final status = await Permission.storage.request();
+                        }
+                      },
+                      child: const Icon(
+                        Icons.add_location_alt,
+                        color: Colors.green,
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => const NotificationScreen()));
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 10),
+                        child: Icon(
+                          Icons.notifications,
+                          color: Colors.red,
+                          size: 25,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 body: Column(
@@ -92,11 +209,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ? ClipOval(
                                   child: CachedNetworkImage(
                                     imageUrl: userViewModel.user.imageUrl,
-                                    width:
-                                        100, // Set width and height to ensure circular shape
+                                    width: 100, // Ensure circular shape
                                     height: 100,
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.grey,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.person,
+                                        size: 50,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
                                       width: 100,
                                       height: 100,
                                       decoration: const BoxDecoration(
@@ -185,11 +315,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                _buildStatCard(
-                                    'Trips',
-                                    '${userViewModel.trips.length}',
-                                    '+${userViewModel.trips.length}',
-                                    Colors.orange),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) {
+                                      return const TripsHistoryScreen();
+                                    }));
+                                  },
+                                  child: _buildStatCard(
+                                      'Trips',
+                                      '${userViewModel.trips.length}',
+                                      '+${userViewModel.trips.length}',
+                                      Colors.orange),
+                                ),
                                 _buildStatCard('Animal Seen',
                                     '${userViewModel.animalSeen}', null, null),
                                 _buildStatCard(
@@ -210,7 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icons.wb_sunny,
                             'Change Weather Preference',
                             context,
-                            WeatherPreferenceScreen(
+                            const WeatherPreferenceScreen(
                               isProfile: true,
                             ),
                           ),
@@ -244,7 +382,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icons.help_outline,
                             'Help',
                             context,
-                            FAQScreen(),
+                            const FAQScreen(),
                           ),
                           _buildListTile(
                             Icons.logout,
@@ -402,7 +540,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => LoginScreen()),
+                                        builder: (context) =>
+                                            const LoginScreen()),
                                     (route) => false,
                                   );
                                 } else {
@@ -410,7 +549,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => LoginScreen()),
+                                        builder: (context) =>
+                                            const LoginScreen()),
                                     (route) => false,
                                   );
                                 }

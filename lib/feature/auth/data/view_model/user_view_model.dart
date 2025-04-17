@@ -5,12 +5,14 @@ import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/notification.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:coyotex/core/utills/user_context_data.dart';
 import 'package:coyotex/feature/auth/data/model/plans.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
 import 'package:coyotex/feature/auth/data/model/user_model.dart';
-import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
+import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class UserViewModel extends ChangeNotifier {
   final LoginAPIs _loginAPIs = LoginAPIs();
@@ -19,7 +21,7 @@ class UserViewModel extends ChangeNotifier {
   bool isLoading = false;
   String errorMessage = '';
   List<TripModel> trips = [];
-  TripAPIs _tripAPIs = TripAPIs();
+  final TripAPIs _tripAPIs = TripAPIs();
 
   Map<String, dynamic>? userData;
   List<Plan> lstPlan = [];
@@ -43,6 +45,7 @@ class UserViewModel extends ChangeNotifier {
 
   Future<ApiResponseWithData> login(
       String email, String password, BuildContext context) async {
+    final tripProvider = Provider.of<TripViewModel>(context, listen: false);
     _setLoading(true);
     try {
       final response = await _loginAPIs.login(email, password);
@@ -52,13 +55,10 @@ class UserViewModel extends ChangeNotifier {
             refreshTokenPref, response.data["refreshToken"]);
 
         NotificationService.getDeviceToken();
-        await getUser();
+        await UserContextData.setCurrentUserAndFetchUserData(context);
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-          (route) => false,
-        );
+        // await getUser();
+        // await tripProvider.getAllMarker();
 
         return response;
       } else {
@@ -115,6 +115,20 @@ class UserViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     var response = await _tripAPIs.getUserTrip();
+    if (response.success) {
+      trips = (response.data["data"] as List).map((item) {
+        return TripModel.fromJson(item);
+      }).toList();
+      print(trips);
+    }
+    notifyListeners();
+    isLoading = false;
+  }
+
+  getSubscriptionDetails() async {
+    isLoading = true;
+    notifyListeners();
+    var response = await _loginAPIs.getSubscriptionDetails();
     if (response.success) {
       trips = (response.data["data"] as List).map((item) {
         return TripModel.fromJson(item);
@@ -222,7 +236,6 @@ class UserViewModel extends ChangeNotifier {
     try {
       final response = await _loginAPIs.getSubscription();
       if (response.success) {
-        // Parse subscriptions as a list of Plan objects
         lstPlan = (response.data["subscriptions"] as List<dynamic>)
             .map((item) => Plan.fromJson(item))
             .toList();

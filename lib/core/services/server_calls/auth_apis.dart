@@ -1,9 +1,11 @@
 import 'package:coyotex/core/services/api_base.dart';
 import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/services/model/notification_model.dart';
+import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class LoginAPIs extends ApiBase {
   LoginAPIs() : super();
@@ -15,7 +17,22 @@ class LoginAPIs extends ApiBase {
       'password': password,
     };
 
-    return await CallHelper().postWithData('api/auth/login', data, {});
+    return await CallHelper().postWithData('auth/login', data, {});
+  }
+
+  Future<ApiResponseWithData<Map<String, dynamic>>> dayStatus(
+      LatLng latlang, WeatherResponse weather) async {
+    Map<String, dynamic> data = {
+      "latitude": latlang.latitude,
+      "longitude": latlang.longitude,
+      "windDirection": weather.wind.deg.toString(),
+      "temperature": weather.main.temp,
+      "humidity": weather.main.humidity,
+      "pressure": weather.main.pressure
+    };
+
+    return await CallHelper()
+        .postWithData('trips/animal-activity-prediction', data, {});
   }
 
   Future<ApiResponse> updateProfile(String name, String number, String userUnit,
@@ -28,7 +45,7 @@ class LoginAPIs extends ApiBase {
     };
 
     return await CallHelper().patch(
-      'api/update-details',
+      'update-details',
       data,
     );
   }
@@ -37,7 +54,7 @@ class LoginAPIs extends ApiBase {
     Map<String, String> data = {};
 
     return await CallHelper().getWithData(
-      'api/subscriptions/active',
+      'subscriptions/active',
       data,
     );
   }
@@ -56,7 +73,7 @@ class LoginAPIs extends ApiBase {
       "confirmPassword": password,
       "referralCode": referralCode
     };
-    return await CallHelper().postWithData('api/auth/signup', data, {});
+    return await CallHelper().postWithData('auth/signup', data, {});
   }
 
   //
@@ -64,7 +81,7 @@ class LoginAPIs extends ApiBase {
     Map<String, String> data = {
       'refreshToken': refreshToken,
     };
-    return await CallHelper().post('api/auth/refresh-token', data);
+    return await CallHelper().post('auth/refresh-token', data);
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> verifyOTP(
@@ -73,7 +90,7 @@ class LoginAPIs extends ApiBase {
       'email': email,
       'otp': otp,
     };
-    return await CallHelper().postWithData('api/auth/verify-otp', data, {});
+    return await CallHelper().postWithData('auth/verify-otp', data, {});
   }
 
   Future<ApiResponse> resetPassword(
@@ -85,7 +102,7 @@ class LoginAPIs extends ApiBase {
       "confirmPassword": newPassword
     };
     return await CallHelper().patch(
-      'api/auth/reset-password',
+      'auth/reset-password',
       data,
     );
   }
@@ -96,7 +113,7 @@ class LoginAPIs extends ApiBase {
       'token': token,
     };
 
-    return await CallHelper().post('api/auth/reset-password', data);
+    return await CallHelper().post('auth/reset-password', data);
   }
 
   Future<ApiResponse> updateUserFCM(
@@ -106,7 +123,7 @@ class LoginAPIs extends ApiBase {
       'fcmToken': token,
     };
 
-    return await CallHelper().post('api/users/update-fcm', data);
+    return await CallHelper().post('users/update-fcm', data);
   }
 
   Future<ApiResponse> sendUserNotification(
@@ -133,7 +150,7 @@ class LoginAPIs extends ApiBase {
 // }
     print(data);
 
-    return await CallHelper().post('api/notifications/send', data);
+    return await CallHelper().post('notifications/send', data);
   }
 
   Future<ApiResponse> logout() async {
@@ -144,7 +161,7 @@ class LoginAPIs extends ApiBase {
     };
 
     var res = await CallHelper().post(
-      'api/auth/logout',
+      'auth/logout',
       data,
     );
     return res;
@@ -155,7 +172,7 @@ class LoginAPIs extends ApiBase {
       'email': email,
     };
 
-    return await CallHelper().post('api/auth/forgot-password', data);
+    return await CallHelper().post('auth/forgot-password', data);
   }
 
   Future<ApiResponse> changePassword(
@@ -166,7 +183,7 @@ class LoginAPIs extends ApiBase {
       "confirmNewPassword": confirmNewPassword,
     };
     return await CallHelper().patch(
-      'api/auth/change-password',
+      'auth/change-password',
       data,
     );
   }
@@ -175,7 +192,7 @@ class LoginAPIs extends ApiBase {
     Map<String, String> data = {};
 
     return await CallHelper().getWithData(
-      'api/notifications',
+      'notifications',
       data,
     );
   }
@@ -191,7 +208,7 @@ class LoginAPIs extends ApiBase {
 
     prefrences.toJson();
     return await CallHelper().patch(
-      'api/update-preferences',
+      'update-preferences',
       data,
     );
   }
@@ -199,7 +216,7 @@ class LoginAPIs extends ApiBase {
   Future<ApiResponseWithData> getUserById() async {
     Map<String, String> data = {};
 
-    return await CallHelper().getWithData('api/userById', data);
+    return await CallHelper().getWithData('userById', data);
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> createPaymentIntent(
@@ -210,7 +227,7 @@ class LoginAPIs extends ApiBase {
     };
 
     return await CallHelper().postWithData(
-      'api/stripe/create-payment-intent',
+      'stripe/create-payment-intent',
       data,
       {},
     );
@@ -222,7 +239,7 @@ class LoginAPIs extends ApiBase {
     Map<String, String> data = {"paymentId": paymentId};
 
     return await CallHelper().postWithData(
-      'api/stripe/payment-success',
+      'stripe/payment-success',
       data,
       {},
     );
@@ -233,7 +250,15 @@ class LoginAPIs extends ApiBase {
     Map<String, String> data = {};
 
     return await CallHelper().getWithData(
-      'api/trips/trip/animal-stats',
+      'trips/trip/animal-stats',
+      data,
+    );
+  }
+  Future<ApiResponseWithData<Map<String, dynamic>>> getSubscriptionDetails() async {
+    Map<String, String> data = {};
+
+    return await CallHelper().getWithData(
+      'users/user-subscription',
       data,
     );
   }

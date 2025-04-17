@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
+  
   static final FlutterLocalNotificationsPlugin _flutterLocalNotificationPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -15,7 +16,11 @@ class NotificationService {
         const AndroidInitializationSettings("@mipmap/ic_launcher");
     var initializationSettings = InitializationSettings(android: androidInit);
     _flutterLocalNotificationPlugin.initialize(initializationSettings,
-        onDidReceiveNotificationResponse: (details) async {});
+        onDidReceiveNotificationResponse: (details) async {
+          // Navigator.of(context).push(MaterialPageRoute(builder: (context){
+          //   return NotificationScreen();
+          // }));
+        });
   }
 
   // static showNotification(RemoteMessage event) async {
@@ -116,7 +121,7 @@ class NotificationService {
       );
     } else if (Platform.isIOS || Platform.isMacOS) {
       // iOS/macOS-specific notification details
-      var darwinNotificationDetails = DarwinNotificationDetails(
+      var darwinNotificationDetails = const DarwinNotificationDetails(
         presentSound: true,
         presentAlert: true,
         presentBadge: true,

@@ -5,7 +5,7 @@ class FilterDialog extends StatefulWidget {
   final List<String> selectedDirections;
   final Function(List<String>) onApply;
 
-  FilterDialog({
+  const FilterDialog({super.key, 
     required this.windDirections,
     required this.selectedDirections,
     required this.onApply,
@@ -17,6 +17,7 @@ class FilterDialog extends StatefulWidget {
 
 class _FilterDialogState extends State<FilterDialog> {
   late List<String> tempSelected;
+  bool isApplied = false;
 
   @override
   void initState() {
@@ -33,15 +34,15 @@ class _FilterDialogState extends State<FilterDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Filter by Wind Direction',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 16),
-            Container(
+            const SizedBox(height: 16),
+            SizedBox(
               height: 300,
               child: Scrollbar(
                 child: ListView.builder(
@@ -52,7 +53,7 @@ class _FilterDialogState extends State<FilterDialog> {
                     return CheckboxListTile(
                       title: Text(
                         direction,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -73,35 +74,49 @@ class _FilterDialogState extends State<FilterDialog> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(10), // Border radius set to 10
                     ),
                   ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontSize: 14),
+                  ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 50),
                 ElevatedButton(
                   onPressed: () {
                     widget.onApply(tempSelected);
-                    Navigator.pop(context);
+                    setState(() {
+                      isApplied = true;
+                    });
+                    Future.delayed(const Duration(milliseconds: 500), () {
+                      Navigator.pop(context);
+                    });
                   },
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    backgroundColor: isApplied
+                        ? Colors.green
+                        : Theme.of(context).primaryColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Text(
-                    'Apply Filters',
-                    style: TextStyle(fontSize: 14),
+                  child: const Text(
+                    'Apply',
+                    style: TextStyle(fontSize: 14, color: Colors.white),
                   ),
                 ),
               ],

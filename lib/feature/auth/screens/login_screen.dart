@@ -6,6 +6,7 @@ import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/sign_up_screen.dart';
+import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:coyotex/utils/validation.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +14,16 @@ import 'package:provider/provider.dart';
 
 import '../../../utils/lower_case_text_formatter.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _nameController = TextEditingController();
+
   final TextEditingController _passwordController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
@@ -29,11 +36,11 @@ class LoginScreen extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.0),
           ),
-          title: Row(
+          title: const Row(
             children: [
-              const Icon(Icons.error, color: Colors.red),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 8),
+              Text(
                 "Error",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -66,6 +73,8 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
+  bool isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,7 +85,7 @@ class LoginScreen extends StatelessWidget {
           child: SingleChildScrollView(
             child: Consumer<UserViewModel>(
               builder: (context, userProvider, child) {
-                return userProvider.isLoading
+                return isLoading
                     ? const Center(
                         child: CircularProgressIndicator.adaptive(
                         backgroundColor: Colors.white,
@@ -128,6 +137,9 @@ class LoginScreen extends StatelessWidget {
                               controller: _passwordController,
                               isPassword: true,
                               labelText: "Password",
+                              onChanged: (value) {
+                                if (value.length >= 5) setState(() {});
+                              },
                               validator: (value) => validatePassword(value),
                             ),
                             const SizedBox(height: 5),
@@ -149,9 +161,13 @@ class LoginScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 30),
                             BrandedPrimaryButton(
-                              isEnabled: true,
+                              isEnabled: _nameController.text.isNotEmpty &&
+                                  _passwordController.text.isNotEmpty,
                               name: "Login",
                               onPressed: () async {
+                                setState(() {
+                                  isLoading = true;
+                                });
                                 if (_formKey.currentState!.validate()) {
                                   final username = _nameController.text;
                                   final password = _passwordController.text;
@@ -161,11 +177,19 @@ class LoginScreen extends StatelessWidget {
 
                                   if (response.success) {
                                     SharedPrefUtil.setValue(isLoginPref, true);
-                                   
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => const HomeScreen()),
+                                      (route) => false,
+                                    );
                                   } else {
                                     AppDialog.showErrorDialog(
                                         context, response.message, () {
                                       Navigator.of(context).pop();
+                                    });
+                                    setState(() {
+                                      isLoading = false;
                                     });
                                   }
                                 }
@@ -179,7 +203,7 @@ class LoginScreen extends StatelessWidget {
                               onPressed: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(builder: (context) {
-                                    return SignupScreen();
+                                    return const SignupScreen();
                                   }),
                                 );
                               },

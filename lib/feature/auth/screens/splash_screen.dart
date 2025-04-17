@@ -34,20 +34,17 @@ class _SplashScreenState extends State<SplashScreen> {
           // );
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => WelcomeScreen()),
+            MaterialPageRoute(builder: (context) => const WelcomeScreen()),
             (route) => false,
           );
         });
       } else {
         await UserContextData.setCurrentUserAndFetchUserData(context);
         Future.delayed(const Duration(seconds: 3), () {
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => HomeScreen()),
-          // );
+         
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
             (route) => false,
           );
         });

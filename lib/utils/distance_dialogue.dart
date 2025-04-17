@@ -1,16 +1,18 @@
 import 'dart:convert';
 import 'package:coyotex/feature/map/data/trip_model.dart';
+import 'package:coyotex/feature/map/view_model/map_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:geolocator/geolocator.dart';
 
 class DistanceDialogue extends StatefulWidget {
   final List<MarkerData> markers;
+  MapProvider provider;
 
-  const DistanceDialogue({
-    Key? key,
+  DistanceDialogue({
+    super.key,
+    required this.provider,
     required this.markers,
-  }) : super(key: key);
+  });
 
   @override
   _DistanceDialogueState createState() => _DistanceDialogueState();
@@ -69,7 +71,7 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
       if (data['routes'].isNotEmpty) {
         double distanceMeters =
             data['routes'][0]['legs'][0]['distance']['value'].toDouble();
-        return distanceMeters / 1000; // Convert meters to km
+        return distanceMeters; // Convert meters to km
       }
     }
     return 0.0;
@@ -78,6 +80,7 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
   @override
   Widget build(BuildContext context) {
     final markers = widget.markers;
+    // final provider = Provider.of<MapProvider>(context, listen: false);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -93,7 +96,7 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
         ],
       ),
       child: isLoading
-          ? CircularProgressIndicator.adaptive()
+          ? const CircularProgressIndicator.adaptive()
           : Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,15 +131,18 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
                     ),
                   )
                 else
-                  _buildRouteVisualization(markers),
+                  _buildRouteVisualization(markers, widget.provider),
                 const SizedBox(height: 16),
-                _buildTotalSection(),
+                _buildTotalSection(widget.provider),
               ],
             ),
     );
   }
 
-  Widget _buildRouteVisualization(List<MarkerData> markers) {
+  Widget _buildRouteVisualization(
+    List<MarkerData> markers,
+    MapProvider provider,
+  ) {
     return SizedBox(
       height: 120,
       child: ListView.builder(
@@ -146,16 +152,18 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
         itemBuilder: (context, index) {
           int markerIndex = index ~/ 2;
           if (index.isEven) {
-            return _buildMarkerPoint(markerIndex, markers[markerIndex]);
+            return _buildMarkerPoint(
+                markerIndex, markers[markerIndex], provider);
           } else {
-            return _buildConnectionLine(segmentDistances[markerIndex]);
+            return _buildConnectionLine(
+                segmentDistances[markerIndex], provider);
           }
         },
       ),
     );
   }
 
-  Widget _buildMarkerPoint(int index, MarkerData marker) {
+  Widget _buildMarkerPoint(int index, MarkerData marker, MapProvider provider) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -196,7 +204,7 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
     );
   }
 
-  Widget _buildConnectionLine(double distance) {
+  Widget _buildConnectionLine(double distance, MapProvider provider) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Column(
@@ -215,7 +223,8 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              "${distance.toStringAsFixed(2)} km",
+              provider.formatDistance(distance, context),
+              // "${distance.toStringAsFixed(2)} km",
               style: TextStyle(
                 color: _accentColor,
                 fontSize: 12,
@@ -228,7 +237,7 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
     );
   }
 
-  Widget _buildTotalSection() {
+  Widget _buildTotalSection(MapProvider provider) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -245,7 +254,8 @@ class _DistanceDialogueState extends State<DistanceDialogue> {
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
           Text(
-            "${totalDistance.toStringAsFixed(2)} km",
+            provider.formatDistance(totalDistance, context),
+            // "${totalDistance.toStringAsFixed(2)} km",
             style: TextStyle(
                 color: _accentColor, fontSize: 18, fontWeight: FontWeight.bold),
           ),

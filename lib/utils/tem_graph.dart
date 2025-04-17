@@ -7,7 +7,6 @@ class TemperatureChart extends StatelessWidget {
 
   TemperatureChart({super.key, required this.markers});
 
-  // Define fixed temperature ranges
   final List<String> temperatureRanges = [
     "-20 to -10",
     "-10 to 0",
@@ -18,7 +17,6 @@ class TemperatureChart extends StatelessWidget {
     "40+"
   ];
 
-  // Function to get the range a temperature falls into
   String getTemperatureRange(double temperature) {
     if (temperature < -10) return "-20 to -10";
     if (temperature < 0) return "-10 to 0";
@@ -31,19 +29,9 @@ class TemperatureChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize maps with all temperature ranges
-    final killedByTemp = Map<String, double>.fromIterable(
-      temperatureRanges,
-      key: (range) => range,
-      value: (_) => 0.0,
-    );
-    final seenByTemp = Map<String, double>.fromIterable(
-      temperatureRanges,
-      key: (range) => range,
-      value: (_) => 0.0,
-    );
+    final killedByTemp = {for (var range in temperatureRanges) range: 0.0};
+    final seenByTemp = {for (var range in temperatureRanges) range: 0.0};
 
-    // Aggregate data based on temperature ranges
     for (final marker in markers) {
       String range = getTemperatureRange(marker.temperature);
 
@@ -57,7 +45,6 @@ class TemperatureChart extends StatelessWidget {
       }
     }
 
-    // Convert to JavaScript-compatible format
     final jsCategories = temperatureRanges.map((t) => "'$t'").join(',');
     final killedData = temperatureRanges.map((t) => killedByTemp[t]).join(',');
     final seenData = temperatureRanges.map((t) => seenByTemp[t]).join(',');
@@ -65,7 +52,7 @@ class TemperatureChart extends StatelessWidget {
     final chartData = '''
     {
       chart: {
-        type: 'column',
+        type: 'line',
         backgroundColor: 'transparent'
       },
       title: {
@@ -77,7 +64,7 @@ class TemperatureChart extends StatelessWidget {
       xAxis: {
         categories: [$jsCategories],
         title: {
-          text: 'Temperature Range (°C)',
+          text: 'Temperature Range (°F)',
           style: {
             color: '#ffffff'
           }
@@ -103,13 +90,12 @@ class TemperatureChart extends StatelessWidget {
         }
       },
       plotOptions: {
-        column: {
-          grouping: true,
-          borderRadius: 3,
+        line: {
           dataLabels: {
             enabled: true,
             color: '#ffffff'
-          }
+          },
+          enableMouseTracking: true
         }
       },
       legend: {
@@ -120,11 +106,11 @@ class TemperatureChart extends StatelessWidget {
       series: [{
         name: 'Killed',
         data: [$killedData],
-        color: '#FF0000' // Explicitly setting red for killed
+        color: '#FF0000'
       }, {
         name: 'Seen',
         data: [$seenData],
-        color: '#00FF00' // Explicitly setting green for seen
+        color: '#00FF00'
       }]
     }
     ''';

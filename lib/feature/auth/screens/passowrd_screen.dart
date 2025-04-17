@@ -2,7 +2,6 @@ import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/branded_text_filed.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
-import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/login_screen.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:flutter/material.dart';
@@ -134,7 +133,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
                                   Navigator.of(context).pushReplacement(
                                     MaterialPageRoute(
                                         builder: (_) =>
-                                            LoginScreen()), // Redirect to login screen
+                                            const LoginScreen()), // Redirect to login screen
                                   );
                                 });
                                 // Show a success dialog

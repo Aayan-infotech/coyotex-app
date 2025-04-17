@@ -7,10 +7,10 @@ class DistanceDialogue extends StatefulWidget {
   final MapProvider mapProvider;
 
   const DistanceDialogue({
-    Key? key,
+    super.key,
     required this.isLocation,
     required this.mapProvider,
-  }) : super(key: key);
+  });
 
   @override
   _DistanceDialogueState createState() => _DistanceDialogueState();

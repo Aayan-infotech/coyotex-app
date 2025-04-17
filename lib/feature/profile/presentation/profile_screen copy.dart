@@ -19,7 +19,7 @@ import '../../../core/utills/shared_pref.dart';
 import '../../auth/screens/passowrd_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  ProfileScreen({super.key});
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -50,7 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Consumer<UserViewModel>(
       builder: (context, userViewModel, child) {
         return userViewModel.isLoading
-            ? Center(
+            ? const Center(
                 child: CircularProgressIndicator.adaptive(
                 backgroundColor: Colors.white,
               ))
@@ -101,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     placeholder: (context, url) => Container(
                                       width: 100,
                                       height: 100,
-                                      decoration: BoxDecoration(
+                                      decoration: const BoxDecoration(
                                         color: Colors.grey,
                                         shape: BoxShape.circle,
                                       ),
@@ -212,7 +212,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icons.wb_sunny,
                             'Change Weather Preference',
                             context,
-                            WeatherPreferenceScreen(
+                            const WeatherPreferenceScreen(
                               isProfile: true,
                             ),
                           ),
@@ -246,7 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icons.help_outline,
                             'Help',
                             context,
-                            FAQScreen(),
+                            const FAQScreen(),
                           ),
                           _buildListTile(
                             Icons.logout,
@@ -404,7 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => LoginScreen()),
+                                        builder: (context) => const LoginScreen()),
                                     (route) => false,
                                   );
                                 } else {
@@ -412,7 +412,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Navigator.pushAndRemoveUntil(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => LoginScreen()),
+                                        builder: (context) => const LoginScreen()),
                                     (route) => false,
                                   );
                                 }

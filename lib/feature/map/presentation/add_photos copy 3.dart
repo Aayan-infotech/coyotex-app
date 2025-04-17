@@ -1,3 +1,4 @@
+import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
@@ -9,13 +10,11 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:mime/mime.dart';
-import 'package:path/path.dart';
 import 'package:video_player/video_player.dart';
 
 class AddPhotoScreen extends StatefulWidget {
   MarkerData? markerData;
-  AddPhotoScreen({this.markerData, Key? key}) : super(key: key);
+  AddPhotoScreen({this.markerData, super.key});
 
   @override
   State<AddPhotoScreen> createState() => _AddPhotoScreenState();
@@ -23,7 +22,7 @@ class AddPhotoScreen extends StatefulWidget {
 
 class _AddPhotoScreenState extends State<AddPhotoScreen> {
   final ImagePicker _picker = ImagePicker();
-  List<File> _mediaFiles = [];
+  final List<File> _mediaFiles = [];
   bool isLoading = false;
   VideoPlayerController? _controller;
   bool isVideo = false;
@@ -253,7 +252,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     String tripId = provider.selectedTripModel.id;
     String markerId = selectedMarkerId!;
 
-    final uri = Uri.parse('http://44.196.64.110:5647/api/trips/upload-media');
+    final uri = Uri.parse('${CallHelper.baseUrl}trips/upload-media');
     final request = http.MultipartRequest('POST', uri);
     request.headers['Authorization'] = 'Bearer $accessToken';
 
@@ -389,11 +388,11 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                             horizontal: 12), // Padding for inner content
                         decoration: BoxDecoration(
                           border: Border.all(
-                              color: Color.fromRGBO(166, 166, 166, 1),
+                              color: const Color.fromRGBO(166, 166, 166, 1),
                               width: 1), // All-side border
                           borderRadius:
                               BorderRadius.circular(8), // Rounded corners
-                          color: Color.fromRGBO(
+                          color: const Color.fromRGBO(
                               255, 255, 255, 0.2), // Background color
                         ),
                         child: DropdownButtonHideUnderline(
@@ -403,7 +402,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                             hint: const Text('Select Marker'),
                             isExpanded:
                                 true, // Makes it take full width of the container
-                            dropdownColor: Color.fromRGBO(
+                            dropdownColor: const Color.fromRGBO(
                                 255, 255, 255, .8), // Fill color for dropdown
                             onChanged: (String? newValue) {
                               setState(() {
@@ -434,7 +433,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                           width: double.infinity,
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: Color.fromRGBO(166, 166, 166, 1)),
+                                color: const Color.fromRGBO(166, 166, 166, 1)),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: _mediaFiles.isEmpty
@@ -510,9 +509,9 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
                                   color: Color.fromRGBO(166, 166, 166, 1),
                                 ),
                               ),
-                              TextSpan(
+                              const TextSpan(
                                 text: "/3)",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   color: Color.fromRGBO(166, 166, 166, 1),
                                 ),
@@ -615,7 +614,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
   }
 
   void _showFinishWarningDialog(
-      MapProvider map_provider, BuildContext context) {
+      MapProvider mapProvider, BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -631,7 +630,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
             ),
             TextButton(
               onPressed: () {
-                map_provider.resetFields();
+                mapProvider.resetFields();
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
               },

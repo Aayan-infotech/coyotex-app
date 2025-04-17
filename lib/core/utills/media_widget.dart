@@ -1,10 +1,13 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 class MediaItemWidget extends StatefulWidget {
   final String url;
+  bool isAddPhotoScreen;
 
-  const MediaItemWidget({super.key, required this.url});
+  MediaItemWidget(
+      {super.key, this.isAddPhotoScreen = false, required this.url});
 
   @override
   State<MediaItemWidget> createState() => _MediaItemWidgetState();
@@ -66,20 +69,27 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: SizedBox(
-          width: 200, // Changed from 120
-          height: 200, // Changed from 120
-          child: Image.network(
-            widget.url,
+          width: 200,
+          height: 200,
+          child: CachedNetworkImage(
+            imageUrl: widget.url,
             fit: BoxFit.cover,
+            placeholder: (context, url) => const Center(
+              child: CircularProgressIndicator(),
+            ),
+            errorWidget: (context, url, error) => const Icon(
+              Icons.error,
+              color: Colors.red,
+            ),
           ),
         ),
       );
     }
 
     if (_controller == null || !_controller!.value.isInitialized) {
-      return const Center(
+      return Center(
           child: CircularProgressIndicator.adaptive(
-        backgroundColor: Colors.white,
+        backgroundColor: widget.isAddPhotoScreen ? Colors.black : Colors.white,
       ));
     }
 
@@ -105,7 +115,7 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
                     color: Colors.black54,
                     shape: BoxShape.circle,
                   ),
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
                     _isPlaying ? Icons.pause : Icons.play_arrow,
                     color: Colors.white,

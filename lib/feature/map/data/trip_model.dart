@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class TripModel {
@@ -95,17 +97,22 @@ class MarkerData {
   final String icon;
   final String markerType;
   int duration;
+  bool isVisited;
   String animalKilled;
   String animalSeen;
   int wind_degree;
   String wind_direction;
   List<dynamic>? media;
   double temperature;
+  int humidity;
+  double pressure;
+  double windSpeed;
 
   MarkerData(
       {required this.id,
       required this.position,
       required this.title,
+      required this.isVisited,
       required this.snippet,
       required this.icon,
       required this.markerType,
@@ -114,12 +121,16 @@ class MarkerData {
       required this.animalSeen,
       required this.wind_degree,
       required this.wind_direction,
-      this.temperature=0.0,
+      this.temperature = 0.0,
+      this.humidity = 0,
+      this.pressure = 0.0,
+      this.windSpeed = 0.0,
       this.media});
 
   factory MarkerData.fromJson(Map<String, dynamic> json) {
     return MarkerData(
-      temperature: json["tem"]??0.0,
+        isVisited: bool.parse(json["is_visited"] ?? "false") ?? false,
+        temperature: json["tem"] ?? 0.0,
         animalKilled: json["animalKilled"] ?? '0',
         animalSeen: json["animalSeen"] ?? '0',
         wind_degree: 0, //json["wind_degree"] ?? '',
@@ -133,7 +144,6 @@ class MarkerData {
         duration: json['timeDurations'] ?? 0,
         media: json["mediaFiles"] ?? []);
   }
-  
 
   Map<String, dynamic> toJson() {
     return {

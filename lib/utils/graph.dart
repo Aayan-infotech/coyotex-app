@@ -21,16 +21,8 @@ class WindDirectionChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Initialize maps with all wind directions
-    final killedByWind = Map<String, double>.fromIterable(
-      _windDirections,
-      key: (dir) => dir,
-      value: (_) => 0.0,
-    );
-    final seenByWind = Map<String, double>.fromIterable(
-      _windDirections,
-      key: (dir) => dir,
-      value: (_) => 0.0,
-    );
+    final killedByWind = {for (var dir in _windDirections) dir: 0.0};
+    final seenByWind = {for (var dir in _windDirections) dir: 0.0};
 
     // Aggregate data
     for (final marker in markers) {
@@ -52,7 +44,7 @@ class WindDirectionChart extends StatelessWidget {
     final chartData = '''
     {
       chart: {
-        type: 'column',
+        type: 'line',
         backgroundColor: 'transparent'
       },
       title: {
@@ -90,13 +82,12 @@ class WindDirectionChart extends StatelessWidget {
         }
       },
       plotOptions: {
-        column: {
-          grouping: true,
-          borderRadius: 3,
+        line: {
           dataLabels: {
             enabled: true,
             color: '#ffffff'
-          }
+          },
+          enableMouseTracking: true
         }
       },
       legend: {

@@ -1,3 +1,4 @@
+import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';
 import 'package:coyotex/feature/homeScreen/screens/pages/home_page.dart';
 import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/map.dart';
@@ -8,46 +9,29 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
-  late Key _mapKey; // Key to force rebuild MapScreen
-
-  @override
-  void initState() {
-    super.initState();
-    _mapKey = UniqueKey(); // Initialize key
-  }
-
-  List<Widget> get _pages => [
-        HomePage(),
-        MapScreen(key: _mapKey), // Use the key here
-        TripsHistoryScreen(),
-        ProfileScreen(),
-      ];
-
-  void _onItemTapped(int index) {
-    if (index == 1) {
-      // Check if Map tab is selected
-      setState(() {
-        _mapKey = UniqueKey(); // Generate new key to rebuild MapScreen
-      });
-    }
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final indexProvider = Provider.of<IndexProvider>(context);
+
+    List<Widget> pages = [
+      const HomePage(),
+      MapScreen(key: indexProvider.mapKey),
+      const TripsHistoryScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
+        index: indexProvider.currentIndex,
+        children: pages,
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -59,8 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: BottomNavigationBar(
           backgroundColor: Colors.transparent,
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
+          currentIndex: indexProvider.currentIndex,
+          onTap: (index) => indexProvider.updateIndex(index),
           type: BottomNavigationBarType.fixed,
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(

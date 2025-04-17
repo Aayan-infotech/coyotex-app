@@ -6,10 +6,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class CustomDialog extends StatefulWidget {
   final bool isLocation;
-  MapProvider mapProvider;
+  final MapProvider mapProvider;
 
-  CustomDialog({Key? key, required this.isLocation, required this.mapProvider})
-      : super(key: key);
+  const CustomDialog({
+    super.key,
+    required this.isLocation,
+    required this.mapProvider,
+  });
 
   @override
   _CustomDialogState createState() => _CustomDialogState();
@@ -36,36 +39,79 @@ class _CustomDialogState extends State<CustomDialog> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      "Enter Animal Details",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Animal Details",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.red),
+                          onPressed: () => Navigator.pop(context),
+                        )
+                      ],
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: animalSeenController,
+                      enabled: markerData.isVisited,
                       decoration: InputDecoration(
                         labelText: "Animals Seen",
-                        prefixIcon: const Icon(Icons.remove_red_eye_outlined),
+                        labelStyle: const TextStyle(color: Colors.black54),
+                        prefixIcon: Icon(Icons.remove_red_eye_outlined,
+                            color: markerData.isVisited
+                                ? Colors.red
+                                : Colors.grey),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
                       ),
                       keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.black),
                     ),
+                    if (!markerData.isVisited)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline,
+                                color: Colors.red, size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              "Visit location to enable editing",
+                              style: TextStyle(color: Colors.red, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: animalKilledController,
+                      enabled: markerData.isVisited,
                       decoration: InputDecoration(
                         labelText: "Animals Killed",
-                        prefixIcon: const Icon(Icons.warning_amber_rounded),
+                        labelStyle: const TextStyle(color: Colors.black54),
+                        prefixIcon: Icon(Icons.warning_amber_rounded,
+                            color: markerData.isVisited
+                                ? Colors.red
+                                : Colors.grey),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        enabledBorder: const OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red),
+                        ),
                       ),
                       keyboardType: TextInputType.number,
+                      style: const TextStyle(color: Colors.black),
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -82,17 +128,47 @@ class _CustomDialogState extends State<CustomDialog> {
                           ),
                         ),
                         isLoading
-                            ? const CircularProgressIndicator()
+                            ? const CircularProgressIndicator(color: Colors.red)
                             : ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
+                                  backgroundColor: Colors.red,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                                 onPressed: () async {
-                                  setState(() => isLoading = true);
+                                  if (!markerData.isVisited) {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        icon: const Icon(
+                                            Icons.warning_amber_rounded,
+                                            color: Colors.red,
+                                            size: 40),
+                                        title: const Text(
+                                            "Location Not Visited",
+                                            style: TextStyle(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold)),
+                                        content: const Text(
+                                            "You must visit this location before saving animal details.",
+                                            style: TextStyle(
+                                                color: Colors.black54)),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text("OK",
+                                                style: TextStyle(
+                                                    color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    return;
+                                  }
 
+                                  setState(() => isLoading = true);
                                   markerData.animalKilled =
                                       animalKilledController.text;
                                   markerData.animalSeen =
@@ -106,7 +182,8 @@ class _CustomDialogState extends State<CustomDialog> {
                                 child: const Text("Save",
                                     style: TextStyle(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.bold)),
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white)),
                               ),
                       ],
                     ),
@@ -127,7 +204,7 @@ class _CustomDialogState extends State<CustomDialog> {
 
     if (response.success) {
       widget.mapProvider.getTrips();
-       setState(() => isLoading = false);
+      setState(() => isLoading = false);
       Navigator.pop(context);
     } else {
       setState(() => isLoading = false);
@@ -141,68 +218,85 @@ class _CustomDialogState extends State<CustomDialog> {
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            spreadRadius: 2,
+          )
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            widget.isLocation ? "Animals Details" : "Stop Duration",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                widget.isLocation ? "Animal Sightings" : "Stop Durations",
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.red),
+                onPressed: () => Navigator.pop(context),
+              )
+            ],
           ),
           const SizedBox(height: 10),
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.4,
             child: ListView.separated(
               shrinkWrap: true,
-              itemCount: widget.mapProvider.markers.length,
-              separatorBuilder: (_, __) => const Divider(),
+              itemCount: widget.mapProvider.selectedTripModel.markers.length,
+              separatorBuilder: (_, __) =>
+                  Divider(color: Colors.red.withOpacity(0.2)),
               itemBuilder: (context, index) {
-                MarkerData markerData = widget.mapProvider.markers[index];
+                MarkerData markerData = widget.mapProvider.selectedTripModel.markers[index];
                 return widget.isLocation
                     ? ListTile(
+                        leading: Icon(
+                          markerData.isVisited
+                              ? Icons.location_on
+                              : Icons.location_off,
+                          color:
+                              markerData.isVisited ? Colors.red : Colors.grey,
+                        ),
                         title: Text(
                           markerData.snippet,
                           style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Column(
-                              children: [
-                                const Text("Killed",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14)),
-                                Text(markerData.animalKilled,
-                                    style: const TextStyle(fontSize: 14)),
-                              ],
-                            ),
+                            _buildCountColumn(
+                                "Killed", markerData.animalKilled),
                             const SizedBox(width: 10),
-                            Column(
-                              children: [
-                                const Text("Seen",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14)),
-                                Text(markerData.animalSeen,
-                                    style: TextStyle(fontSize: 14)),
-                              ],
-                            ),
+                            _buildCountColumn("Seen", markerData.animalSeen),
                           ],
                         ),
                         onTap: () => _showAnimalDialog(context, markerData),
                       )
                     : ListTile(
+                        leading: const Icon(Icons.timer, color: Colors.red),
                         title: Text(
                           markerData.snippet,
                           style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black),
                         ),
                         trailing: Text(
                           "${markerData.duration} min",
                           style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold),
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red),
                         ),
                       );
               },
@@ -210,6 +304,19 @@ class _CustomDialogState extends State<CustomDialog> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCountColumn(String title, String value) {
+    return Column(
+      children: [
+        Text(title,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.black54)),
+        Text(value, style: const TextStyle(fontSize: 14, color: Colors.red)),
+      ],
     );
   }
 }

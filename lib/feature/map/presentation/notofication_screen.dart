@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({Key? key}) : super(key: key);
+  const NotificationScreen({super.key});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -40,7 +40,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   return const NotificationScreen();
                 }));
               },
-              child: Icon(Icons.notifications))
+              child: const Icon(Icons.notifications))
         ],
       ),
       body: Consumer<UserViewModel>(

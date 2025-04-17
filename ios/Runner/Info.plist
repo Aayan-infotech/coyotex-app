@@ -32,6 +32,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera for taking photos/videos.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Need access to import GPX files</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Need access to import GPX files</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Need access to import GPX files</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Your location helps us provide accurate results, even when the app is running in the background, such as tracking your delivery or providing navigation updates.</string>
 	<key>NSLocationAlwaysUsageDescription</key>

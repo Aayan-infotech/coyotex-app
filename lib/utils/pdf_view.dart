@@ -9,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart'; // Add this import
 class PDFViewerScreen extends StatefulWidget {
   final String pdfUrl;
 
-  const PDFViewerScreen({Key? key, required this.pdfUrl}) : super(key: key);
+  const PDFViewerScreen({super.key, required this.pdfUrl});
 
   @override
   State<PDFViewerScreen> createState() => _PDFViewerScreenState();
@@ -110,7 +110,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
                     pageFling: true,
                     defaultPage: _currentPage!,
                     fitPolicy: FitPolicy.BOTH,
-                    onRender: (_pages) => setState(() => this._pages = _pages),
+                    onRender: (pages) => setState(() => _pages = pages),
                     onViewCreated: (PDFViewController pdfViewController) {
                       _controller.complete(pdfViewController);
                     },
