@@ -76,7 +76,7 @@ class LoginAPIs extends ApiBase {
     return await CallHelper().postWithData('auth/signup', data, {});
   }
 
-  //
+ 
   Future<ApiResponse> refresh(String refreshToken) async {
     Map<String, String> data = {
       'refreshToken': refreshToken,

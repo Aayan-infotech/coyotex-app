@@ -136,26 +136,22 @@ class _OtpScreenState extends State<OtpScreen> {
                                   );
                                 }));
                               } else {
-                                Navigator.of(context)
-                                    .push(MaterialPageRoute(builder: (context) {
-                                  return const SubscriptionScreen();
-                                }));
-                                // final responce = await authProvider.verifyOTP(
-                                //     widget.email, otpNumber);
-                                // if (!responce.success) {
-                                //   _showIncorrectPasswordSheet(context);
-                                // } else {
-                                //   SharedPrefUtil.setValue(accessTokenPref,
-                                //       responce.data["accessToken"]);
-                                //   SharedPrefUtil.setValue(refreshTokenPref,
-                                //       responce.data["refreshToken"]);
-                                //   SharedPrefUtil.setValue(isLoginPref, true);
+                                final responce = await authProvider.verifyOTP(
+                                    widget.email, otpNumber);
+                                if (!responce.success) {
+                                  _showIncorrectPasswordSheet(context);
+                                } else {
+                                  SharedPrefUtil.setValue(accessTokenPref,
+                                      responce.data["accessToken"]);
+                                  SharedPrefUtil.setValue(refreshTokenPref,
+                                      responce.data["refreshToken"]);
+                                  SharedPrefUtil.setValue(isLoginPref, true);
 
-                                //   Navigator.of(context).push(
-                                //       MaterialPageRoute(builder: (context) {
-                                //     return const SubscriptionScreen();
-                                //   }));
-                                // }
+                                  Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (context) {
+                                    return const SubscriptionScreen();
+                                  }));
+                                }
                               }
                             }, // Logic handled in OTP field's onSubmit
                           ),
