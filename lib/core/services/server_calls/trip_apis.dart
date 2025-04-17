@@ -18,15 +18,14 @@ class TripAPIs extends ApiBase {
       TripModel tripModel) async {
     Map<String, dynamic> data = tripModel.toJson();
 
-    return await CallHelper().postWithData('api/trips/', data, {});
+    return await CallHelper().postWithData('trips/', data, {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> addStop(
       MarkerData markerData, String id) async {
     Map<String, dynamic> data = markerData.toJson();
 
-    return await CallHelper()
-        .postWithData('api/trips/$id/add-marker', data, {});
+    return await CallHelper().postWithData('trips/$id/add-marker', data, {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> updateTrip(
@@ -34,12 +33,12 @@ class TripAPIs extends ApiBase {
     Map<String, dynamic> data = {"tripId": tripId};
 
     return await CallHelper()
-        .postWithData('api/trips/trip/update-trip-status', data, {});
+        .postWithData('trips/trip/update-trip-status', data, {});
   }
 
   Future<ApiResponse> deleteTrip(String id) async {
     return await CallHelper().delete(
-      'api/trips/$id',
+      'trips/$id',
     );
   }
 
@@ -47,8 +46,7 @@ class TripAPIs extends ApiBase {
       String id, List<String> lstWayPoints) async {
     Map<String, dynamic> data = {"waypoints": lstWayPoints};
 
-    return await CallHelper()
-        .postWithData('api/trips/$id/add-waypoint', data, {});
+    return await CallHelper().postWithData('trips/$id/add-waypoint', data, {});
   }
 
   Future<ApiResponse> addAnimalSeenAndKilled(
@@ -63,14 +61,14 @@ class TripAPIs extends ApiBase {
       "wind_direction": markerData.wind_direction
     };
     return await CallHelper().patch(
-      'api/trips/update-animals',
+      'trips/update-animals',
       data,
     );
   }
 
   Future<ApiResponse> deleteMarker(String markerId, String tripId) async {
     return await CallHelper().delete(
-      'api/trips/delete-marker/$tripId/$markerId',
+      'trips/delete-marker/$tripId/$markerId',
     );
   }
 
@@ -80,7 +78,7 @@ class TripAPIs extends ApiBase {
       "longitude": latLang.longitude
     };
     return await CallHelper()
-        .deleteWithBody('api/trips/$tripId/remove-route-point', data);
+        .deleteWithBody('trips/$tripId/remove-route-point', data);
   }
 
   Future<ApiResponse> isVisited(
@@ -93,14 +91,13 @@ class TripAPIs extends ApiBase {
       "is_visited": true
     };
     return await CallHelper().patch(
-      'api/trips/update-animals',
+      'trips/update-animals',
       data,
     );
   }
 
   Future<http.Response?> generateTripPDF(String tripId) async {
-    final String url =
-        '${CallHelper.baseUrl}api/trips/generate-trip-pdf/$tripId';
+    final String url = '${CallHelper.baseUrl}trips/generate-trip-pdf/$tripId';
     String accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
 
     try {
@@ -130,7 +127,7 @@ class TripAPIs extends ApiBase {
     Map<String, dynamic> data = {"routePoints": points};
 
     return await CallHelper()
-        .postWithData('api/trips/$id/add-route-point', data, {});
+        .postWithData('trips/$id/add-route-point', data, {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> addWeatherMarker(
@@ -138,24 +135,24 @@ class TripAPIs extends ApiBase {
     Map<String, dynamic> data = weatherMarker.toJson();
 
     return await CallHelper()
-        .postWithData('api/trips/$id/add-weather-marker', data, {});
+        .postWithData('trips/$id/add-weather-marker', data, {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> getUserTrip() async {
-    return await CallHelper().getWithData('api/trips/', {});
+    return await CallHelper().getWithData('trips/', {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> generateGpx(
       String tripId) async {
-    return await CallHelper().getWithData('api/trips/${tripId}/gpx', {});
+    return await CallHelper().getWithData('trips/${tripId}/gpx', {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> getTripId(String id) async {
-    return await CallHelper().getWithData('api/trips/$id', {});
+    return await CallHelper().getWithData('trips/$id', {});
   }
 
   Future<ApiResponseWithData<Map<String, dynamic>>> getAllMarker() async {
-    return await CallHelper().getWithData('api/trips/trip/user-markers', {});
+    return await CallHelper().getWithData('trips/trip/user-markers', {});
   }
 
   final String endPoint = 'https://api.openweathermap.org/data/2.5/weather';
@@ -187,7 +184,7 @@ class TripAPIs extends ApiBase {
     };
 
     return await CallHelper()
-        .getWithData('api/trips/trip/search', {}, queryParams: params);
+        .getWithData('trips/trip/search', {}, queryParams: params);
   }
 
   Future<ApiResponse> updateProfile(String name, String number, String userUnit,
@@ -200,7 +197,7 @@ class TripAPIs extends ApiBase {
     };
 
     return await CallHelper().post(
-      'api/update-details',
+      'update-details',
       data,
     );
   }

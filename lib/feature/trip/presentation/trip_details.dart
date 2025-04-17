@@ -946,7 +946,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
         isLoading = true;
       });
 
-      String url = "${CallHelper.baseUrl}api/trips/${tripId}/gpx";
+      String url = "${CallHelper.baseUrl}trips/${tripId}/gpx";
       Dio dio = Dio();
 
       // Get the directory to store the file

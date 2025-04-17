@@ -250,11 +250,11 @@ class _CustomDialogState extends State<CustomDialog> {
             height: MediaQuery.of(context).size.height * 0.4,
             child: ListView.separated(
               shrinkWrap: true,
-              itemCount: widget.mapProvider.markers.length,
+              itemCount: widget.mapProvider.selectedTripModel.markers.length,
               separatorBuilder: (_, __) =>
                   Divider(color: Colors.red.withOpacity(0.2)),
               itemBuilder: (context, index) {
-                MarkerData markerData = widget.mapProvider.markers[index];
+                MarkerData markerData = widget.mapProvider.selectedTripModel.markers[index];
                 return widget.isLocation
                     ? ListTile(
                         leading: Icon(

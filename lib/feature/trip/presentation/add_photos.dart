@@ -263,7 +263,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
       ]);
 
       final response = await Dio().post(
-        '${CallHelper.baseUrl}api/trips/upload-media',
+        '${CallHelper.baseUrl}trips/upload-media',
         data: formData,
         options: Options(
           headers: {

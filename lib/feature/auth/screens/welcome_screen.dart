@@ -13,7 +13,7 @@ class WelcomeScreen extends StatelessWidget {
         children: [
           Image.asset(
             "assets/images/welcome_background.png",
-            fit: BoxFit.cover, // Make the image cover the full screen
+            fit: BoxFit.cover, 
             height: double.infinity, // Ensure the image takes up full height
             width: double.infinity, // Ensure the image takes up full width
           ),
@@ -46,7 +46,7 @@ class WelcomeScreen extends StatelessWidget {
                       fontWeight: FontWeight.w500),
                 ),
                 const Text(
-                  "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum is simply dummy text of the printing and typesetting industry. ",
+                  "Your go-to hunting companion! Track, plan, and record your adventures with ease. Stay informed, stay safe, and make every hunt count!.",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white),
                 )

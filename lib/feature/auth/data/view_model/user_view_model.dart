@@ -60,8 +60,6 @@ class UserViewModel extends ChangeNotifier {
         // await getUser();
         // await tripProvider.getAllMarker();
 
-     
-
         return response;
       } else {
         errorMessage = response.message;
@@ -117,6 +115,20 @@ class UserViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     var response = await _tripAPIs.getUserTrip();
+    if (response.success) {
+      trips = (response.data["data"] as List).map((item) {
+        return TripModel.fromJson(item);
+      }).toList();
+      print(trips);
+    }
+    notifyListeners();
+    isLoading = false;
+  }
+
+  getSubscriptionDetails() async {
+    isLoading = true;
+    notifyListeners();
+    var response = await _loginAPIs.getSubscriptionDetails();
     if (response.success) {
       trips = (response.data["data"] as List).map((item) {
         return TripModel.fromJson(item);
@@ -224,7 +236,6 @@ class UserViewModel extends ChangeNotifier {
     try {
       final response = await _loginAPIs.getSubscription();
       if (response.success) {
-        // Parse subscriptions as a list of Plan objects
         lstPlan = (response.data["subscriptions"] as List<dynamic>)
             .map((item) => Plan.fromJson(item))
             .toList();

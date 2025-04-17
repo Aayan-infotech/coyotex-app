@@ -146,19 +146,27 @@ class MapProvider with ChangeNotifier {
     startTripTimer();
   }
 
-  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    const double earthRadius = 6371.0; // Radius of Earth in kilometers
+  Future<double> calculateDistance(
+      double lat1, double lon1, double lat2, double lon2) async {
+    // const double earthRadius = 6371.0; // Radius of Earth in kilometers
 
-    double dLat = _degreesToRadians(lat2 - lat1);
-    double dLon = _degreesToRadians(lon2 - lon1);
+    // double dLat = _degreesToRadians(lat2 - lat1);
+    // double dLon = _degreesToRadians(lon2 - lon1);
 
-    double a = pow(sin(dLat / 2), 2) +
-        cos(_degreesToRadians(lat1)) *
-            cos(_degreesToRadians(lat2)) *
-            pow(sin(dLon / 2), 2);
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    // double a = pow(sin(dLat / 2), 2) +
+    //     cos(_degreesToRadians(lat1)) *
+    //         cos(_degreesToRadians(lat2)) *
+    //         pow(sin(dLon / 2), 2);
+    // double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
-    return earthRadius * c;
+    // return earthRadius * c;
+    double distance = await Geolocator.distanceBetween(
+      lat1,
+      lon1,
+      lat2,
+      lon2,
+    );
+    return distance;
   }
 
   double _degreesToRadians(double degrees) {
@@ -169,12 +177,13 @@ class MapProvider with ChangeNotifier {
     if (_tripStartTime == null) return;
     // final elapsedMinutes = DateTime.now().difference(_tripStartTime!).inMinutes;
     DateTime newEsti = DateTime.now();
-    if (calculateDistance(
+    bool isDistance = await calculateDistance(
             userStartTripLocation.latitude,
             userStartTripLocation.longitude,
             currentLocationMarker.position.latitude,
             currentLocationMarker.position.longitude) >
-        100) {
+        100;
+    if (isDistance) {
       points.remove(points.last);
       points.add(currentLocationMarker.position);
       // Remaining minutes to complete the trip
@@ -727,9 +736,10 @@ class MapProvider with ChangeNotifier {
       //updateCameraPosition(initialLatLng);
       // path.add(initialLatLng);
 
-      if (!_isWithinRadius(initialLatLng, path, 1000)) {
+      if (!_isWithinRadius(initialLatLng, path, 300)) {
         path.add(initialLatLng);
       }
+      userStartTripLocation = LatLng(position.latitude, position.longitude);
 
       await fetchRouteWithWaypoints(path, isPathShow: true);
 
@@ -742,7 +752,6 @@ class MapProvider with ChangeNotifier {
           distanceFilter: 6,
         ),
       ).listen((Position position) async {
-        userStartTripLocation = LatLng(position.latitude, position.longitude);
         LatLng currentLatLng = LatLng(position.latitude, position.longitude);
         if (position.speed >= 5) {
           speed = position.speed * 3.6; // Convert m/s to km/h

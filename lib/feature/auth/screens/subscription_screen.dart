@@ -21,7 +21,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void initState() {
     super.initState();
-    //   getPlans();
+    getPlans();
   }
 
   void getPlans() {

@@ -1,3 +1,4 @@
+import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
@@ -251,7 +252,7 @@ class _AddPhotoScreenState extends State<AddPhotoScreen> {
     String tripId = provider.selectedTripModel.id;
     String markerId = selectedMarkerId!;
 
-    final uri = Uri.parse('http://44.196.64.110:5647/api/trips/upload-media');
+    final uri = Uri.parse('${CallHelper.baseUrl}trips/upload-media');
     final request = http.MultipartRequest('POST', uri);
     request.headers['Authorization'] = 'Bearer $accessToken';
 

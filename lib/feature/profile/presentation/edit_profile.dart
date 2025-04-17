@@ -128,8 +128,7 @@ class _EditProfileState extends State<EditProfile> {
 
         // Send request with Dio
         final response = await Dio().post(
-        
-          '${CallHelper.baseUrl}api/users/update-profile-picture',
+          '${CallHelper.baseUrl}users/update-profile-picture',
           data: formData,
           options: Options(
             headers: {
@@ -140,7 +139,7 @@ class _EditProfileState extends State<EditProfile> {
         );
 
         if (response.statusCode == 200) {
-        await  userProvider.getUser();
+          await userProvider.getUser();
           print('Upload successful! Response: ${response.data}');
         } else {
           print('Upload failed with status: ${response.statusCode}');
@@ -148,11 +147,9 @@ class _EditProfileState extends State<EditProfile> {
         setState(() {
           _isUploading = false;
         });
-      
-      // ignore: empty_catches
-      } catch (e) {
-       
-      }
+
+        // ignore: empty_catches
+      } catch (e) {}
     }
   }
 
@@ -266,7 +263,7 @@ class _EditProfileState extends State<EditProfile> {
                               var response = await provider.updateUserProfile(
                                 _usernameController.text,
                                 _mobileNumberController.text,
-                                provider.user.userPlan,
+                                provider.user.userUnit,
                                 provider.user.userWeatherPref,
                               );
 

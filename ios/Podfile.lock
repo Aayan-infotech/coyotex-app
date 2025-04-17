@@ -33,8 +33,6 @@ PODS:
   - file_picker (0.0.1):
     - DKImagePickerController/PhotoGallery
     - Flutter
-  - file_saver (0.0.1):
-    - Flutter
   - Firebase/CoreOnly (11.8.0):
     - FirebaseCore (~> 11.8.0)
   - Firebase/Messaging (11.8.0):
@@ -208,7 +206,6 @@ PODS:
 
 DEPENDENCIES:
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
-  - file_saver (from `.symlinks/plugins/file_saver/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
@@ -259,8 +256,6 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   file_picker:
     :path: ".symlinks/plugins/file_picker/ios"
-  file_saver:
-    :path: ".symlinks/plugins/file_saver/ios"
   firebase_core:
     :path: ".symlinks/plugins/firebase_core/ios"
   firebase_messaging:
@@ -306,7 +301,6 @@ SPEC CHECKSUMS:
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   file_picker: 5f42b9d5580e30b57b4863f9d94b448016b702e5
-  file_saver: 6cdbcddd690cb02b0c1a0c225b37cd805c2bf8b6
   Firebase: d80354ed7f6df5f9aca55e9eb47cc4b634735eaf
   firebase_core: 8d552814f6c01ccde5d88939fced4ec26f2f5510
   firebase_messaging: 8b96a4f09841c15a16b96973ef5c3dcfc1a064e4

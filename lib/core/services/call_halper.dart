@@ -20,7 +20,7 @@ class ApiResponseWithData<T> {
 }
 
 class CallHelper {
-  static const String baseUrl = "http://3.223.253.106:5647/";
+  static const String baseUrl = "https://www.thecoyotex.com/api/";
   static const int timeoutInSeconds = 20;
   static const String internalServerErrorMessage = "Internal server error.";
   static bool _isRefreshing = false;
