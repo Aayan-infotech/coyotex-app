@@ -5,24 +5,22 @@ import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/login_screen.dart';
 import 'package:coyotex/feature/auth/screens/prefrence_dstance_screen.dart';
-import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:coyotex/feature/auth/screens/weather_prefrences.dart';
-import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
 import 'package:coyotex/feature/profile/presentation/FAQ_screen.dart';
 import 'package:coyotex/feature/profile/presentation/change_password.dart';
 import 'package:coyotex/feature/profile/presentation/edit_profile.dart';
-import 'package:coyotex/feature/profile/presentation/linked_devices.dart';
 import 'package:coyotex/feature/profile/presentation/subscription_details_screen.dart';
 import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:http/http.dart' as http;
-
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/utills/shared_pref.dart';
+import '../../../utils/app_dialogue_box.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -33,6 +31,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   int trips = 0;
+
   @override
   @override
   void initState() {
@@ -51,6 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   bool isLoading = false;
+
   void _handleGpxFile(String filePath) async {
     setState(() {
       isLoading = true;
@@ -152,7 +152,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             allowMultiple: false,
                             dialogTitle: 'Select GPX File',
                             allowCompression: true,
-
                             withData: false,
                             withReadStream: true,
                             lockParentWindow: true,
@@ -209,7 +208,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ? ClipOval(
                                   child: CachedNetworkImage(
                                     imageUrl: userViewModel.user.imageUrl,
-                                    width: 100, // Ensure circular shape
+                                    width: 100,
+                                    // Ensure circular shape
                                     height: 100,
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(
@@ -384,6 +384,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             context,
                             const FAQScreen(),
                           ),
+                          _showDeleteDialog(context),
                           _buildListTile(
                             Icons.logout,
                             'Logout',
@@ -468,6 +469,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       },
     );
+  }
+
+  Widget _showDeleteDialog(BuildContext context) {
+    return Consumer<UserViewModel>(builder: (context, provider, child) {
+      return ListTile(
+        leading: const Icon(Icons.delete_outline, color: Colors.black),
+        title: const Text(
+          "Delete Account",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        trailing:
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        onTap: () {
+          _showDeleteAccountDialog(provider);
+        },
+      );
+    });
+  }
+
+  _showDeleteAccountDialog(UserViewModel provider) {
+    AppDialog.showSuccessDialog(
+        context,
+        title: "Alert!",
+        "Are you sure to delete your account?",
+        showSecondary: true,
+        icon: Icons.delete,
+        iconClr: Colors.red, () async {
+      Navigator.pop(context);
+      var response = await provider.deleteAccount();
+      if (response.success) {
+        AppDialog.showSuccessDialog(
+            context,
+            "Your account has been delete successfully.",
+                () {
+          Navigator.of(context).pop(); // Close the dialog
+          SharedPrefUtil.preferences.clear();
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+          );
+        });
+      } else {
+        // Handle error
+        AppDialog.showErrorDialog(context, response.message, () {
+          Navigator.of(context).pop();
+        });
+      }
+    });
   }
 
   void _showLogoutBottomSheet(BuildContext context) {
@@ -570,5 +620,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-
-// Dummy screens for demonstration

@@ -94,17 +94,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           const Text(
                             "Change Password",
                             style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700),
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           const Text(
-                            "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                            "Create a strong password to keep your account secure.",
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500),
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const SizedBox(height: 30),
                           BrandedTextField(

@@ -35,7 +35,16 @@ class LinkedDevicesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 40),
             const Text(
-              'Lorem ipsum dolor sit amet consectetur.',
+              'Select Device and Connect',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 40),
+            const Text(
+              'Make sure your device is powered on and nearby.',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 14,
@@ -44,13 +53,14 @@ class LinkedDevicesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Lorem ipsum dolor sit amet consectetur.',
+              'Select it from the list below to establish a connection.',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 14,
               ),
               textAlign: TextAlign.center,
             ),
+
             const SizedBox(height: 20),
             Image.asset(
               'assets/images/devices.png', // Replace with your asset path
@@ -61,9 +71,9 @@ class LinkedDevicesScreen extends StatelessWidget {
             Expanded(
               child: ListView(
                 children: [
-                  _buildDeviceTile(Icons.phone_android, 'Lorem ipsum'),
+                  _buildDeviceTile(Icons.phone_android, 'Galaxy S22 Ultra'),
                   const Divider(color: Colors.white24, thickness: 1),
-                  _buildDeviceTile(Icons.desktop_mac, 'Lorem ipsum'),
+                  _buildDeviceTile(Icons.desktop_mac, 'MacBook Pro 16"'),
                   const Divider(color: Colors.white24, thickness: 1),
                 ],
               ),

@@ -10,19 +10,26 @@ class AppDialog {
       icon: Icons.error,
       iconColor: Colors.red,
       buttonColor: Colors.red,
+      showSecondary: false,
       onOkPressed: onOkPressed,
     );
   }
 
   static void showSuccessDialog(
-      BuildContext context, String message, VoidCallback? onOkPressed) {
+      BuildContext context, String message, VoidCallback? onOkPressed,
+      {
+        String title = "Success",
+        bool showSecondary = false,
+      IconData icon = Icons.check_circle,
+      Color iconClr = Colors.green}) {
     _showDialog(
       context: context,
-      title: "Success",
+      title: title,
       message: message,
-      icon: Icons.check_circle,
-      iconColor: Colors.green,
+      icon: icon,
+      iconColor: iconClr,
       buttonColor: Colors.green,
+      showSecondary: showSecondary,
       onOkPressed: onOkPressed,
     );
   }
@@ -34,6 +41,7 @@ class AppDialog {
     required IconData icon,
     required Color iconColor,
     required Color buttonColor,
+    required bool showSecondary,
     VoidCallback? onOkPressed,
   }) {
     showDialog(
@@ -61,6 +69,22 @@ class AppDialog {
             style: const TextStyle(fontSize: 16),
           ),
           actions: [
+            if (showSecondary)
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                onPressed: () {
+                  if (onOkPressed != null) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text("Cancel"),
+              ),
             TextButton(
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
@@ -70,7 +94,6 @@ class AppDialog {
                 ),
               ),
               onPressed: () {
-               
                 if (onOkPressed != null) {
                   onOkPressed();
                 }

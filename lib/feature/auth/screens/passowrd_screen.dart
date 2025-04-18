@@ -88,18 +88,21 @@ class _PasswordScreenState extends State<PasswordScreen> {
                           const Text(
                             "Change Password",
                             style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700),
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           const Text(
-                            "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                            "Enter your current password and choose a new one to update your credentials.",
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500),
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
+
                           const SizedBox(height: 30),
                           BrandedTextField(
                             prefix: const Icon(Icons.person),

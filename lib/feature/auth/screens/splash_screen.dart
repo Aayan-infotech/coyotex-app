@@ -16,8 +16,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    // TODO: implement initState
-
     asyncInit();
     super.initState();
   }
@@ -26,6 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       await SharedPrefUtil.init();
       bool isLogin = SharedPrefUtil.getValue(isLoginPref, false) as bool;
+      debugPrint("IS LOGIN => ${isLogin}");
       if (!isLogin) {
         Future.delayed(const Duration(seconds: 3), () {
           // Navigator.pushReplacement(

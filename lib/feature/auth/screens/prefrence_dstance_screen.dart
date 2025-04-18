@@ -49,18 +49,22 @@ class _PrefernceDistanceScreenState extends State<PrefernceDistanceScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text("Distance Unit",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700)),
                               const Text(
-                                "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                                "Distance Unit",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const Text(
+                                "Select your preferred unit of distance for tracking and display.",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500),
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                               SizedBox(
                                   height:

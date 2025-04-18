@@ -157,8 +157,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
                         await Stripe.instance.presentPaymentSheet();
 
-                        var response =
-                            await userViewModel.paymentStatus(paymentId);
+                        var response = await userViewModel.paymentStatus(paymentId);
                         if (response.success) {
                           UserPreferences userPreferences = UserPreferences(
                             userPlan: _selectedPlanId!,

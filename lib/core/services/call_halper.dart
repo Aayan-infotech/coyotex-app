@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart' as http;
 
 class ApiResponse {
   final String message;
@@ -50,9 +52,9 @@ class CallHelper {
   Future<ApiResponseWithData<T>> getWithData<T>(String urlSuffix, T defaultData,
       {Map<String, dynamic>? queryParams}) async {
     return _performRequest(() async {
-      Uri uri =
-          Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
-      print(uri);
+      Uri uri = Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
+      var headder = await getHeaders();
+      debugPrint("URL => $uri and HEADER => ${headder}");
       final response = await http
           .get(uri, headers: await getHeaders())
           .timeout(const Duration(seconds: timeoutInSeconds));
@@ -102,6 +104,24 @@ class CallHelper {
           .timeout(const Duration(seconds: timeoutInSeconds));
       return _processResponseWithData(response, defaultData,
           () => postWithData(urlSuffix, body, defaultData));
+    });
+  }
+
+  Future<ApiResponseWithData<T>> putWithData<T>(
+      String urlSuffix, Map<String, dynamic> body, T defaultData) async {
+    return _performRequest(() async {
+      Uri uri = Uri.parse('$baseUrl$urlSuffix');
+      var headder = await getHeaders();
+      debugPrint("URL => $uri and HEADER => ${headder}");
+      final response = await http
+          .put(
+        Uri.parse('$baseUrl$urlSuffix'),
+        headers: await getHeaders(),
+        body: jsonEncode(body),
+      )
+          .timeout(const Duration(seconds: timeoutInSeconds));
+      return _processResponseWithData(response, defaultData,
+              () => putWithData(urlSuffix, body, defaultData));
     });
   }
 

@@ -5,6 +5,7 @@ import 'package:coyotex/core/services/model/weather_model.dart';
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/model/pref_model.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class LoginAPIs extends ApiBase {
@@ -188,6 +189,17 @@ class LoginAPIs extends ApiBase {
     );
   }
 
+  Future<ApiResponseWithData> deleteAccount() async {
+    var userId = SharedPrefUtil.getValue(userIdPref, "") as String;
+    Map<String, dynamic> data = {"status": 0};
+    return await CallHelper().putWithData(
+      "update-user-status-admin/$userId/status",
+      data,
+      {},
+    );
+
+  }
+
   Future<ApiResponseWithData<Map<String, dynamic>>> getNotifications() async {
     Map<String, String> data = {};
 
@@ -254,12 +266,11 @@ class LoginAPIs extends ApiBase {
       data,
     );
   }
-  Future<ApiResponseWithData<Map<String, dynamic>>> getSubscriptionDetails() async {
+
+  Future<ApiResponseWithData<Map<String, dynamic>>>
+      getSubscriptionDetails() async {
     Map<String, String> data = {};
 
-    return await CallHelper().getWithData(
-      'users/user-subscription',
-      data,
-    );
+    return await CallHelper().getWithData('users/user-subscription', data);
   }
 }

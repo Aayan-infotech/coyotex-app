@@ -1,5 +1,6 @@
 import 'package:coyotex/core/services/call_halper.dart';
 import 'package:coyotex/core/services/model/notification_model.dart';
+import 'package:coyotex/core/services/model/subscription_detail.dart';
 import 'package:coyotex/core/services/server_calls/auth_apis.dart';
 import 'package:coyotex/core/services/server_calls/trip_apis.dart';
 import 'package:coyotex/core/utills/constant.dart';
@@ -21,6 +22,7 @@ class UserViewModel extends ChangeNotifier {
   bool isLoading = false;
   String errorMessage = '';
   List<TripModel> trips = [];
+  SubscriptionDetail? subscriptionDetail;
   final TripAPIs _tripAPIs = TripAPIs();
 
   Map<String, dynamic>? userData;
@@ -126,17 +128,20 @@ class UserViewModel extends ChangeNotifier {
   }
 
   getSubscriptionDetails() async {
-    isLoading = true;
+    _setLoading(true);
     notifyListeners();
     var response = await _loginAPIs.getSubscriptionDetails();
+    _setLoading(false);
+    debugPrint("SUBSCRIPTION DETAIL => ${response.message}");
     if (response.success) {
-      trips = (response.data["data"] as List).map((item) {
-        return TripModel.fromJson(item);
-      }).toList();
-      print(trips);
+      debugPrint("SUBSCRIPTION DETAIL => ${response.data}");
+      subscriptionDetail = SubscriptionDetail.fromJson(response.data);
+      return response;
+    } else {
+      _setLoading(false);
+      errorMessage = response.message;
+      return response;
     }
-    notifyListeners();
-    isLoading = false;
   }
 
   Future<ApiResponseWithData> getUser() async {
@@ -183,6 +188,7 @@ class UserViewModel extends ChangeNotifier {
 
   int animalKilled = 0;
   int animalSeen = 0;
+
   Future<ApiResponseWithData<Map<String, dynamic>>> getAnimalStats() async {
     _setLoading(true);
     try {
@@ -398,6 +404,25 @@ class UserViewModel extends ChangeNotifier {
     } catch (e) {
       errorMessage = e.toString();
       return ApiResponse(errorMessage, false);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<ApiResponseWithData> deleteAccount() async {
+    debugPrint("DELETE ACCOUNT CALL");
+    _setLoading(true);
+    try {
+      final response = await _loginAPIs.deleteAccount();
+      debugPrint("DELETE ACCOUNT CALL => ${response.success}");
+      if (response.success) {
+        return response;
+      } else {
+        return response;
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      return ApiResponseWithData(errorMessage, false);
     } finally {
       _setLoading(false);
     }

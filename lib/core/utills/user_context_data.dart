@@ -20,8 +20,8 @@ class UserContextData {
     List<Future> lstFutures = <Future>[];
 
     lstFutures.add(userProvider.getUser());
-    lstFutures.add(userProvider.getSubscriptionDetails());
-    lstFutures.add(userProvider.getSubscriptionPlan());
+    // lstFutures.add(userProvider.getSubscriptionDetails());
+    // lstFutures.add(userProvider.getSubscriptionPlan());
     lstFutures.add(tripProvider.getAllMarker());
     // lstFutures.add(mapProvider.getCurrentLocation());
     // lstFutures.add(mapProvider.getTrips());
