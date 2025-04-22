@@ -1,0 +1,2 @@
+/Users/mac1707/Desktop/projects/flutterProjects/coyotex-app/android/app/.cxx/RelWithDebInfo/4t503a6f/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/mac1707/Desktop/projects/flutterProjects/coyotex-app/android/app/.cxx/RelWithDebInfo/4t503a6f/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -7,8 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/utills/constant.dart';
+import '../../../core/utills/shared_pref.dart';
+
 class SubscriptionScreen extends StatefulWidget {
-  const SubscriptionScreen({super.key});
+  final String from;
+
+  const SubscriptionScreen({super.key, required this.from});
 
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
@@ -21,7 +26,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void initState() {
     super.initState();
-    getPlans();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<UserViewModel>(context, listen: false);
+      authProvider.getSubscriptionPlan();
+    });
+    //getPlans();
   }
 
   void getPlans() {
@@ -157,20 +166,31 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
                         await Stripe.instance.presentPaymentSheet();
 
-                        var response = await userViewModel.paymentStatus(paymentId);
+                        var response =
+                            await userViewModel.paymentStatus(paymentId);
                         if (response.success) {
-                          UserPreferences userPreferences = UserPreferences(
-                            userPlan: _selectedPlanId!,
-                            userUnit: '',
-                            userWeatherPref: '',
-                          );
+                          if (widget.from == "subDetail") {
+                            userViewModel.getSubscriptionDetails();
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          } else {
+                            SharedPrefUtil.setValue(isLoginPref, true);
 
-                          Navigator.of(context)
-                              .push(MaterialPageRoute(builder: (context) {
-                            return PrefernceDistanceScreen(
-                              userPreferences: userPreferences,
+                            UserPreferences userPreferences = UserPreferences(
+                              userPlan: _selectedPlanId!,
+                              userUnit: '',
+                              userWeatherPref: '',
                             );
-                          }));
+
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (context) => PrefernceDistanceScreen(
+                                  userPreferences: userPreferences,
+                                ),
+                              ),
+                              (route) => false, // this means "remove everything below"
+                            );
+                          }
                         }
                       } on StripeException catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(

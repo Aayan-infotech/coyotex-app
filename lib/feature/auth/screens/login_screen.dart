@@ -6,6 +6,7 @@ import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/sign_up_screen.dart';
+import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:coyotex/utils/validation.dart';
@@ -13,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../utils/lower_case_text_formatter.dart';
+import 'otp_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -174,20 +176,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                   var response = await userProvider.login(
                                       username, password, context);
-
                                   if (response.success) {
-                                    SharedPrefUtil.setValue(isLoginPref, true);
-                                    Navigator.pushAndRemoveUntil(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => const HomeScreen()),
-                                      (route) => false,
-                                    );
+                                    if (response.data["plan"] != null) {
+                                      SharedPrefUtil.setValue(
+                                          isLoginPref, true);
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const HomeScreen()),
+                                        (route) => false,
+                                      );
+                                    } else {
+                                      Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (context) {
+                                        return const SubscriptionScreen(from: "login",);
+                                      }));
+                                    }
                                   } else {
                                     AppDialog.showErrorDialog(
                                         context, response.message, () {
                                       Navigator.of(context).pop();
+                                      if (response.message ==
+                                          "You have not verified your email. Please verify your email first.") {
+                                        Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                                builder: (context) {
+                                          return OtpScreen(
+                                            email: _nameController.text,
+                                          );
+                                        }));
+                                      }
                                     });
+
                                     setState(() {
                                       isLoading = false;
                                     });

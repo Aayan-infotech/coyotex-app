@@ -21,28 +21,29 @@ class BrandedTextField extends StatefulWidget {
   final Color? backgroundColor;
   final double? fontSize; // New font size property
   final FocusNode? focusNode; // FocusNode parameter
+  final int? maxLength;
 
-  const BrandedTextField({
-    super.key,
-    this.validator,
-    this.isEnabled = true,
-    this.isFilled = true,
-    required this.controller,
-    this.prefix,
-    required this.labelText,
-    this.height = 55,
-    this.inputFormatters = const [],
-    this.sufix,
-    this.maxLines = 1,
-    this.minLines = 1,
-    this.keyboardType,
-    this.onChanged,
-    this.onTap,
-    this.isPassword = false,
-    this.backgroundColor,
-    this.fontSize, // Accept font size
-    this.focusNode, // Accept focus node
-  });
+  const BrandedTextField(
+      {super.key,
+      this.validator,
+      this.isEnabled = true,
+      this.isFilled = true,
+      required this.controller,
+      this.prefix,
+      required this.labelText,
+      this.height = 55,
+      this.inputFormatters = const [],
+      this.sufix,
+      this.maxLines = 1,
+      this.minLines = 1,
+      this.keyboardType,
+      this.onChanged,
+      this.onTap,
+      this.isPassword = false,
+      this.backgroundColor,
+      this.fontSize, // Accept font size
+      this.focusNode, // Accept focus node
+      this.maxLength});
 
   @override
   _BrandedTextFieldState createState() => _BrandedTextFieldState();
@@ -64,6 +65,7 @@ class _BrandedTextFieldState extends State<BrandedTextField> {
       onTap: widget.onTap,
       maxLines: widget.maxLines,
       minLines: widget.minLines,
+      maxLength: widget.maxLength,
       style: TextStyle(
         fontSize: fontSize,
         fontWeight: FontWeight.w500,
@@ -75,7 +77,8 @@ class _BrandedTextFieldState extends State<BrandedTextField> {
       onChanged: widget.onChanged,
       obscureText: widget.isPassword ? _isObscured : false,
       autovalidateMode: AutovalidateMode.onUserInteraction,
-      focusNode: widget.focusNode, // Assign FocusNode here
+      focusNode: widget.focusNode,
+      // Assign FocusNode here
       decoration: InputDecoration(
         fillColor: Colors.white,
         filled: widget.isFilled,

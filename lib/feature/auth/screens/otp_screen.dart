@@ -149,11 +149,12 @@ class _OtpScreenState extends State<OtpScreen> {
                                       responce.data["accessToken"]);
                                   SharedPrefUtil.setValue(refreshTokenPref,
                                       responce.data["refreshToken"]);
-                                  SharedPrefUtil.setValue(isLoginPref, true);
+                                  // SharedPrefUtil.setValue(isLoginPref, true);
 
                                   Navigator.of(context).push(
                                       MaterialPageRoute(builder: (context) {
-                                    return const SubscriptionScreen();
+                                    return const SubscriptionScreen(
+                                        from: "otp");
                                   }));
                                 }
                               }

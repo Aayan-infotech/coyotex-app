@@ -24,6 +24,20 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _mobileNumberController = TextEditingController();
 
+  String? mobileNumberError ;
+
+  void _validateMobileNumber(String value) {
+    if (value.isNotEmpty && !RegExp(r'^[0-9]{11}$').hasMatch(value)) {
+      setState(() {
+        mobileNumberError = "Enter a valid mobile number";
+      });
+    } else {
+      setState(() {
+        mobileNumberError = null;
+      });
+    }
+  }
+
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return "Email is required.";
@@ -82,7 +96,8 @@ class _SignupScreenState extends State<SignupScreen> {
             return OtpScreen(
               email: _emailController.text,
             );
-          }));
+          })
+          );
         } else {
           showDialog(
             context: context,
@@ -216,8 +231,24 @@ class _SignupScreenState extends State<SignupScreen> {
                               controller: _mobileNumberController,
                               keyboardType: TextInputType.number,
                               labelText: "Mobile Number",
-                              validator: _validateMobile,
+                              maxLines: 1,
+                              maxLength: 11,
+                              onChanged: _validateMobileNumber,
                             ),
+                            if (mobileNumberError != null)
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: Text(
+                                  mobileNumberError!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: Pallete.errorColor,
+                                  ),
+                                ),
+                              )
+                            else
+                              const SizedBox.shrink(),
                             const SizedBox(height: 20),
                             BrandedTextField(
                               prefix: const Icon(Icons.email),

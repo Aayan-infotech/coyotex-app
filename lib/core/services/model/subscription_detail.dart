@@ -7,6 +7,7 @@ class SubscriptionDetail {
   String? purchaseMonth;
   String? purchaseDate;
   String? endsDate;
+  String? status;
 
   SubscriptionDetail({
     this.planName,
@@ -15,6 +16,7 @@ class SubscriptionDetail {
     this.purchaseMonth,
     this.purchaseDate,
     this.endsDate,
+    this.status,
   });
 
   Map<String, dynamic> toJson() {
@@ -25,6 +27,7 @@ class SubscriptionDetail {
     map["purchaseMonth"] = purchaseMonth;
     map["purchaseDate"] = purchaseDate;
     map["endsDate"] = endsDate;
+    map["status"] = status;
     return map;
   }
 
@@ -35,6 +38,7 @@ class SubscriptionDetail {
     purchaseMonth = json["purchaseMonth"];
     purchaseDate = json["purchaseDate"];
     endsDate = json["endsDate"];
+    status = json["status"];
   }
 
   String get formattedPurchaseDate {

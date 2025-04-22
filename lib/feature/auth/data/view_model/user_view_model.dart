@@ -53,8 +53,7 @@ class UserViewModel extends ChangeNotifier {
       final response = await _loginAPIs.login(email, password);
       if (response.success) {
         SharedPrefUtil.setValue(accessTokenPref, response.data["accessToken"]);
-        SharedPrefUtil.setValue(
-            refreshTokenPref, response.data["refreshToken"]);
+        SharedPrefUtil.setValue(refreshTokenPref, response.data["refreshToken"]);
 
         NotificationService.getDeviceToken();
         await UserContextData.setCurrentUserAndFetchUserData(context);

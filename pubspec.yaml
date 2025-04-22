@@ -48,16 +48,16 @@ dependencies:
   image_picker:
   intl: ^0.20.2
   drop_down_search_field: ^1.0.4
-  firebase_core: ^3.10.1
+  firebase_core:
   cached_network_image:
   animated_marker: ^0.0.5
   # flutter_compass:
   permission_handler: ^11.3.1
   high_chart: ^2.1.0
   flutter_stripe:
-  
 
   flutter_pdfview: ^1.4.0
+  shimmer: ^3.0.0
   # open_file: ^3.5.10
 
 dev_dependencies:
