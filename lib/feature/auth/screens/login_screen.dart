@@ -6,7 +6,6 @@ import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/forget_password.dart';
 import 'package:coyotex/feature/auth/screens/sign_up_screen.dart';
-import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:coyotex/feature/homeScreen/screens/home_screen.dart';
 import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:coyotex/utils/validation.dart';
@@ -142,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               onChanged: (value) {
                                 if (value.length >= 5) setState(() {});
                               },
-                              validator: (value) => validatePassword(value),
+                              validator: (value) => validateLoginPassword(value),
                             ),
                             const SizedBox(height: 5),
                             Align(
@@ -174,10 +173,28 @@ class _LoginScreenState extends State<LoginScreen> {
                                   final username = _nameController.text;
                                   final password = _passwordController.text;
 
-                                  var response = await userProvider.login(
-                                      username, password, context);
+                                  var response = await userProvider.login(username, password, context);
+
+                                  debugPrint("LOGIN RESPONSE => ${response.success}");
+
+                                  setState(() {
+                                    isLoading = false;
+                                  });
                                   if (response.success) {
-                                    if (response.data["plan"] != null) {
+                                    // var isSubscription =
+                                    //     response.data["plan"] != null
+                                    //         ? true
+                                    //         : false;
+                                    SharedPrefUtil.setValue(isLoginPref, true);
+                                    SharedPrefUtil.setValue(hasSubscription, true);
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const HomeScreen()),
+                                      (route) => false,
+                                    );
+                                    /*if (response.data["plan"] != null) {
                                       SharedPrefUtil.setValue(
                                           isLoginPref, true);
                                       Navigator.pushAndRemoveUntil(
@@ -192,8 +209,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                           MaterialPageRoute(builder: (context) {
                                         return const SubscriptionScreen(from: "login",);
                                       }));
-                                    }
+                                    }*/
                                   } else {
+                                    setState(() {
+                                      isLoading = false;
+                                    });
                                     AppDialog.showErrorDialog(
                                         context, response.message, () {
                                       Navigator.of(context).pop();
@@ -209,9 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       }
                                     });
 
-                                    setState(() {
-                                      isLoading = false;
-                                    });
+
                                   }
                                 }
                               },

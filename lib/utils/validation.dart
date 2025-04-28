@@ -44,6 +44,19 @@ String? validatePassword(String? value) {
 }
 
 
+String? validateLoginPassword(String? value) {
+  if (value == null) {
+    return null;
+  } else if (value.isEmpty) {
+    return "Please enter password!";
+  } else if (value.length < 6){
+    return "Password must be six eight digits!";
+  } else{
+    return null;
+  }
+}
+
+
 String? validateOldPassword(String? value) {
   if (value == null) {
     return null;

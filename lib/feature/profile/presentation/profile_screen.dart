@@ -10,7 +10,7 @@ import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
 import 'package:coyotex/feature/profile/presentation/FAQ_screen.dart';
 import 'package:coyotex/feature/profile/presentation/change_password.dart';
 import 'package:coyotex/feature/profile/presentation/edit_profile.dart';
-import 'package:coyotex/feature/profile/presentation/subscription_details_screen.dart';
+import 'package:coyotex/feature/profile/presentation/web_screen.dart';
 import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
 import 'package:file_picker/file_picker.dart';
@@ -362,12 +362,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           // _buildListTile(Icons.devices, 'Manage Linked Devices',
                           //     context, LinkedDevicesScreen()),
-                          _buildListTile(
-                            Icons.credit_card,
-                            'Subscription',
-                            context,
-                            const SubscriptionDetailsScreen(),
-                          ),
+                          // _buildListTile(
+                          //   Icons.credit_card,
+                          //   'Subscription',
+                          //   context,
+                          //   const SubscriptionDetailsScreen(),
+                          // ),
                           _buildListTile(
                             Icons.lock,
                             'Change Password',
@@ -383,6 +383,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             'Help',
                             context,
                             const FAQScreen(),
+                          ),
+                          _buildListTile(
+                            Icons.lock_outline,
+                            'Privacy Policy',
+                            context,
+                            const WebScreen(url: "https://www.hunt30.com/privecyPolicy"),
+                          ),
+                          _buildListTile(
+                            Icons.description,
+                            'Terms and Conditions',
+                            context,
+                            const WebScreen(url: "https://www.hunt30.com/termCondition"),
+                          ),
+                          _buildListTile(
+                            Icons.delete,
+                            'Delete Account Policy',
+                            context,
+                            const WebScreen(url: "https://www.hunt30.com/deletePolicy"),
                           ),
                           _showDeleteDialog(context),
                           _buildListTile(
@@ -500,9 +518,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       var response = await provider.deleteAccount();
       if (response.success) {
         AppDialog.showSuccessDialog(
-            context,
-            "Your account has been delete successfully.",
-                () {
+            context, "Your account has been delete successfully.", () {
           Navigator.of(context).pop(); // Close the dialog
           SharedPrefUtil.preferences.clear();
           Navigator.pushAndRemoveUntil(

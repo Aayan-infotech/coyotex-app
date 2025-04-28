@@ -4,10 +4,11 @@ import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/passowrd_screen.dart';
-import 'package:coyotex/feature/auth/screens/subscription_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
 import 'package:provider/provider.dart';
+
+import '../../homeScreen/screens/home_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   bool isResetPassward;
@@ -149,13 +150,23 @@ class _OtpScreenState extends State<OtpScreen> {
                                       responce.data["accessToken"]);
                                   SharedPrefUtil.setValue(refreshTokenPref,
                                       responce.data["refreshToken"]);
-                                  // SharedPrefUtil.setValue(isLoginPref, true);
+                                  SharedPrefUtil.setValue(
+                                      hasSubscription, true);
+                                  SharedPrefUtil.setValue(isLoginPref, true);
 
-                                  Navigator.of(context).push(
-                                      MaterialPageRoute(builder: (context) {
-                                    return const SubscriptionScreen(
-                                        from: "otp");
-                                  }));
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const HomeScreen()),
+                                    (route) => false,
+                                  );
+
+                                  // Navigator.of(context).push(
+                                  //     MaterialPageRoute(builder: (context) {
+                                  //   return const SubscriptionScreen(
+                                  //       from: "otp");
+                                  // }));
                                 }
                               }
                             }, // Logic handled in OTP field's onSubmit

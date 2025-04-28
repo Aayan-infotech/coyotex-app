@@ -1,14 +1,9 @@
 import 'package:coyotex/core/utills/app_colors.dart';
 import 'package:coyotex/core/utills/branded_primary_button.dart';
-import 'package:coyotex/feature/auth/data/model/pref_model.dart';
-import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
-import 'package:coyotex/feature/auth/screens/prefrence_dstance_screen.dart';
+import 'package:coyotex/feature/auth/data/purchase_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/utills/constant.dart';
-import '../../../core/utills/shared_pref.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   final String from;
@@ -20,22 +15,30 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  String? _selectedPlanId;
-  String? _selectedPlanPrice = ""; // Store selected plan ID
+  ProductDetails? _selectedProduct;
+
+  final _products = [
+    ProductDetails(
+      id: 'coyotex_premium_monthly',
+      title: 'Monthly Plan',
+      description: 'Access all premium features monthly',
+      price: '\$9.99',
+      rawPrice: 9.99,
+      currencyCode: 'USD',
+    ),
+    ProductDetails(
+      id: 'coyotex_premium_yearly',
+      title: 'Yearly Plan',
+      description: 'Access all premium features yearly',
+      price: '\$99.99',
+      rawPrice: 99.99,
+      currencyCode: 'USD',
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<UserViewModel>(context, listen: false);
-      authProvider.getSubscriptionPlan();
-    });
-    //getPlans();
-  }
-
-  void getPlans() {
-    final authProvider = Provider.of<UserViewModel>(context, listen: false);
-    authProvider.getSubscriptionPlan(); // Fetch plans from the provider
   }
 
   @override
@@ -44,23 +47,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Consumer<UserViewModel>(
-            builder: (context, userViewModel, child) {
-              if (userViewModel.isLoading) {
+          Consumer<PurchaseProvider>(
+            builder: (context, iapProvider, child) {
+              if (!iapProvider.isAvailable) {
                 return const Center(
-                  child: CircularProgressIndicator(
-                    color: Pallete.primaryColor,
-                  ),
+                  child: Text("Store unavailable",
+                      style: TextStyle(color: Colors.white)),
                 );
               }
 
-              // Ensure lstPlan is populated
-              if (userViewModel.lstPlan.isEmpty) {
+              if (_products.isEmpty) {
                 return const Center(
-                  child: Text(
-                    "No plans available",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  child: Text("No products available",
+                      style: TextStyle(color: Colors.white)),
                 );
               }
 
@@ -115,11 +114,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             childAspectRatio:
                                 3 / 2, // Adjusted aspect ratio for plan cards
                           ),
-                          itemCount: userViewModel.lstPlan.length,
+                          itemCount: _products.length,
                           itemBuilder: (context, index) {
-                            final plan = userViewModel.lstPlan[index];
-                            return _buildPlanCard(plan.id, plan.planName,
-                                plan.planAmount.toString());
+                            final product = _products[index];
+                            return _buildPlanCard(product);
                           },
                         ),
                       ],
@@ -134,84 +132,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             left: 16,
             right: 16,
             child: BrandedPrimaryButton(
-                isEnabled: _selectedPlanId !=
-                    null, // Disable button if no plan is selected
+                isEnabled: _selectedProduct != null,
+                // Disable button if no plan is selected
                 suffixIcon: const Icon(
                   Icons.arrow_forward,
                   color: Colors.white,
                 ),
                 name: "Make Payment",
                 onPressed: () async {
-                  if (_selectedPlanId != null) {
-                    final userViewModel =
-                        Provider.of<UserViewModel>(context, listen: false);
-
-                    final paymentIntentResponse = await userViewModel
-                        .createPaymentIntent(_selectedPlanPrice!, "usd");
-
-                    if (paymentIntentResponse.success) {
-                      String paymentId =
-                          paymentIntentResponse.data["paymentId"];
-                      final clientSecret =
-                          paymentIntentResponse.data["clientSecret"];
-
-                      try {
-                        await Stripe.instance.initPaymentSheet(
-                          paymentSheetParameters: SetupPaymentSheetParameters(
-                            paymentIntentClientSecret: clientSecret,
-                            merchantDisplayName: 'Coyotex',
-                            style: ThemeMode.dark,
-                          ),
-                        );
-
-                        await Stripe.instance.presentPaymentSheet();
-
-                        var response =
-                            await userViewModel.paymentStatus(paymentId);
-                        if (response.success) {
-                          if (widget.from == "subDetail") {
-                            userViewModel.getSubscriptionDetails();
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                          } else {
-                            SharedPrefUtil.setValue(isLoginPref, true);
-
-                            UserPreferences userPreferences = UserPreferences(
-                              userPlan: _selectedPlanId!,
-                              userUnit: '',
-                              userWeatherPref: '',
-                            );
-
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (context) => PrefernceDistanceScreen(
-                                  userPreferences: userPreferences,
-                                ),
-                              ),
-                              (route) => false, // this means "remove everything below"
-                            );
-                          }
-                        }
-                      } on StripeException catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                                  'Payment canceled: ${e.error.localizedMessage}')),
-                        );
-                      } catch (e) {
-                        print(e);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
-                      }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'Error: ${paymentIntentResponse.message}')),
-                      );
-                      print(paymentIntentResponse.message);
-                    }
+                  if (_selectedProduct != null) {
+                    final provider =
+                        Provider.of<PurchaseProvider>(context, listen: false);
+                    provider.buyProduct(_selectedProduct!);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -226,18 +158,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildPlanCard(
-    String planId,
-    String title,
-    String price,
-  ) {
-    final isSelected = _selectedPlanId == planId;
+  Widget _buildPlanCard(ProductDetails product) {
+    final isSelected = _selectedProduct?.id == product.id;
 
     return GestureDetector(
       onTap: () {
-        _selectedPlanPrice = price;
         setState(() {
-          _selectedPlanId = planId; // Update selected plan ID
+          _selectedProduct = product;
         });
       },
       child: Container(
@@ -266,7 +193,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    title,
+                    product.title,
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.black,
                       fontSize: 18,
@@ -276,7 +203,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    "\$$price", //price,
+                    product.price,
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.black,
                       fontSize: 24,

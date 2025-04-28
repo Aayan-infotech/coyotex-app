@@ -1,5 +1,6 @@
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/notification.dart';
+import 'package:coyotex/feature/auth/data/purchase_provider.dart';
 import 'package:coyotex/feature/auth/data/view_model/user_view_model.dart';
 import 'package:coyotex/feature/auth/screens/splash_screen.dart';
 import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';
@@ -98,6 +99,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => RouteProvider()),
         ChangeNotifierProvider(create: (_) => IndexProvider()),
+        ChangeNotifierProvider(create: (_) => PurchaseProvider())
       ],
       child: MaterialApp(
         title: 'Coyotex',

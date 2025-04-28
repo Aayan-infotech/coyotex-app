@@ -58,6 +58,9 @@ dependencies:
 
   flutter_pdfview: ^1.4.0
   shimmer: ^3.0.0
+  in_app_purchase: ^3.2.1
+  url_launcher: ^6.3.1
+  webview_flutter: ^4.11.0
   # open_file: ^3.5.10
 
 dev_dependencies:

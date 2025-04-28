@@ -708,7 +708,11 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/utills/constant.dart';
+import '../../../core/utills/shared_pref.dart';
+import '../../../utils/app_dialogue_box.dart';
 import '../../map/view_model/map_provider.dart';
+import '../../profile/presentation/subscription_details_screen.dart';
 
 class TripDetailsScreen extends StatefulWidget {
   final TripModel tripModel;
@@ -720,6 +724,7 @@ class TripDetailsScreen extends StatefulWidget {
 }
 
 class _TripDetailsScreenState extends State<TripDetailsScreen> {
+  var isSubscription = SharedPrefUtil.getValue(hasSubscription, false) as bool;
   bool showAllStops = false;
   int totalSeenAnimal = 0;
   int totalKilledAnimal = 0;
@@ -845,50 +850,66 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                     ? "Start Trip"
                     : "Restart Trip",
                 onPressed: () async {
-                  setState(() => isLoading = true);
-                  final mapProvider =
-                      Provider.of<MapProvider>(context, listen: false);
-                  mapProvider.resetFields();
-                  TripModel tripModel = TripModel(
-                    id: widget.tripModel.id,
-                    userId: widget.tripModel.userId,
-                    name: widget.tripModel.name,
-                    startLocation: widget.tripModel.startLocation,
-                    destination: widget.tripModel.destination,
-                    waypoints: List.from(widget.tripModel.waypoints),
-                    totalDistance: widget.tripModel.totalDistance,
-                    createdAt: widget.tripModel.createdAt,
-                    routePoints: List.from(widget.tripModel.routePoints),
-                    markers: List.from(widget.tripModel.markers),
-                    weatherMarkers: List.from(widget.tripModel.weatherMarkers),
-                    animalKilled: widget.tripModel.animalKilled,
-                    animalSeen: widget.tripModel.animalSeen,
-                    images: List.from(widget.tripModel.images),
-                    tripStatus: widget.tripModel.tripStatus,
-                  );
-                  mapProvider
-                    ..isSavedTrip = true
-                    ..isSave = true
-                    ..liveTripMarker = tripModel.markers
-                    ..isStartavigation = true
-                    ..markers = tripModel.markers
-                    ..distance = tripModel.totalDistance
-                    ..selectedTripModel = tripModel
-                    ..points = tripModel.routePoints
-                    ..providerLetsHuntButton = true
-                    ..path = tripModel.routePoints
-                    ..onTapOnMap = false
-                    ..isRestart = widget.tripModel.tripStatus != "created";
+                  if (isSubscription) {
+                    setState(() => isLoading = true);
+                    final mapProvider =
+                        Provider.of<MapProvider>(context, listen: false);
+                    mapProvider.resetFields();
+                    TripModel tripModel = TripModel(
+                      id: widget.tripModel.id,
+                      userId: widget.tripModel.userId,
+                      name: widget.tripModel.name,
+                      startLocation: widget.tripModel.startLocation,
+                      destination: widget.tripModel.destination,
+                      waypoints: List.from(widget.tripModel.waypoints),
+                      totalDistance: widget.tripModel.totalDistance,
+                      createdAt: widget.tripModel.createdAt,
+                      routePoints: List.from(widget.tripModel.routePoints),
+                      markers: List.from(widget.tripModel.markers),
+                      weatherMarkers:
+                          List.from(widget.tripModel.weatherMarkers),
+                      animalKilled: widget.tripModel.animalKilled,
+                      animalSeen: widget.tripModel.animalSeen,
+                      images: List.from(widget.tripModel.images),
+                      tripStatus: widget.tripModel.tripStatus,
+                    );
+                    mapProvider
+                      ..isSavedTrip = true
+                      ..isSave = true
+                      ..liveTripMarker = tripModel.markers
+                      ..isStartavigation = true
+                      ..markers = tripModel.markers
+                      ..distance = tripModel.totalDistance
+                      ..selectedTripModel = tripModel
+                      ..points = tripModel.routePoints
+                      ..providerLetsHuntButton = true
+                      ..path = tripModel.routePoints
+                      ..onTapOnMap = false
+                      ..isRestart = widget.tripModel.tripStatus != "created";
 
-                  await mapProvider
-                      .fetchRouteWithWaypoints(tripModel.routePoints);
-                  if (mounted) {
-                    Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    MapScreen(isRestart: true)))
-                        .then((_) => setState(() => isLoading = false));
+                    await mapProvider
+                        .fetchRouteWithWaypoints(tripModel.routePoints);
+                    if (mounted) {
+                      Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      MapScreen(isRestart: true)))
+                          .then((_) => setState(() => isLoading = false));
+                    }
+                  } else {
+                    AppDialog.showErrorDialog(
+                      context,
+                      "You need an active subscription to use this feature.",
+                      () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SubscriptionDetailsScreen(),
+                          ),
+                        );
+                      },
+                    );
                   }
                 },
               )

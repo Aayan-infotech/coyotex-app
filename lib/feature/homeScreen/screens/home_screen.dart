@@ -1,10 +1,8 @@
 import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';
 import 'package:coyotex/feature/homeScreen/screens/pages/home_page.dart';
-import 'package:coyotex/feature/map/data/trip_model.dart';
 import 'package:coyotex/feature/map/presentation/map.dart';
-import 'package:coyotex/feature/map/presentation/notofication_screen.dart';
-import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:coyotex/feature/profile/presentation/profile_screen.dart';
+import 'package:coyotex/feature/trip/presentation/trip_history.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

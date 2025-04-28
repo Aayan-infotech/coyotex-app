@@ -1,28 +1,36 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
+
+import 'package:coyotex/core/utills/constant.dart';
+import 'package:coyotex/core/utills/shared_pref.dart';
 import 'package:coyotex/feature/homeScreen/screens/index_provider.dart';
 import 'package:coyotex/feature/map/presentation/add_stop_map.dart';
 import 'package:coyotex/feature/map/presentation/marker_bottom_sheat.dart';
 import 'package:coyotex/feature/map/presentation/search_location_screen.dart';
 import 'package:coyotex/feature/map/presentation/show_duration_and_animal_details_sheet.dart';
 import 'package:coyotex/feature/map/view_model/map_provider.dart';
+import 'package:coyotex/feature/profile/presentation/subscription_details_screen.dart';
 import 'package:coyotex/feature/trip/view_model/trip_view_model.dart';
+import 'package:coyotex/utils/app_dialogue_box.dart';
 import 'package:coyotex/utils/distance_dialogue.dart';
 import 'package:coyotex/utils/filter_dialoguebox.dart';
+import 'package:coyotex/utils/keyboard_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// import 'package:flutter_compass/flutter_compass.dart';
-import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import '../../trip/presentation/add_photos.dart';
+// import 'package:flutter_compass/flutter_compass.dart';
+import 'package:provider/provider.dart';
+
 import '../../../core/utills/branded_primary_button.dart';
 import '../../../core/utills/branded_text_filed.dart';
-import 'dart:ui' as ui;
+import '../../trip/presentation/add_photos.dart';
 
 class MapScreen extends StatefulWidget {
   bool? isRestart;
   GoogleMapController? googleMapController;
+
   MapScreen({this.googleMapController, this.isRestart = false, super.key});
 
   @override
@@ -30,6 +38,8 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  var isSubscription = SharedPrefUtil.getValue(hasSubscription, false) as bool;
+
   int selectedMode = 0;
   final List<String> modes = ["Drive", "Bike", "Walk"];
   final List<IconData> modeIcons = [
@@ -37,61 +47,81 @@ class _MapScreenState extends State<MapScreen> {
     Icons.two_wheeler,
     Icons.directions_walk,
   ];
+
   // StreamSubscription<CompassEvent>? _compassSubscription;
   double? _compassHeading;
   final Map<String, BitmapDescriptor> icons = {};
+
   Future<void> _loadMarkers() async {
     icons['markerIcon'] = await _getIcon('assets/images/marker_icon.png', 200);
   }
 
   MapType _currentMapType = MapType.hybrid;
+
   void _showLayerDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).dialogBackgroundColor,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(28),
+    if(isSubscription){
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).dialogBackgroundColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
             ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                height: 4,
-                width: 48,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  height: 4,
+                  width: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    Text(
-                      "Map Style",
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Text(
+                        "Map Style",
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              ..._buildLayerOptions(),
-              const SizedBox(height: 24),
-            ],
-          ),
-        );
-      },
-    );
+                const SizedBox(height: 8),
+                ..._buildLayerOptions(),
+                const SizedBox(height: 24),
+              ],
+            ),
+          );
+        },
+      );
+    }else{
+      AppDialog.showErrorDialog(
+        context,
+        "You don't have an active subscription.",
+            () {
+          Navigator.pop(context);
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) =>
+              const SubscriptionDetailsScreen(),
+            ),
+          );
+        },
+      );
+    }
+
   }
 
   List<Widget> _buildLayerOptions() {
@@ -250,6 +280,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   bool isMarkerLoading = false;
+
   asyncInit() async {
     setState(() {
       isMarkerLoading = true;
@@ -375,8 +406,24 @@ class _MapScreenState extends State<MapScreen> {
                                   onTap: provider.isSavedTrip
                                       ? null
                                       : (latlang) async {
+                                        if(isSubscription){
                                           provider.onMapTapped(
                                               latlang, context);
+                                        }else{
+                                          AppDialog.showErrorDialog(
+                                            context,
+                                            "You need an active subscription to use this feature.",
+                                                () {
+                                              Navigator.pop(context);
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => const SubscriptionDetailsScreen(),
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        }
+
                                         },
                                   zoomGesturesEnabled: true,
                                   onMapCreated: (controller) =>
@@ -606,7 +653,8 @@ class _MapScreenState extends State<MapScreen> {
                                                                 ? Icons
                                                                     .arrow_upward // Show upward arrow if increased
                                                                 : Icons
-                                                                    .arrow_downward, // Show downward arrow if decreased
+                                                                    .arrow_downward,
+                                                            // Show downward arrow if decreased
                                                             color: provider
                                                                     .currentEstimate!
                                                                     .isAfter(
@@ -615,7 +663,8 @@ class _MapScreenState extends State<MapScreen> {
                                                                 ? Colors.red
                                                                     .shade600 // Red for increased time
                                                                 : Colors.green
-                                                                    .shade600, // Green for decreased time
+                                                                    .shade600,
+                                                            // Green for decreased time
                                                             size: 16,
                                                           ),
                                                         ],
@@ -861,7 +910,7 @@ class _MapScreenState extends State<MapScreen> {
                                                 listen: false)
                                             .updateIndex(0);
                                       },
-                                      child: Icon(
+                                      child: const Icon(
                                         Icons.arrow_back_ios,
                                         color: Colors.white,
                                         size: 25,
@@ -871,30 +920,48 @@ class _MapScreenState extends State<MapScreen> {
                                       child: BrandedTextField(
                                         height: 40,
                                         controller: provider.startController,
+                                        keyboardType: TextInputType.none,
                                         labelText: "Search here",
                                         onTap: () {
-                                          provider.resetFields();
+                                          context.hideKeyboard();
+                                          if (isSubscription) {
+                                            provider.resetFields();
+                                            Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                    builder: (context) {
+                                              return SearchLocationScreen(
+                                                controller:
+                                                    provider.startController,
+                                                isStart: true,
+                                              );
+                                            })).then((value) async {
+                                              Map<String, dynamic> data =
+                                                  jsonDecode(value);
 
-                                          Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                  builder: (context) {
-                                            return SearchLocationScreen(
-                                              controller:
-                                                  provider.startController,
-                                              isStart: true,
+                                              await provider
+                                                  .onSuggestionSelected(
+                                                      data['placeId'],
+                                                      data["isStart"],
+                                                      provider.startController,
+                                                      // data["controller"],
+                                                      context);
+                                              // provider.showDurationPicker(context);
+                                            });
+                                          } else {
+                                            AppDialog.showErrorDialog(
+                                              context,
+                                              "You don't have an active subscription.",
+                                              () {
+                                                Navigator.pop(context);
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        const SubscriptionDetailsScreen(),
+                                                  ),
+                                                );
+                                              },
                                             );
-                                          })).then((value) async {
-                                            Map<String, dynamic> data =
-                                                jsonDecode(value);
-
-                                            await provider.onSuggestionSelected(
-                                                data['placeId'],
-                                                data["isStart"],
-                                                provider.startController,
-                                                // data["controller"],
-                                                context);
-                                            // provider.showDurationPicker(context);
-                                          });
+                                          }
                                         },
                                         prefix: const Icon(Icons.location_on),
                                       ),
@@ -902,42 +969,59 @@ class _MapScreenState extends State<MapScreen> {
                                     const SizedBox(width: 5),
                                     GestureDetector(
                                       onTap: () async {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => FilterDialog(
-                                            windDirections: _windDirections,
-                                            selectedDirections:
-                                                _selectedDirections,
-                                            onApply: (selected) {
-                                              setState(() =>
-                                                  _selectedDirections =
-                                                      selected);
+                                        if (isSubscription){
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) => FilterDialog(
+                                              windDirections: _windDirections,
+                                              selectedDirections:
+                                              _selectedDirections,
+                                              onApply: (selected) {
+                                                setState(() =>
+                                                _selectedDirections =
+                                                    selected);
 
-                                              final tripProvider =
-                                                  Provider.of<TripViewModel>(
-                                                      context,
-                                                      listen: false);
-                                              final mapProvider =
-                                                  Provider.of<MapProvider>(
-                                                      context,
-                                                      listen: false);
+                                                final tripProvider =
+                                                Provider.of<TripViewModel>(
+                                                    context,
+                                                    listen: false);
+                                                final mapProvider =
+                                                Provider.of<MapProvider>(
+                                                    context,
+                                                    listen: false);
 
-                                              // Filter markers based on selected wind directions
-                                              final filtered = tripProvider
-                                                  .lstMarker
-                                                  .where((marker) {
-                                                if (selected.isEmpty)
-                                                  return true;
-                                                return selected.any((dir) =>
-                                                    marker.wind_direction
-                                                        .contains(dir));
-                                              }).toList();
-                                              // provider.liveTripMarker = filtered;
-                                              mapProvider.updateMapMarkers(
-                                                  filtered); // Update map with filtered markers
+                                                // Filter markers based on selected wind directions
+                                                final filtered = tripProvider
+                                                    .lstMarker
+                                                    .where((marker) {
+                                                  if (selected.isEmpty)
+                                                    return true;
+                                                  return selected.any((dir) =>
+                                                      marker.wind_direction
+                                                          .contains(dir));
+                                                }).toList();
+                                                // provider.liveTripMarker = filtered;
+                                                mapProvider.updateMapMarkers(
+                                                    filtered); // Update map with filtered markers
+                                              },
+                                            ),
+                                          );
+                                        }else {
+                                          AppDialog.showErrorDialog(
+                                            context,
+                                            "You don't have an active subscription.",
+                                                () {
+                                              Navigator.pop(context);
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                  const SubscriptionDetailsScreen(),
+                                                ),
+                                              );
                                             },
-                                          ),
-                                        );
+                                          );
+                                        }
+
                                       },
                                       child: Container(
                                         width: 40,

@@ -12,8 +12,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static initlizeLocalNotification(GlobalKey<NavigatorState> navigatorKey) {
-    var androidInit =
-        const AndroidInitializationSettings("@mipmap/ic_launcher");
+    var androidInit = const AndroidInitializationSettings("@mipmap/ic_launcher");
     var initializationSettings = InitializationSettings(android: androidInit);
     _flutterLocalNotificationPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: (details) async {

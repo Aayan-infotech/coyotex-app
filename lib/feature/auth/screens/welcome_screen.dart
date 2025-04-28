@@ -1,5 +1,6 @@
 import 'package:coyotex/core/utills/branded_primary_button.dart';
 import 'package:coyotex/feature/auth/screens/login_screen.dart';
+import 'package:coyotex/utils/keyboard_extension.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -7,76 +8,101 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Image.asset(
-            "assets/images/welcome_background.png",
-            fit: BoxFit.cover, 
-            height: double.infinity, // Ensure the image takes up full height
-            width: double.infinity, // Ensure the image takes up full width
-          ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Image 1: Logo
-                Image.asset("assets/images/logo.png"),
-                const SizedBox(
-                  height: 10,
-                ),
-                // Image 2: Logo Text
-                Image.asset("assets/images/logo_text.png"),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.1,
-                ),
-                const Text(
-                  "GRIND AND FIND",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w800),
-                ),
-                const Text(
-                  "start the journey now",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w500),
-                ),
-                const Text(
-                  "Your go-to hunting companion! Track, plan, and record your adventures with ease. Stay informed, stay safe, and make every hunt count!.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white),
-                )
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 100, // Adjust this value to control the vertical position
-            left: 0,
-            right: 0,
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
 
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: BrandedPrimaryButton(
-                isEnabled: true,
-                suffixIcon: const Icon(
-                  Icons.arrow_forward,
-                  color: Colors.white,
+    return GestureDetector(
+      onTap: () {
+        context.hideKeyboard();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Stack(
+          children: [
+            Image.asset(
+              "assets/images/welcome_background.png",
+              fit: BoxFit.cover,
+              height: double.infinity,
+              width: double.infinity,
+            ),
+            SingleChildScrollView(
+              child: SizedBox(
+                height: height,
+                width: width,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(height: height * 0.28),
+
+                    // Logo
+                    Image.asset(
+                      "assets/images/logo.png",
+                      width: width * 0.35,
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Logo Text
+                    Image.asset(
+                      "assets/images/logo_text.png",
+                      width: width * 0.6,
+                    ),
+
+                    SizedBox(height: height * 0.08),
+
+                    // Title Text
+                    Text(
+                      "GRIND AND FIND",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: width * 0.075,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      "start the journey now",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: width * 0.055,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: width * 0.08,
+                        vertical: height * 0.02,
+                      ),
+                      child: const Text(
+                        "Your go-to hunting companion! Track, plan, and record your adventures with ease. Stay informed, stay safe, and make every hunt count!.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: width * 0.08),
+                      child: BrandedPrimaryButton(
+                        isEnabled: true,
+                        suffixIcon: const Icon(Icons.arrow_forward,
+                            color: Colors.white),
+                        name: "I'm ready to begin",
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ));
+                        },
+                      ),
+                    ),
+                    SizedBox(height: height * 0.06),
+                  ],
                 ),
-                name: "I'am ready to begin",
-                onPressed: () {
-                  Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (context) {
-                    return const LoginScreen();
-                  }));
-                },
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

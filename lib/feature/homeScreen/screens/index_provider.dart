@@ -7,6 +7,7 @@ class IndexProvider extends ChangeNotifier {
   int get currentIndex => _currentIndex;
   Key get mapKey => _mapKey;
 
+
   void updateIndex(int index) {
     if (index == 1) {
       _mapKey = UniqueKey();
