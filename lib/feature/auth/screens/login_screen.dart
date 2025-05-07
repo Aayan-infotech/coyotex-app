@@ -141,7 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               onChanged: (value) {
                                 if (value.length >= 5) setState(() {});
                               },
-                              validator: (value) => validateLoginPassword(value),
+                              validator: (value) =>
+                                  validateLoginPassword(value),
                             ),
                             const SizedBox(height: 5),
                             Align(
@@ -173,20 +174,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                   final username = _nameController.text;
                                   final password = _passwordController.text;
 
-                                  var response = await userProvider.login(username, password, context);
+                                  var response = await userProvider.login(
+                                      username, password, context);
 
-                                  debugPrint("LOGIN RESPONSE => ${response.success}");
+                                  debugPrint(
+                                      "LOGIN RESPONSE => ${response.success}");
 
-                                  setState(() {
-                                    isLoading = false;
-                                  });
                                   if (response.success) {
                                     // var isSubscription =
                                     //     response.data["plan"] != null
                                     //         ? true
                                     //         : false;
                                     SharedPrefUtil.setValue(isLoginPref, true);
-                                    SharedPrefUtil.setValue(hasSubscription, true);
+                                    SharedPrefUtil.setValue(
+                                        hasSubscription, true);
                                     Navigator.pushAndRemoveUntil(
                                       context,
                                       MaterialPageRoute(
@@ -194,6 +195,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                               const HomeScreen()),
                                       (route) => false,
                                     );
+
+                                    setState(() {
+                                      isLoading = false;
+                                    });
                                     /*if (response.data["plan"] != null) {
                                       SharedPrefUtil.setValue(
                                           isLoginPref, true);
@@ -228,8 +233,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                         }));
                                       }
                                     });
-
-
                                   }
                                 }
                               },

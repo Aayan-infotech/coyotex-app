@@ -271,6 +271,13 @@ class _CustomDialogState extends State<CustomDialog> {
                               fontWeight: FontWeight.w600,
                               color: Colors.black),
                         ),
+                        subtitle: Text(
+                          markerData.title,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black),
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

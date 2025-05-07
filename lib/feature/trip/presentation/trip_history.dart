@@ -179,7 +179,6 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
         });
       }
     } catch (e) {
-    
       setState(() {
         trips = [];
       });
@@ -257,35 +256,39 @@ class _TripsHistoryScreenState extends State<TripsHistoryScreen> {
       ),
       child: Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: CachedNetworkImage(
-              //imageUrl: trip.images.isNotEmpty ? trip.images.first : '',
-              imageUrl: (trip.markers.isNotEmpty &&
-                      trip.markers.first.media != null &&
-                      trip.markers.first.media!.isNotEmpty)
-                  ? trip.markers.first.media!.firstWhere(
-                      (media) => media.isNotEmpty && !checkIfVideo(media),
-                      orElse: () =>
-                          '', // Return an empty string if no valid image is found
-                    )
-                  : '',
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator.adaptive(
-                backgroundColor: Colors.white,
-              )),
-              errorWidget: (context, url, error) => Image.asset(
-                "assets/images/coyotex_place_holder.jpg",
-                width: 50,
-                height: 50,
-                fit: BoxFit.contain,
-              ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 40),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: CachedNetworkImage(
+                  //imageUrl: trip.images.isNotEmpty ? trip.images.first : '',
+                  imageUrl: (trip.markers.isNotEmpty &&
+                          trip.markers.first.media != null &&
+                          trip.markers.first.media!.isNotEmpty)
+                      ? trip.markers.first.media!.firstWhere(
+                          (media) => media.isNotEmpty && !checkIfVideo(media),
+                          orElse: () =>
+                              '', // Return an empty string if no valid image is found
+                        )
+                      : '',
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator.adaptive(
+                        backgroundColor: Colors.white,
+                      )),
+                  errorWidget: (context, url, error) => ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          "assets/images/coyotex_place_holder.jpg",
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.contain,
+                        ),
+                      )),
             ),
           ),
-        
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(

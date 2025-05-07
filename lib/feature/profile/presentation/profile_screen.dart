@@ -388,19 +388,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icons.lock_outline,
                             'Privacy Policy',
                             context,
-                            const WebScreen(url: "https://www.hunt30.com/privecyPolicy"),
+                            const WebScreen(
+                                url: "https://www.hunt30.com/privecyPolicy"),
                           ),
                           _buildListTile(
                             Icons.description,
                             'Terms and Conditions',
                             context,
-                            const WebScreen(url: "https://www.hunt30.com/termCondition"),
+                            const WebScreen(
+                                url: "https://www.hunt30.com/termCondition"),
                           ),
                           _buildListTile(
                             Icons.delete,
                             'Delete Account Policy',
                             context,
-                            const WebScreen(url: "https://www.hunt30.com/deletePolicy"),
+                            const WebScreen(
+                                url: "https://www.hunt30.com/deletePolicy"),
                           ),
                           _showDeleteDialog(context),
                           _buildListTile(

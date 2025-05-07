@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:coyotex/core/utills/constant.dart';
 import 'package:coyotex/core/utills/shared_pref.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:http/http.dart' as http;
 
 class ApiResponse {
   final String message;
@@ -22,13 +22,65 @@ class ApiResponseWithData<T> {
 }
 
 class CallHelper {
-  static const String baseUrl = "https://www.thecoyotex.com/api/";
+  static const String baseUrl =
+      "https://www.thecoyotex.com/api/"; //"http://18.209.91.97:5648/api/";
   static const int timeoutInSeconds = 20;
   static const String internalServerErrorMessage = "Internal server error.";
   static bool _isRefreshing = false;
   static Completer<void>? _refreshCompleter;
+  static void Function()? onLogout;
 
-  Future<Map<String, String>> getHeaders() async {
+  late final Dio dio = Dio(BaseOptions(
+    baseUrl: baseUrl,
+    connectTimeout: const Duration(seconds: timeoutInSeconds),
+    responseType: ResponseType.json,
+  ));
+
+  CallHelper() {
+    dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        options.headers = await _getHeaders();
+        return handler.next(options);
+      },
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          if (_isRefreshing) {
+            await _refreshCompleter?.future;
+            return handler.next(error);
+          }
+
+          _isRefreshing = true;
+          _refreshCompleter = Completer<void>();
+
+          try {
+            if (await _refreshToken()) {
+              final opts = Options(
+                method: error.requestOptions.method,
+                headers: await _getHeaders(),
+              );
+              final response = await dio.request(
+                _buildUrl(error.requestOptions.path),
+                options: opts,
+                data: error.requestOptions.data,
+                queryParameters: error.requestOptions.queryParameters,
+              );
+              _isRefreshing = false;
+              _refreshCompleter?.complete();
+              return handler.resolve(response);
+            }
+          } catch (e) {
+            _isRefreshing = false;
+            _refreshCompleter?.complete();
+            if (onLogout != null) onLogout!();
+            return handler.reject(error);
+          }
+        }
+        return handler.next(error);
+      },
+    ));
+  }
+
+  Future<Map<String, String>> _getHeaders() async {
     String accessToken = SharedPrefUtil.getValue(accessTokenPref, "") as String;
     return {
       'Authorization': 'Bearer $accessToken',
@@ -36,139 +88,102 @@ class CallHelper {
     };
   }
 
+  String _buildUrl(String suffix) {
+    if (suffix.startsWith("http")) return suffix;
+    return "${dio.options.baseUrl}${suffix.startsWith("/") ? suffix.substring(1) : suffix}";
+  }
+
   Future<ApiResponse> get(String urlSuffix,
       {Map<String, dynamic>? queryParams}) async {
     return _performRequest(() async {
-      Uri uri =
-          Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
-      final response = await http
-          .get(uri, headers: await getHeaders())
-          .timeout(const Duration(seconds: timeoutInSeconds));
-      return _processResponse(
-          response, () => get(urlSuffix, queryParams: queryParams));
+      final response = await dio.get(
+        _buildUrl(urlSuffix),
+        queryParameters: queryParams,
+      );
+      return _processResponse(response);
     });
   }
 
   Future<ApiResponseWithData<T>> getWithData<T>(String urlSuffix, T defaultData,
       {Map<String, dynamic>? queryParams}) async {
     return _performRequest(() async {
-      Uri uri = Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
-      var headder = await getHeaders();
-      debugPrint("URL => $uri and HEADER => ${headder}");
-      final response = await http
-          .get(uri, headers: await getHeaders())
-          .timeout(const Duration(seconds: timeoutInSeconds));
-      return _processResponseWithData(response, defaultData,
-          () => getWithData(urlSuffix, defaultData, queryParams: queryParams));
+      debugPrint("URL => ${_buildUrl(urlSuffix)}");
+      final response = await dio.get(
+        _buildUrl(urlSuffix),
+        queryParameters: queryParams,
+      );
+      return _processResponseWithData(response, defaultData);
     });
   }
 
   Future<ApiResponse> delete(String urlSuffix,
       {Map<String, dynamic>? queryParams}) async {
     return _performRequest(() async {
-      Uri uri =
-          Uri.parse('$baseUrl$urlSuffix').replace(queryParameters: queryParams);
-      final response = await http
-          .delete(
-            uri,
-            headers: await getHeaders(),
-          )
-          .timeout(const Duration(seconds: timeoutInSeconds));
-      return _processResponse(
-          response, () => delete(urlSuffix, queryParams: queryParams));
+      final response = await dio.delete(
+        _buildUrl(urlSuffix),
+        queryParameters: queryParams,
+      );
+      return _processResponse(response);
     });
   }
 
   Future<ApiResponse> post(String urlSuffix, Map<String, dynamic> body) async {
     return _performRequest(() async {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl$urlSuffix'),
-            headers: await getHeaders(),
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: timeoutInSeconds));
-      return _processResponse(response, () => post(urlSuffix, body));
+      final response = await dio.post(
+        _buildUrl(urlSuffix),
+        data: jsonEncode(body),
+      );
+      return _processResponse(response);
     });
   }
 
   Future<ApiResponseWithData<T>> postWithData<T>(
       String urlSuffix, Map<String, dynamic> body, T defaultData) async {
     return _performRequest(() async {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl$urlSuffix'),
-            headers: await getHeaders(),
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: timeoutInSeconds));
-      return _processResponseWithData(response, defaultData,
-          () => postWithData(urlSuffix, body, defaultData));
+      final response = await dio.post(
+        _buildUrl(urlSuffix),
+        data: jsonEncode(body),
+      );
+      return _processResponseWithData(response, defaultData);
     });
   }
 
   Future<ApiResponseWithData<T>> putWithData<T>(
       String urlSuffix, Map<String, dynamic> body, T defaultData) async {
     return _performRequest(() async {
-      Uri uri = Uri.parse('$baseUrl$urlSuffix');
-      var headder = await getHeaders();
-      debugPrint("URL => $uri and HEADER => ${headder}");
-      final response = await http
-          .put(
-        Uri.parse('$baseUrl$urlSuffix'),
-        headers: await getHeaders(),
-        body: jsonEncode(body),
-      )
-          .timeout(const Duration(seconds: timeoutInSeconds));
-      return _processResponseWithData(response, defaultData,
-              () => putWithData(urlSuffix, body, defaultData));
+      debugPrint("URL => ${_buildUrl(urlSuffix)}");
+      final response = await dio.put(
+        _buildUrl(urlSuffix),
+        data: jsonEncode(body),
+      );
+      return _processResponseWithData(response, defaultData);
     });
   }
 
   Future<ApiResponse> deleteWithBody(
       String urlSuffix, Map<String, dynamic> body) async {
     return _performRequest(() async {
-      Uri uri = Uri.parse('$baseUrl$urlSuffix');
-      final response = await http
-          .delete(
-            uri,
-            headers: await getHeaders(),
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: timeoutInSeconds));
-      return _processResponse(response, () => deleteWithBody(urlSuffix, body));
+      final response = await dio.delete(
+        _buildUrl(urlSuffix),
+        data: jsonEncode(body),
+      );
+      return _processResponse(response);
     });
   }
 
   Future<ApiResponse> patch<T>(
-    String urlSuffix,
-    Map<String, dynamic> body,
-  ) async {
+      String urlSuffix, Map<String, dynamic> body) async {
     return _performRequest(() async {
-      final response = await http
-          .patch(
-            Uri.parse('$baseUrl$urlSuffix'),
-            headers: await getHeaders(),
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: timeoutInSeconds));
-      return _processResponse(
-          response,
-          () => patch(
-                urlSuffix,
-                body,
-              ));
+      final response = await dio.patch(
+        _buildUrl(urlSuffix),
+        data: jsonEncode(body),
+      );
+      return _processResponse(response);
     });
   }
 
-  /// Handles API responses and retries if unauthorized (401).
-  ApiResponse _processResponse(
-      http.Response response, Future<ApiResponse> Function() retryRequest) {
-    if (response.statusCode == 401) {
-      return _handleUnauthorizedRequest(retryRequest);
-    }
-
-    final Map<String, dynamic> data = jsonDecode(response.body);
+  ApiResponse _processResponse(Response response) {
+    final data = response.data;
     String message = data["message"] ?? internalServerErrorMessage;
 
     return response.statusCode == 200 || response.statusCode == 201
@@ -176,13 +191,9 @@ class CallHelper {
         : ApiResponse(message, false);
   }
 
-  ApiResponseWithData<T> _processResponseWithData<T>(http.Response response,
-      T defaultData, Future<ApiResponseWithData<T>> Function() retryRequest) {
-    if (response.statusCode == 401) {
-      return _handleUnauthorizedRequestWithData(defaultData, retryRequest);
-    }
-
-    final Map<String, dynamic> data = jsonDecode(response.body);
+  ApiResponseWithData<T> _processResponseWithData<T>(
+      Response response, T defaultData) {
+    final data = response.data;
     String message = data["message"] ?? internalServerErrorMessage;
 
     return response.statusCode == 200 || response.statusCode == 201
@@ -190,64 +201,32 @@ class CallHelper {
         : ApiResponseWithData(defaultData, false, message: message);
   }
 
-  /// Handles token refresh and retries the failed request.
-  _handleUnauthorizedRequest(Future<ApiResponse> Function() retryRequest) {
-    return _refreshToken().then((success) async {
-      if (success) return await retryRequest();
-      return ApiResponse("Session expired. Please log in again.", false);
-    }).catchError((_) => ApiResponse("Token refresh failed", false));
-  }
-
-  _handleUnauthorizedRequestWithData<T>(
-      T defaultData, Future<ApiResponseWithData<T>> Function() retryRequest) {
-    return _refreshToken().then((success) async {
-      if (success) return await retryRequest();
-      return ApiResponseWithData(defaultData, false,
-          message: "Session expired. Please log in again.");
-    }).catchError((_) => ApiResponseWithData(defaultData, false,
-        message: "Token refresh failed"));
-  }
-
-  /// Refreshes the token and updates stored credentials.
   Future<bool> _refreshToken() async {
-    if (_isRefreshing) {
-      await _refreshCompleter?.future;
-      return (SharedPrefUtil.getValue(accessTokenPref, "") as String)
-          .isNotEmpty;
-    }
-
-    _isRefreshing = true;
-    _refreshCompleter = Completer<void>();
-
     try {
       String refreshToken =
           SharedPrefUtil.getValue(refreshTokenPref, "") as String;
-      final response = await http.post(
-        Uri.parse("${baseUrl}api/auth/refresh-token"),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({"refreshToken": refreshToken}),
+      final response = await dio.post(
+        _buildUrl("auth/refresh-token"),
+        data: jsonEncode({"refreshToken": refreshToken}),
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
+        final data = response.data;
         String newAccessToken = data["accessToken"] ?? "";
         await SharedPrefUtil.setValue(accessTokenPref, newAccessToken);
-        _refreshCompleter?.complete();
-        _isRefreshing = false;
         return true;
       }
-    } catch (_) {}
-
-    _refreshCompleter?.complete();
-    _isRefreshing = false;
+    } catch (_) {
+      if (onLogout != null) onLogout!();
+    }
     return false;
   }
 
-  /// Wraps API calls with exception handling and retry logic.
   Future<T> _performRequest<T>(Future<T> Function() requestFunction) async {
     try {
       return await requestFunction();
-    } catch (e) {
+    } on DioException catch (e) {
+      debugPrint("API Error: ${e.message}");
       if (T == ApiResponseWithData<Map<String, dynamic>>) {
         return ApiResponseWithData<Map<String, dynamic>>({}, false,
             message: "Request failed") as T;
@@ -259,6 +238,9 @@ class CallHelper {
       } else {
         throw Exception("Unexpected return type in _performRequest: $T");
       }
+    } catch (e) {
+      debugPrint("Unexpected error: $e");
+      return ApiResponse("Unexpected error occurred", false) as T;
     }
   }
 }

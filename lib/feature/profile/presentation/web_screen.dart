@@ -35,7 +35,7 @@ class WebScreen extends StatelessWidget {
                       width: MediaQuery.of(context).size.width * 0.18,
                       height: MediaQuery.of(context).size.width * 0.18,
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
+                        color: Colors.black.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: const [
                           BoxShadow(color: Colors.white, blurRadius: 0.15)

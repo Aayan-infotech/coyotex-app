@@ -26,6 +26,7 @@ class Pallete {
   static const Color labelTextColor = Color(0xB24E4E4E);
   static const Color successColor = Color(0xFF35A01A);
   static const Color errorColor = Color(0xFFFF3E3E);
+  // ignore: deprecated_member_use
   static Color outLineColor = Colors.black.withOpacity(0.2);
   static Color importantNote = const Color(0xFFFFFACE);
   static Color alertBackGroundColor = const Color(0x0CCD2B2B);

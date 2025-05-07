@@ -33,14 +33,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
         centerTitle: true,
         actions: [
-          GestureDetector(
-              onTap: () {
-                Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (context) {
-                  return const NotificationScreen();
-                }));
-              },
-              child: const Icon(Icons.notifications))
+          // GestureDetector(
+          //     onTap: () {
+          //       Navigator.of(context)
+          //           .push(MaterialPageRoute(builder: (context) {
+          //         return const NotificationScreen();
+          //       }));
+          //     },
+          //     child: const Icon(Icons.notifications))
         ],
       ),
       body: Consumer<UserViewModel>(
